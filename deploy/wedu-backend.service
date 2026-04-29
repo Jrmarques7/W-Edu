@@ -1,0 +1,17 @@
+[Unit]
+Description=W-Edu Backend (FastAPI)
+After=network.target postgresql.service
+Requires=postgresql.service
+
+[Service]
+Type=simple
+User=www-data
+WorkingDirectory=/opt/w-edu/backend
+EnvironmentFile=/opt/w-edu/backend/.env
+Environment=PYTHONPATH=/opt/w-edu/backend
+ExecStart=/opt/w-edu/backend/.venv/bin/uvicorn main:app --host 0.0.0.0 --port 8002 --workers 2
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
