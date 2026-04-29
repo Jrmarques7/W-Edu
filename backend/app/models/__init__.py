@@ -5,8 +5,10 @@ from app.models.enrollment import Enrollment
 from app.models.progress import Progress
 from app.models.session import Session
 from app.models.attendance import Attendance
+from app.models.quiz import Quiz, QuizQuestion, QuizAttempt
 
 __all__ = [
     "Student", "Course", "Lesson", "Enrollment",
     "Progress", "Session", "Attendance",
+    "Quiz", "QuizQuestion", "QuizAttempt",
 ]

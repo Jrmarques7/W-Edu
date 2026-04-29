@@ -23,3 +23,12 @@ def update_progress(
 @router.get("/me", response_model=list[ProgressOut])
 def my_progress(db: Session = Depends(get_db), current: Student = Depends(get_current_student)):
     return ProgressService(db).list_by_student(current.id)
+
+
+@router.post("/consume/{lesson_id}", response_model=ProgressOut)
+def mark_consumed(
+    lesson_id: int,
+    db: Session = Depends(get_db),
+    current: Student = Depends(get_current_student),
+):
+    return ProgressService(db).mark_consumed(current.id, lesson_id)

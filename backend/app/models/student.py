@@ -26,3 +26,4 @@ class Student(Base):
     progress: Mapped[list["Progress"]] = relationship(back_populates="student")
     sessions: Mapped[list["Session"]] = relationship(back_populates="student")
     attendance: Mapped[list["Attendance"]] = relationship(back_populates="student")
+    quiz_attempts: Mapped[list["QuizAttempt"]] = relationship(back_populates="student")

@@ -27,3 +27,4 @@ class Lesson(Base):
     progress: Mapped[list["Progress"]] = relationship(back_populates="lesson")
     sessions: Mapped[list["Session"]] = relationship(back_populates="lesson")
     attendance: Mapped[list["Attendance"]] = relationship(back_populates="lesson")
+    quiz: Mapped["Quiz | None"] = relationship(back_populates="lesson", uselist=False)

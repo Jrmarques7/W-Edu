@@ -1,39 +1,79 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { MicrophoneIcon, CheckCircleIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
+import { MicrophoneIcon, CheckCircleIcon, ArrowPathIcon, ClipboardDocumentListIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import api from '@/lib/api/client';
 import { endpoints } from '@/lib/api/endpoints';
 import type { Lesson, Progress, Session } from '@/types/course';
+import type { Quiz, QuizAttempt } from '@/types/quiz';
+import QuizPanel from '@/components/lesson/QuizPanel';
 
 export default function LessonPage() {
   const { id } = useParams<{ id: string }>();
+  const lessonId = Number(id);
+
   const [lesson, setLesson] = useState<Lesson | null>(null);
   const [progress, setProgress] = useState<Progress | null>(null);
   const [session, setSession] = useState<Session | null>(null);
+  const [quiz, setQuiz] = useState<Quiz | null>(null);
+  const [lastAttempt, setLastAttempt] = useState<QuizAttempt | null>(null);
+  const [showQuiz, setShowQuiz] = useState(false);
   const [starting, setStarting] = useState(false);
-  const [marking, setMarking] = useState(false);
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  const refreshProgress = useCallback(async () => {
+    const { data } = await api.get<Progress[]>(endpoints.progress.me);
+    setProgress(data.find((x) => x.lesson_id === lessonId) ?? null);
+  }, [lessonId]);
 
   useEffect(() => {
     Promise.all([
-      api.get<Lesson>(`/lessons/${id}`),
+      api.get<Lesson>(`/lessons/${lessonId}`),
       api.get<Progress[]>(endpoints.progress.me),
       api.get<Session[]>(endpoints.sessions.me),
-    ]).then(([l, p, s]) => {
+      api.get<Quiz>(`/quizzes/lesson/${lessonId}`).catch(() => null),
+      api.get<QuizAttempt[]>(`/quizzes/lesson/${lessonId}/attempts`).catch(() => null),
+    ]).then(([l, p, s, q, a]) => {
       setLesson(l.data);
-      setProgress(p.data.find((x) => x.lesson_id === Number(id)) ?? null);
-      setSession(s.data.filter((x) => x.lesson_id === Number(id)).sort((a, b) => b.id - a.id)[0] ?? null);
+      setProgress(p.data.find((x) => x.lesson_id === lessonId) ?? null);
+      setSession(s.data.filter((x) => x.lesson_id === lessonId).sort((a, b) => b.id - a.id)[0] ?? null);
+      if (q) setQuiz(q.data);
+      if (a && a.data.length > 0) setLastAttempt(a.data[0]);
     });
-  }, [id]);
+  }, [lessonId]);
+
+  // Mark content consumed when user scrolls to bottom (text/video lessons)
+  useEffect(() => {
+    if (!lesson || lesson.type === 'voice' || progress?.content_consumed_at) return;
+
+    const el = contentRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          api.post<Progress>(`/progress/consume/${lessonId}`).then(({ data }) => setProgress(data));
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.8 }
+    );
+
+    const sentinel = el.querySelector('[data-sentinel]');
+    if (sentinel) observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [lesson, lessonId, progress?.content_consumed_at]);
 
   const startVoiceSession = async () => {
     try {
       setStarting(true);
-      const { data } = await api.post<Session>(endpoints.sessions.create, { lesson_id: Number(id) });
+      const { data } = await api.post<Session>(endpoints.sessions.create, { lesson_id: lessonId });
       setSession(data);
+      // Voice session = content consumed
+      await api.post<Progress>(`/progress/consume/${lessonId}`).then(({ data }) => setProgress(data));
       toast.success('Sessão de voz iniciada! O BeVox entrará em contato.');
     } catch {
       toast.error('Erro ao iniciar sessão de voz.');
@@ -42,17 +82,11 @@ export default function LessonPage() {
     }
   };
 
-  const markDone = async () => {
-    try {
-      setMarking(true);
-      const { data } = await api.put<Progress>(endpoints.progress.update(Number(id)), { status: 'done' });
-      setProgress(data);
-      toast.success('Aula marcada como concluída!');
-    } catch {
-      toast.error('Erro ao atualizar progresso.');
-    } finally {
-      setMarking(false);
-    }
+  const handleQuizPass = async () => {
+    const { data } = await api.put<Progress>(endpoints.progress.update(lessonId), { status: 'done' });
+    setProgress(data);
+    setShowQuiz(false);
+    toast.success('Aula concluída!');
   };
 
   if (!lesson) {
@@ -67,6 +101,9 @@ export default function LessonPage() {
   }
 
   const isDone = progress?.status === 'done';
+  const consumed = !!progress?.content_consumed_at;
+  const quizPassed = lastAttempt?.passed ?? false;
+  const canFinish = consumed && (!quiz || quizPassed);
 
   return (
     <div className="max-w-3xl space-y-6">
@@ -90,9 +127,10 @@ export default function LessonPage() {
 
       {/* Content */}
       {lesson.content && (
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+        <div ref={contentRef} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
           <h2 className="text-base font-semibold text-gray-900 dark:text-white mb-3">Conteúdo da Aula</h2>
           <p className="text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">{lesson.content}</p>
+          <div data-sentinel className="h-1 mt-4" />
         </div>
       )}
 
@@ -113,17 +151,11 @@ export default function LessonPage() {
                 disabled={starting}
                 className="mt-4 flex items-center space-x-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50"
               >
-                {starting ? (
-                  <ArrowPathIcon className="w-4 h-4 animate-spin" />
-                ) : (
-                  <MicrophoneIcon className="w-4 h-4" />
-                )}
+                {starting ? <ArrowPathIcon className="w-4 h-4 animate-spin" /> : <MicrophoneIcon className="w-4 h-4" />}
                 <span>{starting ? 'Iniciando...' : 'Falar com o Professor'}</span>
               </button>
             </div>
           </div>
-
-          {/* Last session transcript */}
           {session?.transcript && (
             <div className="mt-5 pt-5 border-t border-indigo-200 dark:border-indigo-700">
               <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
@@ -137,16 +169,69 @@ export default function LessonPage() {
         </div>
       )}
 
-      {/* Mark done */}
-      {!isDone && (
+      {/* Quiz panel */}
+      {quiz && consumed && !isDone && (
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <ClipboardDocumentListIcon className="w-6 h-6 text-indigo-600" />
+              <div>
+                <p className="font-semibold text-gray-900 dark:text-white text-sm">Quiz da Aula</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  {quiz.questions.length} questão{quiz.questions.length !== 1 ? 'ões' : ''} · Nota mínima: {quiz.passing_score}%
+                  {lastAttempt && ` · Última tentativa: ${lastAttempt.score}% (${lastAttempt.passed ? 'Aprovado' : 'Reprovado'})`}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowQuiz(true)}
+              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors"
+            >
+              {lastAttempt ? 'Tentar novamente' : 'Fazer Quiz'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Quiz already passed */}
+      {quiz && quizPassed && !isDone && (
+        <div className="flex items-center space-x-2 text-sm text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 rounded-xl p-4 border border-green-200 dark:border-green-800">
+          <CheckCircleIcon className="w-5 h-5" />
+          <span>Quiz aprovado com {lastAttempt?.score}% — você pode concluir a aula.</span>
+        </div>
+      )}
+
+      {/* Finish lesson */}
+      {!isDone && canFinish && (
         <button
-          onClick={markDone}
-          disabled={marking}
-          className="flex items-center space-x-2 px-4 py-2 border border-green-500 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 text-sm font-medium rounded-lg transition-colors disabled:opacity-50"
+          onClick={async () => {
+            const { data } = await api.put<Progress>(endpoints.progress.update(lessonId), { status: 'done' });
+            setProgress(data);
+            toast.success('Aula concluída!');
+          }}
+          className="flex items-center space-x-2 px-4 py-2 border border-green-500 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 text-sm font-medium rounded-lg transition-colors"
         >
           <CheckCircleIcon className="w-4 h-4" />
-          <span>{marking ? 'Salvando...' : 'Marcar como concluída'}</span>
+          <span>Concluir Aula</span>
         </button>
+      )}
+
+      {/* Blocked message */}
+      {!isDone && !canFinish && consumed && quiz && !quizPassed && !showQuiz && (
+        <p className="text-sm text-amber-600 dark:text-amber-400">
+          Complete o quiz com pelo menos {quiz.passing_score}% para concluir a aula.
+        </p>
+      )}
+
+      {/* Quiz modal */}
+      {showQuiz && quiz && (
+        <QuizPanel
+          quiz={quiz}
+          lessonId={lessonId}
+          onClose={() => { setShowQuiz(false); refreshProgress(); }}
+          onPass={handleQuizPass}
+          onAttempt={(a) => setLastAttempt(a)}
+        />
       )}
     </div>
   );

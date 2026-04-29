@@ -30,6 +30,7 @@ export interface Progress {
   student_id: number;
   lesson_id: number;
   status: ProgressStatus;
+  content_consumed_at: string | null;
   updated_at: string;
 }
 
