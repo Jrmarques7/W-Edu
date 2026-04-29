@@ -1,8 +1,8 @@
 # W-Edu — Roadmap de Implementação
 
 ## Status Atual
-**Fase:** 1 — Fundação (backend concluído, frontend pendente)  
-**Última atualização:** 2026-04-28
+**Fase:** 2 — Voz com Professor IA (em andamento)  
+**Última atualização:** 2026-04-29
 
 ---
 
@@ -18,7 +18,7 @@
 
 ---
 
-### 🔄 Fase 1 — Fundação
+### ✅ Fase 1 — Fundação
 
 **Backend (FastAPI)** ✅
 - [x] Setup do projeto (estrutura de pastas, requirements.txt)
@@ -41,6 +41,9 @@
 - [x] Tela de progresso (counters + lista)
 - [x] Tela de sessões (histórico + transcrições expansíveis)
 - [x] Build sem erros
+- [x] Admin com CRUD de cursos, aulas e alunos
+- [x] Deploy em produção (Ubuntu + systemd + nginx)
+- [x] Login funcionando em produção
 
 ---
 
@@ -79,8 +82,8 @@
 | Banco | PostgreSQL | Padrão do ecossistema |
 | Cache/Filas | Redis | Padrão do ecossistema |
 | Auth | JWT | Stateless, compatível com os demais serviços |
-| Porta backend | 8002 | BeVox=8001, W-Matrix=8000 |
-| Porta frontend | 3002 | BeVox frontend=3001 |
+| Porta backend | 8000 | Padrão produção |
+| Porta frontend | 3000 | Padrão produção |
 
 ## Integrações Externas
 
