@@ -51,7 +51,7 @@ journalctl -u wedu-frontend -f
 ```
 
 ## Variáveis de ambiente
-Edite `/opt/w-edu/backend/.env` antes de subir os serviços.  
+Edite `/var/www/W-Edu/backend/.env` antes de subir os serviços.  
 Troque obrigatoriamente o `SECRET_KEY` em produção.
 
 ## Portas internas
@@ -64,12 +64,12 @@ Troque obrigatoriamente o `SECRET_KEY` em produção.
 
 ## Atualizar após mudanças
 ```bash
-cd /opt/w-edu
+cd /var/www/W-Edu
 
 # Backend
 git pull
 cd backend && .venv/bin/pip install -r requirements.txt
-PYTHONPATH=/opt/w-edu/backend .venv/bin/alembic --config alembic.ini upgrade head
+PYTHONPATH=/var/www/W-Edu/backend .venv/bin/alembic --config alembic.ini upgrade head
 sudo systemctl restart wedu-backend
 
 # Frontend

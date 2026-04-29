@@ -34,7 +34,7 @@ sudo -u postgres psql -tc "SELECT 1 FROM pg_database WHERE datname='wedu'" | gre
 echo "✓ PostgreSQL configurado"
 
 # --- Diretório da aplicação ---
-APP_DIR=/opt/w-edu
+APP_DIR=/var/www/W-Edu
 mkdir -p $APP_DIR
 cp -r . $APP_DIR
 chown -R www-data:www-data $APP_DIR
