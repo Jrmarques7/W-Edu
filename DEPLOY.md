@@ -57,8 +57,8 @@ Troque obrigatoriamente o `SECRET_KEY` em produção.
 ## Portas internas
 | Serviço   | Porta |
 |-----------|-------|
-| Backend   | 8002  |
-| Frontend  | 3002  |
+| Backend   | 8000  |
+| Frontend  | 3000  |
 | Nginx     | 80    |
 | PostgreSQL| 5432  |
 

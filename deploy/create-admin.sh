@@ -6,7 +6,7 @@ NAME="${1:-Admin}"
 EMAIL="${2:-admin@wedu.com}"
 PASSWORD="${3:-admin123}"
 
-API="http://localhost:8002"
+API="http://localhost:8000"
 
 echo "Criando conta admin: $EMAIL"
 

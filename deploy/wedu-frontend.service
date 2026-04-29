@@ -9,7 +9,7 @@ WorkingDirectory=/opt/w-edu/frontend
 ExecStart=/usr/bin/npm start
 Restart=always
 RestartSec=5
-Environment=PORT=3002
+Environment=PORT=3000
 Environment=NODE_ENV=production
 
 [Install]

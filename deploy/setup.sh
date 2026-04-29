@@ -77,6 +77,6 @@ nginx -t && systemctl reload nginx
 
 echo ""
 echo "=== Deploy concluído ==="
-echo "Backend:  http://localhost:8002"
-echo "Frontend: http://localhost:3002"
+echo "Backend:  http://localhost:8000"
+echo "Frontend: http://localhost:3000"
 echo "Nginx:    http://SEU_IP"
