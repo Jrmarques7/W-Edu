@@ -56,4 +56,11 @@ export const endpoints = {
     my: '/certificates/students/me',
     student: (studentId: number) => `/certificates/students/${studentId}`,
   },
+  notifications: {
+    templates: '/notifications/templates',
+    template: (key: string, channel: string) => `/notifications/templates/${key}/${channel}`,
+    events: '/notifications/events',
+    eventSent: (id: number) => `/notifications/events/${id}/mark-sent`,
+    eventFailed: (id: number) => `/notifications/events/${id}/mark-failed`,
+  },
 };

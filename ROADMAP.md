@@ -34,7 +34,7 @@ Documento de referencia: [docs/PLATFORM_TARGET.md](docs/PLATFORM_TARGET.md)
 - Falta agenda academica com vagas, lista de espera, salas e unidades.
 - Falta presenca presencial com QR Code e regras de validacao.
 - Certificacao automatica e validacao publica de certificado implementadas no backend.
-- Falta comunicacao por eventos e integracao W-Omni.
+- Comunicacao por eventos estruturada e base de notificacao implementada.
 - Falta financeiro, documentos, relatorios e analytics.
 - Falta arquitetura modular com fronteiras claras para futura separacao em microservicos.
 

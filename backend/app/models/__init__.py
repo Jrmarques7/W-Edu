@@ -15,6 +15,7 @@ from app.models.session import Session
 from app.models.attendance import Attendance
 from app.models.quiz import Quiz, QuizQuestion, QuizAttempt
 from app.models.certificate import Certificate
+from app.models.notification import NotificationTemplate, NotificationEvent
 from app.models.schedule import (
     AttendanceRecord,
     CheckinToken,
@@ -30,7 +31,7 @@ __all__ = [
     "Student", "Organization", "StudentProfile", "InstructorProfile", "InstructorAvailability", "InstructorRating",
     "Course", "CourseModule", "LearningPath", "LearningPathCourse", "CoursePrerequisite", "CourseCompletionRule", "Lesson", "Enrollment",
     "Progress", "Session", "Attendance",
-    "Quiz", "QuizQuestion", "QuizAttempt", "Certificate",
+    "Quiz", "QuizQuestion", "QuizAttempt", "Certificate", "NotificationTemplate", "NotificationEvent",
     "Location", "Room", "ClassOffering", "ClassEnrollment", "WaitlistEntry", "ScheduledMeeting",
     "AttendanceRecord", "CheckinToken",
 ]

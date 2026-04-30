@@ -129,15 +129,15 @@ Observacao: `alembic upgrade head` online nao foi aplicado porque o PostgreSQL c
 
 ### Comunicacao
 
-- Eventos de dominio para notificacao.
-- Integracao W-Omni.
-- WhatsApp.
-- Email.
-- Push.
+- Eventos de dominio persistidos.
+- Templates de notificacao.
+- Base para integracao W-Omni.
 - Lembrete de aula.
 - Falta registrada.
+- Presenca registrada.
+- Certificado emitido.
+- WhatsApp, email e push ainda dependem de adaptadores reais.
 - Novo conteudo publicado.
-- Certificado disponivel.
 - Chat aluno/instrutor.
 - Grupos por turma.
 - Forum.

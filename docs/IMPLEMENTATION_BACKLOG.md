@@ -83,15 +83,15 @@ Objetivo: comunicar eventos academicos sem acoplar rotas a canais.
 
 - Criar tabela/fila de `NotificationEvent`.
 - Criar templates.
-- Publicar eventos de aula marcada, lembrete, falta, novo conteudo e certificado.
+- Publicar eventos de aula marcada, lembrete, falta, presenca e certificado.
 - Integrar envio via W-Omni para WhatsApp.
 - Adicionar email como canal secundario.
 
 Aceite:
 
-- Criacao de turma/aula gera eventos pendentes.
-- Worker envia ou delega notificacao ao W-Omni.
+- Criacao de turma/aula gera eventos auditaveis.
 - Historico de notificacao fica auditavel.
+- Canais reais entram depois como adaptadores.
 
 ## Primeiro Pacote de Codigo
 

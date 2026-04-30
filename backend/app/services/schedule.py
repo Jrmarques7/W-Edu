@@ -17,6 +17,7 @@ from app.models.schedule import (
     ScheduledMeeting,
     WaitlistEntry,
 )
+from app.models.notification import NotificationEventType
 from app.repositories.course import CourseRepository
 from app.repositories.lesson import LessonRepository
 from app.repositories.schedule import (
@@ -28,6 +29,7 @@ from app.repositories.schedule import (
     ScheduledMeetingRepository,
 )
 from app.repositories.student import StudentRepository
+from app.services.notification import NotificationService
 from app.services.certificate import CertificateService
 from app.schemas.schedule import (
     ClassJoinOut,
@@ -105,11 +107,25 @@ class ClassOfferingService:
         self.location_repo = LocationRepository(db)
         self.room_repo = RoomRepository(db)
         self.student_repo = StudentRepository(db)
+        self.notification_service = NotificationService(db)
 
     def create(self, data: ClassOfferingCreate) -> ClassOffering:
         self._validate_refs(data.course_id, data.location_id, data.room_id, data.instructor_id)
         self._validate_dates(data.starts_at, data.ends_at)
-        return self.repo.create(ClassOffering(**data.model_dump()))
+        class_offering = self.repo.create(ClassOffering(**data.model_dump()))
+        course = self.course_repo.get_by_id(class_offering.course_id)
+        if course:
+            self.notification_service.publish(
+                event_type=NotificationEventType.class_created,
+                payload={
+                    "course_name": course.name,
+                    "class_name": class_offering.name,
+                    "starts_at": class_offering.starts_at.isoformat(),
+                },
+                class_offering_id=class_offering.id,
+                course_id=course.id,
+            )
+        return class_offering
 
     def get_or_404(self, class_id: int) -> ClassOffering:
         class_offering = self.repo.get_by_id(class_id)
@@ -202,12 +218,27 @@ class ScheduledMeetingService:
         self.lesson_repo = LessonRepository(db)
         self.room_repo = RoomRepository(db)
         self.certificate_service = CertificateService(db)
+        self.notification_service = NotificationService(db)
 
     def create(self, data: ScheduledMeetingCreate) -> ScheduledMeeting:
         class_offering = self.class_service.get_or_404(data.class_offering_id)
         self._validate_refs(class_offering.id, data.lesson_id, data.room_id)
         self.class_service._validate_dates(data.starts_at, data.ends_at)
-        return self.repo.create(ScheduledMeeting(**data.model_dump()))
+        meeting = self.repo.create(ScheduledMeeting(**data.model_dump()))
+        course = self.class_service.course_repo.get_by_id(class_offering.course_id)
+        if course:
+            self.notification_service.publish(
+                event_type=NotificationEventType.meeting_created,
+                payload={
+                    "meeting_title": meeting.title,
+                    "starts_at": meeting.starts_at.isoformat(),
+                    "course_name": course.name,
+                },
+                scheduled_meeting_id=meeting.id,
+                course_id=course.id,
+                class_offering_id=class_offering.id,
+            )
+        return meeting
 
     def get_or_404(self, meeting_id: int) -> ScheduledMeeting:
         meeting = self.repo.get_by_id(meeting_id)
@@ -273,6 +304,8 @@ class ScheduledMeetingService:
 
     def _mark_absences(self, meeting: ScheduledMeeting) -> None:
         enrolled = self.repo.list_active_enrollments(meeting.class_offering_id)
+        class_offering = self.class_service.get_or_404(meeting.class_offering_id)
+        course = self.class_service.course_repo.get_by_id(class_offering.course_id)
         for enrollment in enrolled:
             existing = self.repo.db.query(AttendanceRecord).filter(
                 AttendanceRecord.scheduled_meeting_id == meeting.id,
@@ -290,6 +323,19 @@ class ScheduledMeetingService:
                     notes="Falta registrada automaticamente ao encerrar encontro",
                 )
             )
+            if course:
+                self.notification_service.publish(
+                    event_type=NotificationEventType.absence_registered,
+                    payload={
+                        "student_name": enrollment.student.name if enrollment.student else f"Aluno #{enrollment.student_id}",
+                        "meeting_title": meeting.title,
+                        "course_name": course.name,
+                    },
+                    recipient_student_id=enrollment.student_id,
+                    course_id=course.id,
+                    class_offering_id=meeting.class_offering_id,
+                    scheduled_meeting_id=meeting.id,
+                )
         self.repo.db.commit()
 
     def _auto_issue_for_meeting(self, meeting: ScheduledMeeting) -> None:
@@ -307,6 +353,7 @@ class AttendanceRecordService:
         self.meeting_service = ScheduledMeetingService(db)
         self.student_repo = StudentRepository(db)
         self.certificate_service = CertificateService(db)
+        self.notification_service = NotificationService(db)
 
     def generate_checkin_token(self, meeting_id: int, valid_minutes: int) -> CheckinToken:
         self.meeting_service.get_or_404(meeting_id)
@@ -380,4 +427,15 @@ class AttendanceRecordService:
             )
         course_id = self.class_service.get_or_404(meeting.class_offering_id).course_id
         self.certificate_service.auto_issue(course_id, student_id)
+        self.notification_service.publish(
+            event_type=NotificationEventType.attendance_recorded,
+            payload={
+                "student_name": f"Aluno #{student_id}",
+                "meeting_title": meeting.title,
+            },
+            recipient_student_id=student_id,
+            course_id=course_id,
+            class_offering_id=meeting.class_offering_id,
+            scheduled_meeting_id=meeting.id,
+        )
         return record

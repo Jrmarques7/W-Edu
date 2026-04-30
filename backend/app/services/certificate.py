@@ -15,6 +15,8 @@ from app.models.student import Student
 from app.repositories.certificate import CertificateRepository, CourseCompletionRuleRepository
 from app.repositories.course import CourseRepository
 from app.repositories.lesson import LessonRepository
+from app.services.notification import NotificationService
+from app.models.notification import NotificationEventType
 from app.repositories.student import StudentRepository
 from app.schemas.certificate import CertificateEligibilityOut, CertificateRuleUpdate
 
@@ -27,6 +29,7 @@ class CertificateService:
         self.course_repo = CourseRepository(db)
         self.lesson_repo = LessonRepository(db)
         self.student_repo = StudentRepository(db)
+        self.notification_service = NotificationService(db)
 
     def get_rule(self, course_id: int) -> CourseCompletionRule:
         course = self._get_course_or_404(course_id)
@@ -93,15 +96,31 @@ class CertificateService:
             existing.revoked_at = None
             existing.revoked_reason = None
             existing.issued_by_id = issued_by_id
-            return self.repo.update(existing)
+            certificate = self.repo.update(existing)
+        else:
+            certificate = self.repo.create(
+                Certificate(
+                    student_id=student_id,
+                    course_id=course_id,
+                    validation_code=self._generate_code(),
+                    issued_by_id=issued_by_id,
+                )
+            )
 
-        certificate = Certificate(
-            student_id=student_id,
-            course_id=course_id,
-            validation_code=self._generate_code(),
-            issued_by_id=issued_by_id,
-        )
-        return self.repo.create(certificate)
+        course = self.course_repo.get_by_id(course_id)
+        student = self.student_repo.get_by_id(student_id)
+        if course and student:
+            self.notification_service.publish(
+                event_type=NotificationEventType.certificate_issued,
+                payload={
+                    "course_name": course.name,
+                    "student_name": student.name,
+                    "certificate_code": certificate.validation_code,
+                },
+                recipient_student_id=student_id,
+                course_id=course_id,
+            )
+        return certificate
 
     def auto_issue(self, course_id: int, student_id: int) -> Certificate | None:
         try:
