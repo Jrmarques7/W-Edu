@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
-from app.routers import auth, students, courses, lessons, enrollments, progress, sessions, webhooks, admin, quiz, learning_paths, schedule, certificates, notifications, finance
+from app.routers import auth, students, courses, lessons, enrollments, progress, sessions, webhooks, admin, quiz, learning_paths, schedule, certificates, notifications, finance, documents
 
 app = FastAPI(title="W-Edu API", version="0.1.0")
 
@@ -29,6 +29,7 @@ app.include_router(schedule.router, prefix="/schedule", tags=["schedule"])
 app.include_router(certificates.router, prefix="/certificates", tags=["certificates"])
 app.include_router(notifications.router, prefix="/notifications", tags=["notifications"])
 app.include_router(finance.router, prefix="/finance", tags=["finance"])
+app.include_router(documents.router, prefix="/documents", tags=["documents"])
 
 
 @app.get("/health")

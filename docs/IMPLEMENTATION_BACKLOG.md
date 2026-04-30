@@ -109,6 +109,24 @@ Aceite:
 - Admin registra cobranca e marca como paga/falha.
 - Empresa pode concentrar cobrancas e assinaturas.
 
+### Marco 7 — Documentos e GED/ECM
+
+Objetivo: tratar documentos como parte do dominio, nao como anexo solto.
+
+- [x] Criar base GED local com upload e versionamento.
+- [x] Conectar documentos com curso, turma, aluno e empresa.
+- [ ] Criar contratos.
+- [ ] Criar termos de participacao.
+- [ ] Criar anexos e materiais didaticos versionados.
+- [ ] Integrar Alfresco Community Edition.
+- [ ] Integrar OnlyOffice.
+
+Aceite:
+
+- Admin cadastra um documento e relaciona com o dominio.
+- Documento pode ter versoes e download.
+- Estrutura fica pronta para integracao com GED externo.
+
 ## Primeiro Pacote de Codigo
 
 O primeiro pacote deve ser pequeno e migravel:

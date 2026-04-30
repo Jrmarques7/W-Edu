@@ -30,10 +30,6 @@ notification_event_type = sa.Enum(
 
 
 def upgrade() -> None:
-    notification_channel.create(op.get_bind(), checkfirst=True)
-    notification_status.create(op.get_bind(), checkfirst=True)
-    notification_event_type.create(op.get_bind(), checkfirst=True)
-
     op.create_table(
         "notification_templates",
         sa.Column("id", sa.Integer(), primary_key=True),
@@ -71,6 +67,3 @@ def upgrade() -> None:
 def downgrade() -> None:
     op.drop_table("notification_events")
     op.drop_table("notification_templates")
-    notification_event_type.drop(op.get_bind(), checkfirst=True)
-    notification_status.drop(op.get_bind(), checkfirst=True)
-    notification_channel.drop(op.get_bind(), checkfirst=True)

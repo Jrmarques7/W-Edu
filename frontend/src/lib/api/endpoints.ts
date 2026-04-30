@@ -73,4 +73,11 @@ export const endpoints = {
     chargePaid: (id: number) => `/finance/charges/${id}/paid`,
     chargeFailed: (id: number) => `/finance/charges/${id}/failed`,
   },
+  documents: {
+    list: '/documents',
+    detail: (id: number) => `/documents/${id}`,
+    versions: (id: number) => `/documents/${id}/versions`,
+    versionDownload: (documentId: number, versionId: number) => `/documents/${documentId}/versions/${versionId}/download`,
+    download: (id: number) => `/documents/${id}/download`,
+  },
 };

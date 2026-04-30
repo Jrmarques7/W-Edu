@@ -193,12 +193,13 @@ checkin_tokens
 
 ### Fase 8 — Documentos e GED/ECM
 
+- [x] Criar base GED local com upload e versionamento.
+- [x] Conectar documentos com curso, turma, aluno e empresa.
 - [ ] Criar contratos.
 - [ ] Criar termos de participacao.
 - [ ] Criar anexos e materiais didaticos versionados.
 - [ ] Integrar Alfresco Community Edition.
 - [ ] Integrar OnlyOffice.
-- [ ] Conectar documentos com curso, turma, aluno e empresa.
 
 ### Fase 9 — Relatorios, Analytics e IA
 

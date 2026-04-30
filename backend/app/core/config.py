@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from pydantic_settings import BaseSettings
 
 
@@ -10,6 +12,7 @@ class Settings(BaseSettings):
 
     BEVOX_URL: str = "http://localhost:8001"
     WMATRIX_URL: str = "http://localhost:8000"
+    DOCUMENTS_STORAGE_DIR: str = str(Path(__file__).resolve().parents[2] / "storage" / "documents")
 
     ALLOWED_ORIGINS: list[str] = ["http://localhost:3002"]
 

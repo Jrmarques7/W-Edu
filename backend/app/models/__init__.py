@@ -17,6 +17,7 @@ from app.models.quiz import Quiz, QuizQuestion, QuizAttempt
 from app.models.certificate import Certificate
 from app.models.notification import NotificationTemplate, NotificationEvent
 from app.models.finance import BillingPlan, Subscription, Charge
+from app.models.document import Document, DocumentVersion
 from app.models.schedule import (
     AttendanceRecord,
     CheckinToken,
@@ -34,5 +35,5 @@ __all__ = [
     "Progress", "Session", "Attendance",
     "Quiz", "QuizQuestion", "QuizAttempt", "Certificate", "NotificationTemplate", "NotificationEvent", "BillingPlan", "Subscription", "Charge",
     "Location", "Room", "ClassOffering", "ClassEnrollment", "WaitlistEntry", "ScheduledMeeting",
-    "AttendanceRecord", "CheckinToken",
+    "AttendanceRecord", "CheckinToken", "Document", "DocumentVersion",
 ]

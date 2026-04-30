@@ -22,11 +22,6 @@ charge_status = sa.Enum("pending", "paid", "failed", "cancelled", "refunded", na
 
 
 def upgrade() -> None:
-    billing_period.create(op.get_bind(), checkfirst=True)
-    subscription_status.create(op.get_bind(), checkfirst=True)
-    payment_method.create(op.get_bind(), checkfirst=True)
-    charge_status.create(op.get_bind(), checkfirst=True)
-
     op.create_table(
         "billing_plans",
         sa.Column("id", sa.Integer(), primary_key=True),
@@ -86,7 +81,3 @@ def downgrade() -> None:
     op.drop_table("charges")
     op.drop_table("subscriptions")
     op.drop_table("billing_plans")
-    charge_status.drop(op.get_bind(), checkfirst=True)
-    payment_method.drop(op.get_bind(), checkfirst=True)
-    subscription_status.drop(op.get_bind(), checkfirst=True)
-    billing_period.drop(op.get_bind(), checkfirst=True)

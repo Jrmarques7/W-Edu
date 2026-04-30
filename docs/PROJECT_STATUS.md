@@ -79,6 +79,12 @@ O projeto ja possui uma base LMS/EAD com autenticacao, cursos, aulas, matriculas
 - Backlog de implementacao.
 - Controle de status do projeto.
 
+### Documentos e GED/ECM
+
+- Base de documentos com upload local, versionamento e download.
+- Vinculo de documentos com curso, turma, empresa e aluno.
+- Admin de documentos em `/admin/documents`.
+
 ## Migrations Criadas
 
 - `9d8f1c2a3b4e_expand_academic_domain.py`
@@ -155,9 +161,7 @@ Observacao: `alembic upgrade head` online nao foi aplicado porque o PostgreSQL c
 
 ### Documentos e GED/ECM
 
-- Contratos.
-- Termos de participacao.
-- Materiais didaticos versionados.
+- Base GED local com contratos, termos e materiais versionados.
 - Integracao Alfresco Community Edition.
 - Integracao OnlyOffice.
 
