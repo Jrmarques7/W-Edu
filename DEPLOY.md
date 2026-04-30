@@ -63,6 +63,38 @@ Troque obrigatoriamente o `SECRET_KEY` em produção.
 | PostgreSQL| 5432  |
 
 ## Atualizar após mudanças
+
+### Opção recomendada
+
+Use o script genérico de atualização:
+
+```bash
+cd /var/www/W-Edu
+sudo bash deploy/update.sh
+```
+
+Se o projeto estiver em outro diretório:
+
+```bash
+sudo APP_DIR=/var/www/W-Edu bash /var/www/W-Edu/deploy/update.sh
+```
+
+O script aceita variáveis para outros projetos:
+
+```bash
+sudo APP_DIR=/var/www/my-app \
+  BRANCH=main \
+  BACKEND_DIR=api \
+  FRONTEND_DIR=web \
+  BACKEND_SERVICE=my-api \
+  FRONTEND_SERVICE=my-web \
+  MIGRATE_CMD="PYTHONPATH=/var/www/my-app/api .venv/bin/alembic --config alembic.ini upgrade head" \
+  FRONTEND_BUILD_CMD="npm ci && npm run build" \
+  bash /var/www/my-app/deploy/update.sh
+```
+
+### Manual
+
 ```bash
 cd /var/www/W-Edu
 
