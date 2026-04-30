@@ -20,6 +20,26 @@ export interface Organization {
   created_at: string;
 }
 
+export interface StudentProfile {
+  id: number;
+  student_id: number;
+  phone: string | null;
+  document: string | null;
+  position: string | null;
+  department: string | null;
+  bio: string | null;
+  created_at: string;
+}
+
+export interface InstructorProfile {
+  id: number;
+  student_id: number;
+  specialties: string | null;
+  bio: string | null;
+  rating: string | null;
+  created_at: string;
+}
+
 export interface AuthTokens {
   access_token: string;
   token_type: string;

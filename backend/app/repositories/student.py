@@ -15,6 +15,14 @@ class StudentRepository:
     def list_all(self) -> list[Student]:
         return self.db.query(Student).order_by(Student.created_at.desc()).all()
 
+    def list_by_organization(self, organization_id: int) -> list[Student]:
+        return (
+            self.db.query(Student)
+            .filter(Student.organization_id == organization_id)
+            .order_by(Student.created_at.desc())
+            .all()
+        )
+
     def create(self, student: Student) -> Student:
         self.db.add(student)
         self.db.commit()

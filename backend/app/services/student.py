@@ -45,6 +45,9 @@ class StudentService:
     def list_all(self) -> list[Student]:
         return self.repo.list_all()
 
+    def list_by_organization(self, organization_id: int) -> list[Student]:
+        return self.repo.list_by_organization(organization_id)
+
     def update(self, student_id: int, data: StudentUpdate) -> Student:
         student = self.get_or_404(student_id)
         payload = data.model_dump(exclude_none=True)
@@ -75,6 +78,13 @@ class StudentService:
             setattr(profile, field, value)
         return self.profile_repo.update(profile)
 
+    def get_student_profile(self, student_id: int) -> StudentProfile:
+        self.get_or_404(student_id)
+        profile = self.profile_repo.get_student_profile(student_id)
+        if not profile:
+            profile = self.profile_repo.create_student_profile(StudentProfile(student_id=student_id))
+        return profile
+
     def update_instructor_profile(self, student_id: int, data: InstructorProfileUpdate) -> InstructorProfile:
         student = self.get_or_404(student_id)
         if student.role != UserRole.instructor:
@@ -85,6 +95,15 @@ class StudentService:
         for field, value in data.model_dump(exclude_none=True).items():
             setattr(profile, field, value)
         return self.profile_repo.update(profile)
+
+    def get_instructor_profile(self, student_id: int) -> InstructorProfile:
+        student = self.get_or_404(student_id)
+        if student.role != UserRole.instructor:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Usuário não é instrutor")
+        profile = self.profile_repo.get_instructor_profile(student_id)
+        if not profile:
+            profile = self.profile_repo.create_instructor_profile(InstructorProfile(student_id=student_id))
+        return profile
 
 
 class OrganizationService:
@@ -104,6 +123,13 @@ class OrganizationService:
 
     def list_all(self) -> list[Organization]:
         return self.repo.list_all()
+
+    def list_for_user(self, current: Student) -> list[Organization]:
+        if current.role == UserRole.admin:
+            return self.repo.list_all()
+        if current.organization_id is None:
+            return []
+        return [self.get_or_404(current.organization_id)]
 
     def update(self, organization_id: int, data: OrganizationUpdate) -> Organization:
         organization = self.get_or_404(organization_id)

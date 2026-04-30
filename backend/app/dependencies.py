@@ -27,3 +27,11 @@ def get_current_admin(current: Student = Depends(get_current_student)) -> Studen
     if current.role != UserRole.admin:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acesso restrito a administradores")
     return current
+
+
+def get_current_admin_or_company_manager(current: Student = Depends(get_current_student)) -> Student:
+    if current.role not in {UserRole.admin, UserRole.company_manager}:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acesso restrito")
+    if current.role == UserRole.company_manager and current.organization_id is None:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Gestor sem empresa vinculada")
+    return current

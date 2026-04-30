@@ -2,8 +2,9 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.dependencies import get_current_admin
+from app.dependencies import get_current_admin, get_current_admin_or_company_manager
 from app.models.student import Student
+from app.models.student import UserRole
 from app.schemas.student import StudentOut, StudentCreate
 from app.schemas.student import (
     InstructorProfileOut,
@@ -25,12 +26,20 @@ router = APIRouter()
 
 
 @router.get("/students", response_model=list[StudentOut])
-def list_all_students(db: Session = Depends(get_db), _: Student = Depends(get_current_admin)):
-    return StudentService(db).list_all()
+def list_all_students(db: Session = Depends(get_db), current: Student = Depends(get_current_admin_or_company_manager)):
+    service = StudentService(db)
+    if current.role == UserRole.company_manager:
+        return service.list_by_organization(current.organization_id)
+    return service.list_all()
 
 
 @router.post("/students", response_model=StudentOut, status_code=201)
-def create_student(data: StudentCreate, db: Session = Depends(get_db), _: Student = Depends(get_current_admin)):
+def create_student(data: StudentCreate, db: Session = Depends(get_db), current: Student = Depends(get_current_admin_or_company_manager)):
+    if current.role == UserRole.company_manager:
+        if data.role in {UserRole.admin, UserRole.coordinator, UserRole.company_manager}:
+            from fastapi import HTTPException, status
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Gestor não pode criar este perfil")
+        data = data.model_copy(update={"organization_id": current.organization_id})
     return StudentService(db).create(data)
 
 
@@ -39,14 +48,39 @@ def update_student(
     student_id: int,
     data: StudentUpdate,
     db: Session = Depends(get_db),
-    _: Student = Depends(get_current_admin),
+    current: Student = Depends(get_current_admin_or_company_manager),
 ):
+    if current.role == UserRole.company_manager:
+        target = StudentService(db).get_or_404(student_id)
+        if target.organization_id != current.organization_id:
+            from fastapi import HTTPException, status
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Usuário fora da empresa")
+        data = data.model_copy(update={"organization_id": current.organization_id})
     return StudentService(db).update(student_id, data)
 
 
 @router.delete("/students/{student_id}", status_code=204)
-def delete_student(student_id: int, db: Session = Depends(get_db), _: Student = Depends(get_current_admin)):
+def delete_student(student_id: int, db: Session = Depends(get_db), current: Student = Depends(get_current_admin_or_company_manager)):
+    if current.role == UserRole.company_manager:
+        target = StudentService(db).get_or_404(student_id)
+        if target.organization_id != current.organization_id or target.role in {UserRole.admin, UserRole.company_manager}:
+            from fastapi import HTTPException, status
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Usuário fora do escopo do gestor")
     StudentService(db).delete(student_id)
+
+
+@router.get("/students/{student_id}/student-profile", response_model=StudentProfileOut)
+def get_student_profile(
+    student_id: int,
+    db: Session = Depends(get_db),
+    current: Student = Depends(get_current_admin_or_company_manager),
+):
+    if current.role == UserRole.company_manager:
+        target = StudentService(db).get_or_404(student_id)
+        if target.organization_id != current.organization_id:
+            from fastapi import HTTPException, status
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Usuário fora da empresa")
+    return StudentService(db).get_student_profile(student_id)
 
 
 @router.patch("/students/{student_id}/student-profile", response_model=StudentProfileOut)
@@ -54,9 +88,28 @@ def update_student_profile(
     student_id: int,
     data: StudentProfileUpdate,
     db: Session = Depends(get_db),
-    _: Student = Depends(get_current_admin),
+    current: Student = Depends(get_current_admin_or_company_manager),
 ):
+    if current.role == UserRole.company_manager:
+        target = StudentService(db).get_or_404(student_id)
+        if target.organization_id != current.organization_id:
+            from fastapi import HTTPException, status
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Usuário fora da empresa")
     return StudentService(db).update_student_profile(student_id, data)
+
+
+@router.get("/students/{student_id}/instructor-profile", response_model=InstructorProfileOut)
+def get_instructor_profile(
+    student_id: int,
+    db: Session = Depends(get_db),
+    current: Student = Depends(get_current_admin_or_company_manager),
+):
+    if current.role == UserRole.company_manager:
+        target = StudentService(db).get_or_404(student_id)
+        if target.organization_id != current.organization_id:
+            from fastapi import HTTPException, status
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Usuário fora da empresa")
+    return StudentService(db).get_instructor_profile(student_id)
 
 
 @router.patch("/students/{student_id}/instructor-profile", response_model=InstructorProfileOut)
@@ -64,8 +117,13 @@ def update_instructor_profile(
     student_id: int,
     data: InstructorProfileUpdate,
     db: Session = Depends(get_db),
-    _: Student = Depends(get_current_admin),
+    current: Student = Depends(get_current_admin_or_company_manager),
 ):
+    if current.role == UserRole.company_manager:
+        target = StudentService(db).get_or_404(student_id)
+        if target.organization_id != current.organization_id:
+            from fastapi import HTTPException, status
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Usuário fora da empresa")
     return StudentService(db).update_instructor_profile(student_id, data)
 
 
@@ -79,8 +137,8 @@ def create_organization(
 
 
 @router.get("/organizations", response_model=list[OrganizationOut])
-def list_organizations(db: Session = Depends(get_db), _: Student = Depends(get_current_admin)):
-    return OrganizationService(db).list_all()
+def list_organizations(db: Session = Depends(get_db), current: Student = Depends(get_current_admin_or_company_manager)):
+    return OrganizationService(db).list_for_user(current)
 
 
 @router.patch("/organizations/{organization_id}", response_model=OrganizationOut)

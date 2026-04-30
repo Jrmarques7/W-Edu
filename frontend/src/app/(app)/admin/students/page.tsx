@@ -1,10 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { PlusIcon, TrashIcon, UsersIcon } from '@heroicons/react/24/outline';
+import { PencilIcon, PlusIcon, TrashIcon, UsersIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import api from '@/lib/api/client';
-import type { Organization, Student, UserRole } from '@/types/auth';
+import type { InstructorProfile, Organization, Student, StudentProfile, UserRole } from '@/types/auth';
 
 const roleLabel: Record<UserRole, string> = {
   student: 'Aluno',
@@ -36,7 +36,7 @@ function NewStudentModal({ organizations, onClose, onSave }: {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-md p-6 space-y-4">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Novo Aluno</h2>
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Novo usuário</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nome *</label>
@@ -80,10 +80,111 @@ function NewStudentModal({ organizations, onClose, onSave }: {
             </button>
             <button type="submit" disabled={saving}
               className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50">
-              {saving ? 'Criando...' : 'Criar Aluno'}
+              {saving ? 'Criando...' : 'Criar usuário'}
             </button>
           </div>
         </form>
+      </div>
+    </div>
+  );
+}
+
+function ProfileModal({ student, onClose, onSaved }: {
+  student: Student;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [studentProfile, setStudentProfile] = useState<Partial<StudentProfile>>({});
+  const [instructorProfile, setInstructorProfile] = useState<Partial<InstructorProfile>>({});
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    const requests: Promise<any>[] = [
+      api.get<StudentProfile>(`/admin/students/${student.id}/student-profile`).then((response) => setStudentProfile(response.data)),
+    ];
+    if (student.role === 'instructor') {
+      requests.push(
+        api.get<InstructorProfile>(`/admin/students/${student.id}/instructor-profile`).then((response) => setInstructorProfile(response.data))
+      );
+    }
+    Promise.all(requests).finally(() => setLoading(false));
+  }, [student.id, student.role]);
+
+  const save = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setSaving(true);
+    try {
+      await api.patch(`/admin/students/${student.id}/student-profile`, {
+        phone: studentProfile.phone || null,
+        document: studentProfile.document || null,
+        position: studentProfile.position || null,
+        department: studentProfile.department || null,
+        bio: studentProfile.bio || null,
+      });
+      if (student.role === 'instructor') {
+        await api.patch(`/admin/students/${student.id}/instructor-profile`, {
+          specialties: instructorProfile.specialties || null,
+          bio: instructorProfile.bio || null,
+          rating: instructorProfile.rating || null,
+        });
+      }
+      toast.success('Perfil atualizado.');
+      onSaved();
+      onClose();
+    } catch (e: any) {
+      toast.error(e.response?.data?.detail ?? 'Erro ao salvar perfil.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-2xl p-6 space-y-4">
+        <div>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Editar perfil</h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400">{student.name} · {roleLabel[student.role]}</p>
+        </div>
+        {loading ? (
+          <p className="text-sm text-gray-500 dark:text-gray-400">Carregando...</p>
+        ) : (
+          <form onSubmit={save} className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <input value={studentProfile.phone ?? ''} onChange={(e) => setStudentProfile((prev) => ({ ...prev, phone: e.target.value }))} placeholder="Telefone"
+                className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              <input value={studentProfile.document ?? ''} onChange={(e) => setStudentProfile((prev) => ({ ...prev, document: e.target.value }))} placeholder="Documento"
+                className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              <input value={studentProfile.position ?? ''} onChange={(e) => setStudentProfile((prev) => ({ ...prev, position: e.target.value }))} placeholder="Cargo"
+                className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              <input value={studentProfile.department ?? ''} onChange={(e) => setStudentProfile((prev) => ({ ...prev, department: e.target.value }))} placeholder="Departamento"
+                className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            </div>
+            <textarea value={studentProfile.bio ?? ''} onChange={(e) => setStudentProfile((prev) => ({ ...prev, bio: e.target.value }))} rows={3} placeholder="Bio do aluno/usuário"
+              className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+
+            {student.role === 'instructor' && (
+              <div className="border-t border-gray-100 dark:border-gray-700 pt-4 space-y-3">
+                <input value={instructorProfile.specialties ?? ''} onChange={(e) => setInstructorProfile((prev) => ({ ...prev, specialties: e.target.value }))} placeholder="Especialidades"
+                  className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                <input value={instructorProfile.rating ?? ''} onChange={(e) => setInstructorProfile((prev) => ({ ...prev, rating: e.target.value }))} placeholder="Avaliação média"
+                  className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                <textarea value={instructorProfile.bio ?? ''} onChange={(e) => setInstructorProfile((prev) => ({ ...prev, bio: e.target.value }))} rows={3} placeholder="Bio do instrutor"
+                  className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              </div>
+            )}
+
+            <div className="flex justify-end space-x-3 pt-2">
+              <button type="button" onClick={onClose} className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                Cancelar
+              </button>
+              <button type="submit" disabled={saving}
+                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50">
+                {saving ? 'Salvando...' : 'Salvar perfil'}
+              </button>
+            </div>
+          </form>
+        )}
       </div>
     </div>
   );
@@ -93,6 +194,7 @@ export default function AdminStudentsPage() {
   const [students, setStudents] = useState<Student[]>([]);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [showModal, setShowModal] = useState(false);
+  const [profileStudent, setProfileStudent] = useState<Student | null>(null);
   const [loading, setLoading] = useState(true);
   const [organizationName, setOrganizationName] = useState('');
 
@@ -216,10 +318,16 @@ export default function AdminStudentsPage() {
                   {new Date(student.created_at).toLocaleDateString('pt-BR')}
                 </p>
                 {student.role !== 'admin' && (
+                  <>
+                  <button onClick={() => setProfileStudent(student)}
+                    className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-colors">
+                    <PencilIcon className="w-4 h-4" />
+                  </button>
                   <button onClick={() => deleteStudent(student.id)}
                     className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">
                     <TrashIcon className="w-4 h-4" />
                   </button>
+                  </>
                 )}
               </div>
             </div>
@@ -228,6 +336,7 @@ export default function AdminStudentsPage() {
       )}
 
       {showModal && <NewStudentModal organizations={organizations} onClose={() => setShowModal(false)} onSave={createStudent} />}
+      {profileStudent && <ProfileModal student={profileStudent} onClose={() => setProfileStudent(null)} onSaved={loadData} />}
     </div>
   );
 }
