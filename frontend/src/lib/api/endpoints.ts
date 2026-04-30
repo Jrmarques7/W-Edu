@@ -7,6 +7,14 @@ export const endpoints = {
     list: '/courses',
     detail: (id: number) => `/courses/${id}`,
     lessons: (courseId: number) => `/lessons/course/${courseId}`,
+    modules: (courseId: number) => `/courses/${courseId}/modules`,
+    moduleDetail: (moduleId: number) => `/courses/modules/${moduleId}`,
+    prerequisites: (courseId: number) => `/courses/${courseId}/prerequisites`,
+  },
+  learningPaths: {
+    list: '/learning-paths',
+    detail: (id: number) => `/learning-paths/${id}`,
+    courses: (id: number) => `/learning-paths/${id}/courses`,
   },
   enrollments: {
     byStudent: (studentId: number) => `/enrollments/student/${studentId}`,
@@ -19,5 +27,22 @@ export const endpoints = {
   sessions: {
     me: '/sessions/me',
     create: '/sessions',
+  },
+  schedule: {
+    locations: '/schedule/locations',
+    location: (id: number) => `/schedule/locations/${id}`,
+    rooms: '/schedule/rooms',
+    room: (id: number) => `/schedule/rooms/${id}`,
+    classes: '/schedule/classes',
+    class: (id: number) => `/schedule/classes/${id}`,
+    classMeetings: (id: number) => `/schedule/classes/${id}/meetings`,
+    classEnrollments: (id: number) => `/schedule/classes/${id}/enrollments`,
+    classWaitlist: (id: number) => `/schedule/classes/${id}/waitlist`,
+    joinClass: (id: number) => `/schedule/classes/${id}/join`,
+    meetings: '/schedule/meetings',
+    meeting: (id: number) => `/schedule/meetings/${id}`,
+    checkinTokens: (meetingId: number) => `/schedule/meetings/${meetingId}/checkin-tokens`,
+    checkIn: (token: string) => `/schedule/check-in/${token}`,
+    attendance: (meetingId: number) => `/schedule/meetings/${meetingId}/attendance`,
   },
 };

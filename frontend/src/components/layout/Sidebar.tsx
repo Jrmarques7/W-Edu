@@ -13,6 +13,7 @@ import {
   ChevronRightIcon,
   UsersIcon,
   AcademicCapIcon,
+  CalendarDaysIcon,
   Squares2X2Icon,
 } from '@heroicons/react/24/outline';
 import { useAuthStore } from '@/store/authStore';
@@ -35,6 +36,7 @@ const studentMenu = [
 const adminMenu = [
   { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
   { name: 'Cursos', href: '/admin/courses', icon: AcademicCapIcon },
+  { name: 'Agenda', href: '/admin/schedule', icon: CalendarDaysIcon },
   { name: 'Alunos', href: '/admin/students', icon: UsersIcon },
   { name: 'Catálogo', href: '/courses', icon: Squares2X2Icon },
   { name: 'Configurações', href: '/settings', icon: Cog6ToothIcon },

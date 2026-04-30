@@ -9,8 +9,9 @@ import {
   VideoCameraIcon,
   MicrophoneIcon,
   CheckCircleIcon,
-  ClockIcon,
   PlayCircleIcon,
+  CalendarDaysIcon,
+  ClipboardDocumentCheckIcon,
 } from '@heroicons/react/24/outline';
 import api from '@/lib/api/client';
 import { endpoints } from '@/lib/api/endpoints';
@@ -19,6 +20,8 @@ import type { Course, Lesson, Progress } from '@/types/course';
 const lessonIcon = (type: Lesson['type']) => {
   if (type === 'video') return VideoCameraIcon;
   if (type === 'voice') return MicrophoneIcon;
+  if (type === 'live' || type === 'in_person') return CalendarDaysIcon;
+  if (type === 'assessment') return ClipboardDocumentCheckIcon;
   return DocumentTextIcon;
 };
 

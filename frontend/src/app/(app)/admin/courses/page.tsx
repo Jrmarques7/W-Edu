@@ -5,7 +5,7 @@ import { PlusIcon, PencilIcon, TrashIcon, BookOpenIcon, ChevronDownIcon, Chevron
 import toast from 'react-hot-toast';
 import api from '@/lib/api/client';
 import { endpoints } from '@/lib/api/endpoints';
-import type { Course, Lesson } from '@/types/course';
+import type { Course, CourseModule, Lesson } from '@/types/course';
 
 function CourseModal({ course, onClose, onSave }: {
   course?: Course;
@@ -14,13 +14,14 @@ function CourseModal({ course, onClose, onSave }: {
 }) {
   const [name, setName] = useState(course?.name ?? '');
   const [description, setDescription] = useState(course?.description ?? '');
+  const [modality, setModality] = useState<Course['modality']>(course?.modality ?? 'online');
   const [agentId, setAgentId] = useState(course?.agent_id ?? '');
   const [saving, setSaving] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
-    await onSave({ name, description: description || null, agent_id: agentId || null });
+    await onSave({ name, description: description || null, modality, agent_id: agentId || null });
     setSaving(false);
   };
 
@@ -42,6 +43,15 @@ function CourseModal({ course, onClose, onSave }: {
               className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
           </div>
           <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Modalidade</label>
+            <select value={modality} onChange={(e) => setModality(e.target.value as Course['modality'])}
+              className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              <option value="online">Online</option>
+              <option value="in_person">Presencial</option>
+              <option value="hybrid">Híbrido</option>
+            </select>
+          </div>
+          <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">ID do Agente W-Matrix</label>
             <input value={agentId} onChange={(e) => setAgentId(e.target.value)} placeholder="ex: agent-mat-001"
               className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
@@ -61,8 +71,9 @@ function CourseModal({ course, onClose, onSave }: {
   );
 }
 
-function LessonModal({ courseId, lesson, onClose, onSave }: {
+function LessonModal({ courseId, modules, lesson, onClose, onSave }: {
   courseId: number;
+  modules: CourseModule[];
   lesson?: Lesson;
   onClose: () => void;
   onSave: (data: Partial<Lesson>) => Promise<void>;
@@ -70,13 +81,14 @@ function LessonModal({ courseId, lesson, onClose, onSave }: {
   const [title, setTitle] = useState(lesson?.title ?? '');
   const [content, setContent] = useState(lesson?.content ?? '');
   const [order, setOrder] = useState(lesson?.order ?? 1);
+  const [moduleId, setModuleId] = useState<number | ''>(lesson?.module_id ?? '');
   const [type, setType] = useState<Lesson['type']>(lesson?.type ?? 'text');
   const [saving, setSaving] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
-    await onSave({ title, content: content || null, order, type, course_id: courseId });
+    await onSave({ title, content: content || null, order, type, module_id: moduleId || null, course_id: courseId });
     setSaving(false);
   };
 
@@ -99,7 +111,11 @@ function LessonModal({ courseId, lesson, onClose, onSave }: {
                 className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
                 <option value="text">Texto</option>
                 <option value="video">Vídeo</option>
+                <option value="pdf">PDF</option>
+                <option value="live">Live</option>
+                <option value="in_person">Presencial</option>
                 <option value="voice">Voz</option>
+                <option value="assessment">Avaliação</option>
               </select>
             </div>
             <div>
@@ -107,6 +123,16 @@ function LessonModal({ courseId, lesson, onClose, onSave }: {
               <input type="number" value={order} min={1} onChange={(e) => setOrder(Number(e.target.value))}
                 className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
             </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Módulo</label>
+            <select value={moduleId} onChange={(e) => setModuleId(e.target.value ? Number(e.target.value) : '')}
+              className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              <option value="">Sem módulo</option>
+              {modules.map((module) => (
+                <option key={module.id} value={module.id}>{module.title}</option>
+              ))}
+            </select>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Conteúdo</label>
@@ -131,6 +157,7 @@ function LessonModal({ courseId, lesson, onClose, onSave }: {
 export default function AdminCoursesPage() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [lessons, setLessons] = useState<Record<number, Lesson[]>>({});
+  const [modules, setModules] = useState<Record<number, CourseModule[]>>({});
   const [expanded, setExpanded] = useState<number | null>(null);
   const [courseModal, setCourseModal] = useState<{ open: boolean; course?: Course }>({ open: false });
   const [lessonModal, setLessonModal] = useState<{ open: boolean; courseId?: number; lesson?: Lesson }>({ open: false });
@@ -144,11 +171,17 @@ export default function AdminCoursesPage() {
     setLessons((prev) => ({ ...prev, [courseId]: data }));
   };
 
+  const loadModules = async (courseId: number) => {
+    const { data } = await api.get<CourseModule[]>(endpoints.courses.modules(courseId));
+    setModules((prev) => ({ ...prev, [courseId]: data }));
+  };
+
   useEffect(() => { loadCourses(); }, []);
 
   const toggleExpand = async (courseId: number) => {
     if (expanded === courseId) { setExpanded(null); return; }
     setExpanded(courseId);
+    if (!modules[courseId]) await loadModules(courseId);
     if (!lessons[courseId]) await loadLessons(courseId);
   };
 
@@ -187,6 +220,17 @@ export default function AdminCoursesPage() {
       setLessonModal({ open: false });
       if (lessonModal.courseId) await loadLessons(lessonModal.courseId);
     } catch { toast.error('Erro ao salvar aula.'); }
+  };
+
+  const createModule = async (courseId: number) => {
+    const title = prompt('Nome do módulo');
+    if (!title) return;
+    try {
+      const order = (modules[courseId]?.length ?? 0) + 1;
+      await api.post(endpoints.courses.modules(courseId), { course_id: courseId, title, order });
+      toast.success('Módulo criado!');
+      await loadModules(courseId);
+    } catch { toast.error('Erro ao criar módulo.'); }
   };
 
   const deleteLesson = async (lessonId: number, courseId: number) => {
@@ -234,7 +278,10 @@ export default function AdminCoursesPage() {
                   </div>
                   <div>
                     <p className="font-medium text-gray-900 dark:text-white">{course.name}</p>
-                    {course.agent_id && <p className="text-xs text-gray-500 dark:text-gray-400">Agente: {course.agent_id}</p>}
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      {course.modality === 'online' ? 'Online' : course.modality === 'in_person' ? 'Presencial' : 'Híbrido'}
+                      {course.agent_id ? ` · Agente: ${course.agent_id}` : ''}
+                    </p>
                   </div>
                   {expanded === course.id ? <ChevronUpIcon className="w-4 h-4 text-gray-400 ml-2" /> : <ChevronDownIcon className="w-4 h-4 text-gray-400 ml-2" />}
                 </button>
@@ -254,12 +301,28 @@ export default function AdminCoursesPage() {
                 <div className="border-t border-gray-100 dark:border-gray-700 px-5 py-4 space-y-3">
                   <div className="flex items-center justify-between">
                     <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Aulas</p>
-                    <button onClick={() => setLessonModal({ open: true, courseId: course.id })}
-                      className="flex items-center space-x-1 text-xs text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 font-medium">
-                      <PlusIcon className="w-3.5 h-3.5" />
-                      <span>Adicionar aula</span>
-                    </button>
+                    <div className="flex items-center space-x-3">
+                      <button onClick={() => createModule(course.id)}
+                        className="flex items-center space-x-1 text-xs text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white font-medium">
+                        <PlusIcon className="w-3.5 h-3.5" />
+                        <span>Adicionar módulo</span>
+                      </button>
+                      <button onClick={() => setLessonModal({ open: true, courseId: course.id })}
+                        className="flex items-center space-x-1 text-xs text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 font-medium">
+                        <PlusIcon className="w-3.5 h-3.5" />
+                        <span>Adicionar aula</span>
+                      </button>
+                    </div>
                   </div>
+                  {(modules[course.id] ?? []).length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {(modules[course.id] ?? []).map((module) => (
+                        <span key={module.id} className="text-xs px-2 py-1 rounded bg-gray-100 text-gray-600 dark:bg-gray-900 dark:text-gray-300">
+                          {module.order}. {module.title}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                   {(lessons[course.id] ?? []).length === 0 ? (
                     <p className="text-sm text-gray-400">Nenhuma aula ainda.</p>
                   ) : (
@@ -270,6 +333,11 @@ export default function AdminCoursesPage() {
                             <span className="text-xs text-gray-400 w-5 text-right">{lesson.order}.</span>
                             <span className="text-sm text-gray-900 dark:text-white">{lesson.title}</span>
                             <span className="text-xs px-1.5 py-0.5 bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400 rounded capitalize">{lesson.type}</span>
+                            {lesson.module_id && (
+                              <span className="text-xs text-gray-500 dark:text-gray-400">
+                                {modules[course.id]?.find((module) => module.id === lesson.module_id)?.title}
+                              </span>
+                            )}
                           </div>
                           <div className="flex items-center space-x-1">
                             <button onClick={() => setLessonModal({ open: true, courseId: course.id, lesson })}
@@ -296,7 +364,7 @@ export default function AdminCoursesPage() {
         <CourseModal course={courseModal.course} onClose={() => setCourseModal({ open: false })} onSave={saveCourse} />
       )}
       {lessonModal.open && lessonModal.courseId && (
-        <LessonModal courseId={lessonModal.courseId} lesson={lessonModal.lesson} onClose={() => setLessonModal({ open: false })} onSave={saveLesson} />
+        <LessonModal courseId={lessonModal.courseId} modules={modules[lessonModal.courseId] ?? []} lesson={lessonModal.lesson} onClose={() => setLessonModal({ open: false })} onSave={saveLesson} />
       )}
     </div>
   );

@@ -1,18 +1,32 @@
+export type CourseModality = 'online' | 'in_person' | 'hybrid';
+export type LessonType = 'text' | 'video' | 'pdf' | 'live' | 'in_person' | 'voice' | 'assessment';
+
 export interface Course {
   id: number;
   name: string;
   description: string | null;
+  modality: CourseModality;
   agent_id: string | null;
+  created_at: string;
+}
+
+export interface CourseModule {
+  id: number;
+  course_id: number;
+  title: string;
+  description: string | null;
+  order: number;
   created_at: string;
 }
 
 export interface Lesson {
   id: number;
   course_id: number;
+  module_id: number | null;
   title: string;
   content: string | null;
   order: number;
-  type: 'text' | 'video' | 'voice';
+  type: LessonType;
   created_at: string;
 }
 

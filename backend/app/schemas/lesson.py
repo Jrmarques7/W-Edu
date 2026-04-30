@@ -5,6 +5,7 @@ from app.models.lesson import LessonType
 
 class LessonCreate(BaseModel):
     course_id: int
+    module_id: int | None = None
     title: str
     content: str | None = None
     order: int = 0
@@ -12,6 +13,7 @@ class LessonCreate(BaseModel):
 
 
 class LessonUpdate(BaseModel):
+    module_id: int | None = None
     title: str | None = None
     content: str | None = None
     order: int | None = None
@@ -21,6 +23,7 @@ class LessonUpdate(BaseModel):
 class LessonOut(BaseModel):
     id: int
     course_id: int
+    module_id: int | None
     title: str
     content: str | None
     order: int
