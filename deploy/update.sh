@@ -9,6 +9,9 @@ set -Eeuo pipefail
 # Or from the deploy directory:
 #   sudo ./update.sh
 #
+# Git commands run as SUDO_USER by default when the script is called with sudo,
+# so SSH remotes use the deploy user's key instead of root's key.
+#
 # Reusable usage for other projects:
 #   sudo APP_DIR=/var/www/my-app \
 #     BRANCH=main \
@@ -41,6 +44,7 @@ FRONTEND_BUILD_CMD="${FRONTEND_BUILD_CMD:-npm ci && npm run build}"
 RUN_BACKEND="${RUN_BACKEND:-true}"
 RUN_FRONTEND="${RUN_FRONTEND:-true}"
 RUN_GIT_PULL="${RUN_GIT_PULL:-true}"
+GIT_USER="${GIT_USER:-${SUDO_USER:-}}"
 
 log() {
   printf '\n==> %s\n' "$*"
@@ -55,6 +59,16 @@ run_shell() {
   local command="$1"
   printf '+ %s\n' "$command"
   bash -lc "$command"
+}
+
+run_git() {
+  if [[ -n "$GIT_USER" && "$GIT_USER" != "root" ]]; then
+    printf '+ sudo -u %s git -C %s %s\n' "$GIT_USER" "$APP_DIR" "$*"
+    sudo -u "$GIT_USER" git -C "$APP_DIR" "$@"
+  else
+    printf '+ git -C %s %s\n' "$APP_DIR" "$*"
+    git -C "$APP_DIR" "$@"
+  fi
 }
 
 require_dir() {
@@ -104,15 +118,16 @@ FRONTEND_DIR=$FRONTEND_DIR
 BACKEND_SERVICE=$BACKEND_SERVICE
 FRONTEND_SERVICE=$FRONTEND_SERVICE
 RELOAD_NGINX=$RELOAD_NGINX
+GIT_USER=${GIT_USER:-root}
 EOF
 
 cd "$APP_DIR"
 
 if [[ "$RUN_GIT_PULL" == "true" ]]; then
   log "Updating source"
-  run git fetch "$REMOTE" "$BRANCH"
-  run git checkout "$BRANCH"
-  run git pull --ff-only "$REMOTE" "$BRANCH"
+  run_git fetch "$REMOTE" "$BRANCH"
+  run_git checkout "$BRANCH"
+  run_git pull --ff-only "$REMOTE" "$BRANCH"
 fi
 
 if [[ "$RUN_BACKEND" == "true" ]]; then
