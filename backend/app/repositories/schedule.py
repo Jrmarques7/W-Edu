@@ -179,6 +179,16 @@ class ScheduledMeetingRepository:
         self.db.refresh(meeting)
         return meeting
 
+    def list_active_enrollments(self, class_id: int) -> list[ClassEnrollment]:
+        return (
+            self.db.query(ClassEnrollment)
+            .filter(
+                ClassEnrollment.class_offering_id == class_id,
+                ClassEnrollment.status == ClassEnrollmentStatus.active,
+            )
+            .all()
+        )
+
 
 class AttendanceRecordRepository:
     def __init__(self, db: Session):

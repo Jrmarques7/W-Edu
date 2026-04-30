@@ -34,6 +34,7 @@ from app.schemas.schedule import (
     ClassOfferingUpdate,
     LocationCreate,
     LocationUpdate,
+    MeetingAttendanceSummary,
     RoomCreate,
     RoomUpdate,
     ScheduledMeetingCreate,
@@ -229,6 +230,32 @@ class ScheduledMeetingService:
             setattr(meeting, field, value)
         return self.repo.update(meeting)
 
+    def close_meeting(self, meeting_id: int) -> ScheduledMeeting:
+        meeting = self.get_or_404(meeting_id)
+        if meeting.is_closed:
+            return meeting
+        self._mark_absences(meeting)
+        meeting.is_closed = True
+        meeting.closed_at = datetime.now(timezone.utc)
+        return self.repo.update(meeting)
+
+    def attendance_summary(self, meeting_id: int) -> MeetingAttendanceSummary:
+        meeting = self.get_or_404(meeting_id)
+        records = self.repo.db.query(AttendanceRecord).filter(AttendanceRecord.scheduled_meeting_id == meeting_id).all()
+        enrolled = self.repo.list_active_enrollments(meeting.class_offering_id)
+        present = sum(1 for record in records if record.status == AttendanceStatus.present)
+        late = sum(1 for record in records if record.status == AttendanceStatus.late)
+        absent = sum(1 for record in records if record.status == AttendanceStatus.absent)
+        return MeetingAttendanceSummary(
+            meeting_id=meeting.id,
+            class_offering_id=meeting.class_offering_id,
+            total_enrolled=len(enrolled),
+            present=present,
+            late=late,
+            absent=absent,
+            recorded=len(records),
+        )
+
     def _validate_refs(self, class_id: int, lesson_id: int | None, room_id: int | None) -> None:
         class_offering = self.class_service.get_or_404(class_id)
         if lesson_id:
@@ -239,6 +266,27 @@ class ScheduledMeetingService:
                 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Aula não pertence ao curso da turma")
         if room_id and not self.room_repo.get_by_id(room_id):
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Sala não encontrada")
+
+    def _mark_absences(self, meeting: ScheduledMeeting) -> None:
+        enrolled = self.repo.list_active_enrollments(meeting.class_offering_id)
+        for enrollment in enrolled:
+            existing = self.repo.db.query(AttendanceRecord).filter(
+                AttendanceRecord.scheduled_meeting_id == meeting.id,
+                AttendanceRecord.student_id == enrollment.student_id,
+            ).first()
+            if existing:
+                continue
+            self.repo.db.add(
+                AttendanceRecord(
+                    scheduled_meeting_id=meeting.id,
+                    class_offering_id=meeting.class_offering_id,
+                    student_id=enrollment.student_id,
+                    status=AttendanceStatus.absent,
+                    method=AttendanceMethod.manual,
+                    notes="Falta registrada automaticamente ao encerrar encontro",
+                )
+            )
+        self.repo.db.commit()
 
 
 class AttendanceRecordService:

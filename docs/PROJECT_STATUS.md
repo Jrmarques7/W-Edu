@@ -53,6 +53,8 @@ O projeto ja possui uma base LMS/EAD com autenticacao, cursos, aulas, matriculas
 - Status de presenca: `present`, `late`, `absent`.
 - Metodos preparados: `manual`, `qr_code`, `webhook`, `biometric`, `facial`.
 - Admin gera token de check-in e consulta quantidade de presencas.
+- Encerramento de encontro gera faltas automaticamente para inscritos ativos sem registro.
+- Resumo de frequencia por encontro.
 
 ### Usuarios, perfis e empresas
 

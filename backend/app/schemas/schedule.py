@@ -149,6 +149,8 @@ class ScheduledMeetingOut(BaseModel):
     ends_at: datetime
     type: MeetingType
     meeting_url: str | None
+    is_closed: bool
+    closed_at: datetime | None
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -187,3 +189,13 @@ class AttendanceRecordOut(BaseModel):
     notes: str | None
 
     model_config = {"from_attributes": True}
+
+
+class MeetingAttendanceSummary(BaseModel):
+    meeting_id: int
+    class_offering_id: int
+    total_enrolled: int
+    present: int
+    late: int
+    absent: int
+    recorded: int

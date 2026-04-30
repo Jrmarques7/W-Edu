@@ -45,6 +45,8 @@ export interface ScheduledMeeting {
   ends_at: string;
   type: MeetingType;
   meeting_url: string | null;
+  is_closed: boolean;
+  closed_at: string | null;
   created_at: string;
 }
 
@@ -66,4 +68,14 @@ export interface AttendanceRecord {
   method: AttendanceMethod;
   recorded_at: string;
   notes: string | null;
+}
+
+export interface MeetingAttendanceSummary {
+  meeting_id: number;
+  class_offering_id: number;
+  total_enrolled: number;
+  present: number;
+  late: number;
+  absent: number;
+  recorded: number;
 }

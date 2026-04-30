@@ -137,6 +137,8 @@ class ScheduledMeeting(Base):
     ends_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     type: Mapped[MeetingType] = mapped_column(SAEnum(MeetingType), default=MeetingType.in_person)
     meeting_url: Mapped[str | None] = mapped_column(String(500))
+    is_closed: Mapped[bool] = mapped_column(Boolean, default=False)
+    closed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
     class_offering: Mapped["ClassOffering"] = relationship(back_populates="scheduled_meetings")

@@ -21,6 +21,7 @@ from app.schemas.schedule import (
     RoomOut,
     RoomUpdate,
     ScheduledMeetingCreate,
+    MeetingAttendanceSummary,
     ScheduledMeetingOut,
     ScheduledMeetingUpdate,
     WaitlistEntryOut,
@@ -158,6 +159,24 @@ def update_meeting(
     _: Student = Depends(get_current_admin),
 ):
     return ScheduledMeetingService(db).update(meeting_id, data)
+
+
+@router.post("/meetings/{meeting_id}/close", response_model=ScheduledMeetingOut)
+def close_meeting(
+    meeting_id: int,
+    db: Session = Depends(get_db),
+    _: Student = Depends(get_current_admin),
+):
+    return ScheduledMeetingService(db).close_meeting(meeting_id)
+
+
+@router.get("/meetings/{meeting_id}/summary", response_model=MeetingAttendanceSummary)
+def meeting_summary(
+    meeting_id: int,
+    db: Session = Depends(get_db),
+    _: Student = Depends(get_current_admin),
+):
+    return ScheduledMeetingService(db).attendance_summary(meeting_id)
 
 
 @router.post("/meetings/{meeting_id}/checkin-tokens", response_model=CheckinTokenOut, status_code=201)

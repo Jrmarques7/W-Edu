@@ -41,6 +41,8 @@ export const endpoints = {
     joinClass: (id: number) => `/schedule/classes/${id}/join`,
     meetings: '/schedule/meetings',
     meeting: (id: number) => `/schedule/meetings/${id}`,
+    closeMeeting: (id: number) => `/schedule/meetings/${id}/close`,
+    meetingSummary: (id: number) => `/schedule/meetings/${id}/summary`,
     checkinTokens: (meetingId: number) => `/schedule/meetings/${meetingId}/checkin-tokens`,
     checkIn: (token: string) => `/schedule/check-in/${token}`,
     attendance: (meetingId: number) => `/schedule/meetings/${meetingId}/attendance`,

@@ -12,7 +12,7 @@ import toast from 'react-hot-toast';
 import api from '@/lib/api/client';
 import { endpoints } from '@/lib/api/endpoints';
 import type { Course } from '@/types/course';
-import type { AttendanceRecord, ClassOffering, Location, Room, ScheduledMeeting } from '@/types/schedule';
+import type { AttendanceRecord, ClassOffering, Location, MeetingAttendanceSummary, Room, ScheduledMeeting } from '@/types/schedule';
 
 const toDateTimeLocal = (value: string) => value.slice(0, 16);
 const toApiDateTime = (value: string) => new Date(value).toISOString();
@@ -24,6 +24,7 @@ export default function AdminSchedulePage() {
   const [classes, setClasses] = useState<ClassOffering[]>([]);
   const [meetings, setMeetings] = useState<Record<number, ScheduledMeeting[]>>({});
   const [attendance, setAttendance] = useState<Record<number, AttendanceRecord[]>>({});
+  const [summaries, setSummaries] = useState<Record<number, MeetingAttendanceSummary>>({});
   const [loading, setLoading] = useState(true);
   const [locationName, setLocationName] = useState('');
   const [roomForm, setRoomForm] = useState({ location_id: '', name: '', capacity: 20, resources: '' });
@@ -132,6 +133,24 @@ export default function AdminSchedulePage() {
       const { data } = await api.get<AttendanceRecord[]>(endpoints.schedule.attendance(meetingId));
       setAttendance((prev) => ({ ...prev, [meetingId]: data }));
     } catch { toast.error('Erro ao carregar presença.'); }
+  };
+
+  const closeMeeting = async (meeting: ScheduledMeeting) => {
+    try {
+      const { data } = await api.post<ScheduledMeeting>(endpoints.schedule.closeMeeting(meeting.id));
+      setMeetings((prev) => ({
+        ...prev,
+        [meeting.class_offering_id]: (prev[meeting.class_offering_id] ?? []).map((item) => (item.id === meeting.id ? data : item)),
+      }));
+      toast.success('Encontro encerrado.');
+    } catch { toast.error('Erro ao encerrar encontro.'); }
+  };
+
+  const loadSummary = async (meetingId: number) => {
+    try {
+      const { data } = await api.get<MeetingAttendanceSummary>(endpoints.schedule.meetingSummary(meetingId));
+      setSummaries((prev) => ({ ...prev, [meetingId]: data }));
+    } catch { toast.error('Erro ao carregar resumo.'); }
   };
 
   if (loading) {
@@ -278,8 +297,21 @@ export default function AdminSchedulePage() {
                                   className="text-xs px-2 py-1 rounded border border-gray-300 text-gray-700 dark:text-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700">
                                   Presenças
                                 </button>
+                                <button onClick={() => loadSummary(meeting.id)}
+                                  className="text-xs px-2 py-1 rounded border border-emerald-300 text-emerald-700 dark:text-emerald-300 dark:border-emerald-800 hover:bg-emerald-50 dark:hover:bg-emerald-900/20">
+                                  Resumo
+                                </button>
+                                <button onClick={() => closeMeeting(meeting)} disabled={meeting.is_closed}
+                                  className="text-xs px-2 py-1 rounded border border-gray-300 text-gray-700 dark:text-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50">
+                                  {meeting.is_closed ? 'Encerrado' : 'Encerrar'}
+                                </button>
                               </div>
                             </div>
+                            {summaries[meeting.id] && (
+                              <p className="text-xs text-gray-500 dark:text-gray-400">
+                                {summaries[meeting.id].present} presentes, {summaries[meeting.id].late} atrasados, {summaries[meeting.id].absent} ausentes de {summaries[meeting.id].total_enrolled} inscritos
+                              </p>
+                            )}
                             {attendance[meeting.id] && (
                               <p className="text-xs text-gray-500 dark:text-gray-400">
                                 {attendance[meeting.id].length} presença{attendance[meeting.id].length !== 1 ? 's' : ''} registrada{attendance[meeting.id].length !== 1 ? 's' : ''}
