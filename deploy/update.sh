@@ -3,8 +3,11 @@ set -Eeuo pipefail
 
 # Generic deploy/update script for systemd-based projects.
 #
-# W-Edu default usage on the server:
+# W-Edu default usage on the server, from the repo root:
 #   sudo bash deploy/update.sh
+#
+# Or from the deploy directory:
+#   sudo ./update.sh
 #
 # Reusable usage for other projects:
 #   sudo APP_DIR=/var/www/my-app \
@@ -17,7 +20,9 @@ set -Eeuo pipefail
 #     FRONTEND_BUILD_CMD="npm ci && npm run build" \
 #     bash deploy/update.sh
 
-APP_DIR="${APP_DIR:-/var/www/W-Edu}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DETECTED_APP_DIR="$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel 2>/dev/null || true)"
+APP_DIR="${APP_DIR:-${DETECTED_APP_DIR:-/var/www/W-Edu}}"
 BRANCH="${BRANCH:-main}"
 REMOTE="${REMOTE:-origin}"
 
@@ -81,6 +86,13 @@ if [[ "${EUID:-$(id -u)}" -ne 0 ]]; then
 fi
 
 require_dir "$APP_DIR"
+
+if [[ "$RUN_GIT_PULL" == "true" && ! -d "$APP_DIR/.git" ]]; then
+  echo "APP_DIR is not a git repository: $APP_DIR" >&2
+  echo "Set APP_DIR to the project checkout, for example:" >&2
+  echo "  sudo APP_DIR=/var/www/W-Edu/W-Edu bash $SCRIPT_DIR/update.sh" >&2
+  exit 1
+fi
 
 log "Deploy configuration"
 cat <<EOF
