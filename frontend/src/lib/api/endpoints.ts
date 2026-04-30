@@ -47,4 +47,13 @@ export const endpoints = {
     checkIn: (token: string) => `/schedule/check-in/${token}`,
     attendance: (meetingId: number) => `/schedule/meetings/${meetingId}/attendance`,
   },
+  certificates: {
+    rule: (courseId: number) => `/certificates/rules/${courseId}`,
+    eligibility: (courseId: number, studentId: number) => `/certificates/courses/${courseId}/students/${studentId}/eligibility`,
+    issue: (courseId: number, studentId: number) => `/certificates/courses/${courseId}/students/${studentId}/issue`,
+    courseCertificates: (courseId: number) => `/certificates/courses/${courseId}/certificates`,
+    validate: (code: string) => `/certificates/validate/${code}`,
+    my: '/certificates/students/me',
+    student: (studentId: number) => `/certificates/students/${studentId}`,
+  },
 };

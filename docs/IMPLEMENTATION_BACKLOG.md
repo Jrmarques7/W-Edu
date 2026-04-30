@@ -68,7 +68,8 @@ Objetivo: concluir o ciclo academico.
 - Avaliacao hibrida: quiz online e validacao presencial.
 - Entregas de trabalho.
 - Certificado PDF.
-- Validacao publica por codigo/QR Code.
+- Validacao publica por codigo.
+- Validacao publica por QR Code.
 
 Aceite:
 

@@ -118,11 +118,13 @@ Observacao: `alembic upgrade head` online nao foi aplicado porque o PostgreSQL c
 ### Avaliacoes e certificacao
 
 - Regras de aprovacao por progresso, nota e frequencia.
+- Certificacao por curso com regra configuravel.
+- Emissao automatica de certificado quando o aluno atende aos criterios.
+- Validacao publica de certificado por codigo.
 - Avaliacao hibrida: prova online e validacao presencial.
 - Trabalhos/atividades com entrega.
 - Avaliacao pratica presencial.
 - Certificado PDF.
-- Validacao publica de certificado por QR Code.
 - Assinatura digital.
 
 ### Comunicacao

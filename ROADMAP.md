@@ -33,7 +33,7 @@ Documento de referencia: [docs/PLATFORM_TARGET.md](docs/PLATFORM_TARGET.md)
 - Falta modelar instrutor, coordenador, empresa e perfis detalhados.
 - Falta agenda academica com vagas, lista de espera, salas e unidades.
 - Falta presenca presencial com QR Code e regras de validacao.
-- Falta certificacao automatica.
+- Certificacao automatica e validacao publica de certificado implementadas no backend.
 - Falta comunicacao por eventos e integracao W-Omni.
 - Falta financeiro, documentos, relatorios e analytics.
 - Falta arquitetura modular com fronteiras claras para futura separacao em microservicos.
@@ -166,9 +166,9 @@ checkin_tokens
 - [ ] Avaliacao hibrida: prova online e validacao presencial.
 - [ ] Trabalhos/atividades com entrega.
 - [ ] Avaliacao pratica presencial.
-- [ ] Regras de aprovacao por nota, presenca e progresso.
-- [ ] Geracao automatica de certificado PDF.
-- [ ] Validacao publica de certificado por QR Code.
+- [x] Regras de aprovacao por nota, presenca e progresso.
+- [x] Geracao automatica de certificado PDF.
+- [x] Validacao publica de certificado por codigo.
 - [ ] Assinatura digital como integracao posterior.
 
 ### Fase 6 — Comunicacao com W-Omni

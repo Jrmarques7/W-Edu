@@ -95,3 +95,19 @@ class CoursePrerequisiteOut(BaseModel):
     prerequisite_course_id: int
 
     model_config = {"from_attributes": True}
+
+
+class CourseCompletionRuleOut(BaseModel):
+    id: int
+    course_id: int
+    require_lessons_complete: bool
+    minimum_progress_percent: int
+    require_quiz: bool
+    minimum_quiz_score: int
+    require_attendance: bool
+    minimum_attendance_percent: int
+    auto_issue: bool
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}

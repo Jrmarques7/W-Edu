@@ -4,6 +4,8 @@ from sqlalchemy.orm import Session
 from app.models.quiz import Quiz, QuizQuestion, QuizAttempt
 from app.repositories.quiz import QuizRepository, QuizQuestionRepository, QuizAttemptRepository
 from app.schemas.quiz import QuizCreate, QuizUpdate, QuizQuestionCreate, QuizQuestionUpdate, QuizAnswerSubmit
+from app.repositories.lesson import LessonRepository
+from app.services.certificate import CertificateService
 
 
 class QuizService:
@@ -11,6 +13,8 @@ class QuizService:
         self.repo = QuizRepository(db)
         self.question_repo = QuizQuestionRepository(db)
         self.attempt_repo = QuizAttemptRepository(db)
+        self.lesson_repo = LessonRepository(db)
+        self.certificate_service = CertificateService(db)
 
     # --- Admin ---
 
@@ -67,7 +71,11 @@ class QuizService:
         score = round(correct / len(quiz.questions) * 100)
         passed = score >= quiz.passing_score
 
-        return self.attempt_repo.create(student_id, quiz.id, score, passed, data.answers)
+        attempt = self.attempt_repo.create(student_id, quiz.id, score, passed, data.answers)
+        lesson = self.lesson_repo.get_by_id(lesson_id)
+        if lesson:
+            self.certificate_service.auto_issue(lesson.course_id, student_id)
+        return attempt
 
     def get_attempts(self, lesson_id: int, student_id: int) -> list[QuizAttempt]:
         quiz = self._get_quiz_or_404(lesson_id)

@@ -41,6 +41,12 @@ class Course(Base):
         foreign_keys="CoursePrerequisite.prerequisite_course_id",
         cascade="all, delete-orphan",
     )
+    completion_rule: Mapped["CourseCompletionRule | None"] = relationship(
+        back_populates="course",
+        uselist=False,
+        cascade="all, delete-orphan",
+    )
+    certificates: Mapped[list["Certificate"]] = relationship(back_populates="course", cascade="all, delete-orphan")
 
 
 class CourseModule(Base):
@@ -101,3 +107,26 @@ class CoursePrerequisite(Base):
         back_populates="required_by",
         foreign_keys=[prerequisite_course_id],
     )
+
+
+class CourseCompletionRule(Base):
+    __tablename__ = "course_completion_rules"
+    __table_args__ = (UniqueConstraint("course_id"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    course_id: Mapped[int] = mapped_column(ForeignKey("courses.id"), index=True)
+    require_lessons_complete: Mapped[bool] = mapped_column(default=True)
+    minimum_progress_percent: Mapped[int] = mapped_column(Integer, default=100)
+    require_quiz: Mapped[bool] = mapped_column(default=True)
+    minimum_quiz_score: Mapped[int] = mapped_column(Integer, default=70)
+    require_attendance: Mapped[bool] = mapped_column(default=False)
+    minimum_attendance_percent: Mapped[int] = mapped_column(Integer, default=75)
+    auto_issue: Mapped[bool] = mapped_column(default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+    course: Mapped["Course"] = relationship(back_populates="completion_rule")

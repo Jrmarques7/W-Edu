@@ -28,6 +28,7 @@ from app.repositories.schedule import (
     ScheduledMeetingRepository,
 )
 from app.repositories.student import StudentRepository
+from app.services.certificate import CertificateService
 from app.schemas.schedule import (
     ClassJoinOut,
     ClassOfferingCreate,
@@ -200,6 +201,7 @@ class ScheduledMeetingService:
         self.class_service = ClassOfferingService(db)
         self.lesson_repo = LessonRepository(db)
         self.room_repo = RoomRepository(db)
+        self.certificate_service = CertificateService(db)
 
     def create(self, data: ScheduledMeetingCreate) -> ScheduledMeeting:
         class_offering = self.class_service.get_or_404(data.class_offering_id)
@@ -237,7 +239,9 @@ class ScheduledMeetingService:
         self._mark_absences(meeting)
         meeting.is_closed = True
         meeting.closed_at = datetime.now(timezone.utc)
-        return self.repo.update(meeting)
+        meeting = self.repo.update(meeting)
+        self._auto_issue_for_meeting(meeting)
+        return meeting
 
     def attendance_summary(self, meeting_id: int) -> MeetingAttendanceSummary:
         meeting = self.get_or_404(meeting_id)
@@ -288,6 +292,12 @@ class ScheduledMeetingService:
             )
         self.repo.db.commit()
 
+    def _auto_issue_for_meeting(self, meeting: ScheduledMeeting) -> None:
+        enrollments = self.repo.list_active_enrollments(meeting.class_offering_id)
+        course_id = self.class_service.get_or_404(meeting.class_offering_id).course_id
+        for enrollment in enrollments:
+            self.certificate_service.auto_issue(course_id, enrollment.student_id)
+
 
 class AttendanceRecordService:
     def __init__(self, db: Session):
@@ -296,6 +306,7 @@ class AttendanceRecordService:
         self.class_repo = ClassOfferingRepository(db)
         self.meeting_service = ScheduledMeetingService(db)
         self.student_repo = StudentRepository(db)
+        self.certificate_service = CertificateService(db)
 
     def generate_checkin_token(self, meeting_id: int, valid_minutes: int) -> CheckinToken:
         self.meeting_service.get_or_404(meeting_id)
@@ -355,14 +366,18 @@ class AttendanceRecordService:
             existing.method = method
             existing.notes = notes
             existing.recorded_at = datetime.now(timezone.utc)
-            return self.record_repo.update(existing)
-        return self.record_repo.create(
-            AttendanceRecord(
-                scheduled_meeting_id=meeting.id,
-                class_offering_id=meeting.class_offering_id,
-                student_id=student_id,
-                status=status_value,
-                method=method,
-                notes=notes,
+            record = self.record_repo.update(existing)
+        else:
+            record = self.record_repo.create(
+                AttendanceRecord(
+                    scheduled_meeting_id=meeting.id,
+                    class_offering_id=meeting.class_offering_id,
+                    student_id=student_id,
+                    status=status_value,
+                    method=method,
+                    notes=notes,
+                )
             )
-        )
+        course_id = self.class_service.get_or_404(meeting.class_offering_id).course_id
+        self.certificate_service.auto_issue(course_id, student_id)
+        return record
