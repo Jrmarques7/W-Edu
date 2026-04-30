@@ -35,7 +35,7 @@ Documento de referencia: [docs/PLATFORM_TARGET.md](docs/PLATFORM_TARGET.md)
 - Falta presenca presencial com QR Code e regras de validacao.
 - Certificacao automatica e validacao publica de certificado implementadas no backend.
 - Comunicacao por eventos estruturada e base de notificacao implementada.
-- Falta financeiro, documentos, relatorios e analytics.
+- Financeiro base implementado; faltam documentos, relatorios e analytics.
 - Falta arquitetura modular com fronteiras claras para futura separacao em microservicos.
 
 ---

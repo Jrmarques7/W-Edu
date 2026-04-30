@@ -63,4 +63,14 @@ export const endpoints = {
     eventSent: (id: number) => `/notifications/events/${id}/mark-sent`,
     eventFailed: (id: number) => `/notifications/events/${id}/mark-failed`,
   },
+  finance: {
+    plans: '/finance/plans',
+    plan: (id: number) => `/finance/plans/${id}`,
+    subscriptions: '/finance/subscriptions',
+    subscription: (id: number) => `/finance/subscriptions/${id}`,
+    charges: '/finance/charges',
+    charge: (id: number) => `/finance/charges/${id}`,
+    chargePaid: (id: number) => `/finance/charges/${id}/paid`,
+    chargeFailed: (id: number) => `/finance/charges/${id}/failed`,
+  },
 };

@@ -47,6 +47,7 @@ class Course(Base):
         cascade="all, delete-orphan",
     )
     certificates: Mapped[list["Certificate"]] = relationship(back_populates="course", cascade="all, delete-orphan")
+    charges: Mapped[list["Charge"]] = relationship(back_populates="course")
 
 
 class CourseModule(Base):

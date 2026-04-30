@@ -92,6 +92,7 @@ class ClassOffering(Base):
     enrollments: Mapped[list["ClassEnrollment"]] = relationship(back_populates="class_offering", cascade="all, delete-orphan")
     waitlist_entries: Mapped[list["WaitlistEntry"]] = relationship(back_populates="class_offering", cascade="all, delete-orphan")
     scheduled_meetings: Mapped[list["ScheduledMeeting"]] = relationship(back_populates="class_offering", cascade="all, delete-orphan")
+    charges: Mapped[list["Charge"]] = relationship(back_populates="class_offering")
 
 
 class ClassEnrollment(Base):

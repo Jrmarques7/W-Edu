@@ -15,6 +15,7 @@ import {
   AcademicCapIcon,
   CalendarDaysIcon,
   ChatBubbleLeftRightIcon,
+  BanknotesIcon,
   Squares2X2Icon,
   ShieldCheckIcon,
 } from '@heroicons/react/24/outline';
@@ -41,6 +42,7 @@ const adminMenu = [
   { name: 'Agenda', href: '/admin/schedule', icon: CalendarDaysIcon },
   { name: 'Certificados', href: '/admin/certificates', icon: ShieldCheckIcon },
   { name: 'Comunicação', href: '/admin/notifications', icon: ChatBubbleLeftRightIcon },
+  { name: 'Financeiro', href: '/admin/finance', icon: BanknotesIcon },
   { name: 'Alunos', href: '/admin/students', icon: UsersIcon },
   { name: 'Catálogo', href: '/courses', icon: Squares2X2Icon },
   { name: 'Configurações', href: '/settings', icon: Cog6ToothIcon },

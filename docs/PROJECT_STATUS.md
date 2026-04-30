@@ -150,7 +150,8 @@ Observacao: `alembic upgrade head` online nao foi aplicado porque o PostgreSQL c
 - PIX.
 - Cartao.
 - Boleto.
-- Gateway Asaas/PagSeguro.
+- Gateway Asaas/PagSeguro como integracao futura.
+- Estrutura base de planos, assinaturas e cobrancas.
 
 ### Documentos e GED/ECM
 

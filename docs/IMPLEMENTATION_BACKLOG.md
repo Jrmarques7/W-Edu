@@ -93,6 +93,22 @@ Aceite:
 - Historico de notificacao fica auditavel.
 - Canais reais entram depois como adaptadores.
 
+### Marco 6 — Financeiro
+
+Objetivo: monetizar cursos, turmas e assinaturas.
+
+- [x] Planos de curso.
+- [x] Assinaturas por aluno ou empresa.
+- [x] Cobranças por turma, curso ou assinatura.
+- [x] Estrutura base para PIX, cartao e boleto.
+- [ ] Integrar gateway real (Asaas/PagSeguro).
+
+Aceite:
+
+- Admin cria plano e assinatura.
+- Admin registra cobranca e marca como paga/falha.
+- Empresa pode concentrar cobrancas e assinaturas.
+
 ## Primeiro Pacote de Codigo
 
 O primeiro pacote deve ser pequeno e migravel:

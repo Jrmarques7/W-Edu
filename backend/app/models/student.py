@@ -26,6 +26,8 @@ class Organization(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
     users: Mapped[list["Student"]] = relationship(back_populates="organization")
+    subscriptions: Mapped[list["Subscription"]] = relationship(back_populates="organization")
+    charges: Mapped[list["Charge"]] = relationship(back_populates="organization")
 
 
 class Student(Base):
@@ -53,6 +55,8 @@ class Student(Base):
         back_populates="issued_by",
         foreign_keys="Certificate.issued_by_id",
     )
+    subscriptions: Mapped[list["Subscription"]] = relationship(back_populates="student")
+    charges: Mapped[list["Charge"]] = relationship(back_populates="student")
 
 
 class StudentProfile(Base):
