@@ -9,6 +9,7 @@ from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
+from sqlalchemy.dialects import postgresql
 
 
 revision: str = "b2c3d4e5f6a7"
@@ -18,8 +19,24 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    op.execute("CREATE TYPE attendancestatus AS ENUM ('present', 'late', 'absent')")
-    op.execute("CREATE TYPE attendancemethod AS ENUM ('manual', 'qr_code', 'webhook', 'biometric', 'facial')")
+    op.execute(
+        """
+        DO $$ BEGIN
+            CREATE TYPE attendancestatus AS ENUM ('present', 'late', 'absent');
+        EXCEPTION
+            WHEN duplicate_object THEN null;
+        END $$;
+        """
+    )
+    op.execute(
+        """
+        DO $$ BEGIN
+            CREATE TYPE attendancemethod AS ENUM ('manual', 'qr_code', 'webhook', 'biometric', 'facial');
+        EXCEPTION
+            WHEN duplicate_object THEN null;
+        END $$;
+        """
+    )
 
     op.create_table(
         "attendance_records",
@@ -27,8 +44,16 @@ def upgrade() -> None:
         sa.Column("scheduled_meeting_id", sa.Integer(), nullable=False),
         sa.Column("class_offering_id", sa.Integer(), nullable=False),
         sa.Column("student_id", sa.Integer(), nullable=False),
-        sa.Column("status", sa.Enum("present", "late", "absent", name="attendancestatus"), nullable=False),
-        sa.Column("method", sa.Enum("manual", "qr_code", "webhook", "biometric", "facial", name="attendancemethod"), nullable=False),
+        sa.Column(
+            "status",
+            postgresql.ENUM("present", "late", "absent", name="attendancestatus", create_type=False),
+            nullable=False,
+        ),
+        sa.Column(
+            "method",
+            postgresql.ENUM("manual", "qr_code", "webhook", "biometric", "facial", name="attendancemethod", create_type=False),
+            nullable=False,
+        ),
         sa.Column("recorded_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("notes", sa.Text(), nullable=True),
         sa.ForeignKeyConstraint(["class_offering_id"], ["class_offerings.id"]),

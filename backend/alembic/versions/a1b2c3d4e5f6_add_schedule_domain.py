@@ -9,6 +9,7 @@ from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
+from sqlalchemy.dialects import postgresql
 
 
 revision: str = "a1b2c3d4e5f6"
@@ -18,9 +19,33 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    op.execute("CREATE TYPE classstatus AS ENUM ('draft', 'open', 'closed', 'completed', 'cancelled')")
-    op.execute("CREATE TYPE classenrollmentstatus AS ENUM ('active', 'cancelled', 'completed')")
-    op.execute("CREATE TYPE meetingtype AS ENUM ('in_person', 'live', 'hybrid')")
+    op.execute(
+        """
+        DO $$ BEGIN
+            CREATE TYPE classstatus AS ENUM ('draft', 'open', 'closed', 'completed', 'cancelled');
+        EXCEPTION
+            WHEN duplicate_object THEN null;
+        END $$;
+        """
+    )
+    op.execute(
+        """
+        DO $$ BEGIN
+            CREATE TYPE classenrollmentstatus AS ENUM ('active', 'cancelled', 'completed');
+        EXCEPTION
+            WHEN duplicate_object THEN null;
+        END $$;
+        """
+    )
+    op.execute(
+        """
+        DO $$ BEGIN
+            CREATE TYPE meetingtype AS ENUM ('in_person', 'live', 'hybrid');
+        EXCEPTION
+            WHEN duplicate_object THEN null;
+        END $$;
+        """
+    )
 
     op.create_table(
         "locations",
@@ -54,7 +79,11 @@ def upgrade() -> None:
         sa.Column("starts_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("ends_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("capacity", sa.Integer(), nullable=False),
-        sa.Column("status", sa.Enum("draft", "open", "closed", "completed", "cancelled", name="classstatus"), nullable=False),
+        sa.Column(
+            "status",
+            postgresql.ENUM("draft", "open", "closed", "completed", "cancelled", name="classstatus", create_type=False),
+            nullable=False,
+        ),
         sa.Column("location_id", sa.Integer(), nullable=True),
         sa.Column("room_id", sa.Integer(), nullable=True),
         sa.Column("instructor_id", sa.Integer(), nullable=True),
@@ -75,7 +104,11 @@ def upgrade() -> None:
         sa.Column("id", sa.Integer(), nullable=False),
         sa.Column("class_offering_id", sa.Integer(), nullable=False),
         sa.Column("student_id", sa.Integer(), nullable=False),
-        sa.Column("status", sa.Enum("active", "cancelled", "completed", name="classenrollmentstatus"), nullable=False),
+        sa.Column(
+            "status",
+            postgresql.ENUM("active", "cancelled", "completed", name="classenrollmentstatus", create_type=False),
+            nullable=False,
+        ),
         sa.Column("enrolled_at", sa.DateTime(timezone=True), nullable=False),
         sa.ForeignKeyConstraint(["class_offering_id"], ["class_offerings.id"]),
         sa.ForeignKeyConstraint(["student_id"], ["students.id"]),
@@ -94,7 +127,11 @@ def upgrade() -> None:
         sa.Column("title", sa.String(length=200), nullable=False),
         sa.Column("starts_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("ends_at", sa.DateTime(timezone=True), nullable=False),
-        sa.Column("type", sa.Enum("in_person", "live", "hybrid", name="meetingtype"), nullable=False),
+        sa.Column(
+            "type",
+            postgresql.ENUM("in_person", "live", "hybrid", name="meetingtype", create_type=False),
+            nullable=False,
+        ),
         sa.Column("meeting_url", sa.String(length=500), nullable=True),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
         sa.ForeignKeyConstraint(["class_offering_id"], ["class_offerings.id"]),
