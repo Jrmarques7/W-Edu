@@ -4,21 +4,32 @@ import { useEffect, useState } from 'react';
 import { PlusIcon, TrashIcon, UsersIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import api from '@/lib/api/client';
-import type { Student } from '@/types/auth';
+import type { Organization, Student, UserRole } from '@/types/auth';
 
-function NewStudentModal({ onClose, onSave }: {
+const roleLabel: Record<UserRole, string> = {
+  student: 'Aluno',
+  instructor: 'Instrutor',
+  coordinator: 'Coordenador',
+  company_manager: 'Gestor empresa',
+  admin: 'Admin',
+};
+
+function NewStudentModal({ organizations, onClose, onSave }: {
+  organizations: Organization[];
   onClose: () => void;
-  onSave: (data: { name: string; email: string; password: string }) => Promise<void>;
+  onSave: (data: { name: string; email: string; password: string; role: UserRole; organization_id: number | null }) => Promise<void>;
 }) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [role, setRole] = useState<UserRole>('student');
+  const [organizationId, setOrganizationId] = useState('');
   const [saving, setSaving] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
-    await onSave({ name, email, password });
+    await onSave({ name, email, password, role, organization_id: organizationId ? Number(organizationId) : null });
     setSaving(false);
   };
 
@@ -42,6 +53,27 @@ function NewStudentModal({ onClose, onSave }: {
             <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6}
               className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
           </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Perfil</label>
+              <select value={role} onChange={(e) => setRole(e.target.value as UserRole)}
+                className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                {Object.entries(roleLabel).map(([value, label]) => (
+                  <option key={value} value={value}>{label}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Empresa</label>
+              <select value={organizationId} onChange={(e) => setOrganizationId(e.target.value)}
+                className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <option value="">Sem empresa</option>
+                {organizations.map((organization) => (
+                  <option key={organization.id} value={organization.id}>{organization.name}</option>
+                ))}
+              </select>
+            </div>
+          </div>
           <div className="flex justify-end space-x-3 pt-2">
             <button type="button" onClick={onClose} className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 transition-colors">
               Cancelar
@@ -59,22 +91,42 @@ function NewStudentModal({ onClose, onSave }: {
 
 export default function AdminStudentsPage() {
   const [students, setStudents] = useState<Student[]>([]);
+  const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [organizationName, setOrganizationName] = useState('');
 
-  const loadStudents = () =>
-    api.get<Student[]>('/admin/students').then((r) => setStudents(r.data)).finally(() => setLoading(false));
+  const loadData = () =>
+    Promise.all([
+      api.get<Student[]>('/admin/students'),
+      api.get<Organization[]>('/admin/organizations'),
+    ]).then(([studentRes, organizationRes]) => {
+      setStudents(studentRes.data);
+      setOrganizations(organizationRes.data);
+    }).finally(() => setLoading(false));
 
-  useEffect(() => { loadStudents(); }, []);
+  useEffect(() => { loadData(); }, []);
 
-  const createStudent = async (data: { name: string; email: string; password: string }) => {
+  const createStudent = async (data: { name: string; email: string; password: string; role: UserRole; organization_id: number | null }) => {
     try {
       await api.post('/admin/students', data);
-      toast.success('Aluno criado!');
+      toast.success('Usuário criado!');
       setShowModal(false);
-      loadStudents();
+      loadData();
     } catch (e: any) {
-      toast.error(e.response?.data?.detail ?? 'Erro ao criar aluno.');
+      toast.error(e.response?.data?.detail ?? 'Erro ao criar usuário.');
+    }
+  };
+
+  const createOrganization = async (event: React.FormEvent) => {
+    event.preventDefault();
+    try {
+      await api.post('/admin/organizations', { name: organizationName });
+      setOrganizationName('');
+      toast.success('Empresa criada!');
+      loadData();
+    } catch (e: any) {
+      toast.error(e.response?.data?.detail ?? 'Erro ao criar empresa.');
     }
   };
 
@@ -83,7 +135,7 @@ export default function AdminStudentsPage() {
     try {
       await api.delete(`/admin/students/${id}`);
       toast.success('Aluno excluído.');
-      loadStudents();
+      loadData();
     } catch { toast.error('Erro ao excluir aluno.'); }
   };
 
@@ -100,20 +152,32 @@ export default function AdminStudentsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Alunos</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{students.length} aluno{students.length !== 1 ? 's' : ''} cadastrado{students.length !== 1 ? 's' : ''}</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Usuários</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{students.length} usuário{students.length !== 1 ? 's' : ''} cadastrado{students.length !== 1 ? 's' : ''}</p>
         </div>
         <button onClick={() => setShowModal(true)}
           className="flex items-center space-x-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors">
           <PlusIcon className="w-4 h-4" />
-          <span>Novo Aluno</span>
+          <span>Novo usuário</span>
         </button>
       </div>
+
+      <form onSubmit={createOrganization} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 flex flex-col sm:flex-row gap-3">
+        <div className="flex-1">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nova empresa B2B</label>
+          <input value={organizationName} onChange={(e) => setOrganizationName(e.target.value)} required placeholder="Nome da empresa"
+            className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+        </div>
+        <button className="self-end flex items-center space-x-2 px-4 py-2 bg-gray-900 hover:bg-gray-800 dark:bg-gray-700 dark:hover:bg-gray-600 text-white text-sm font-medium rounded-lg transition-colors">
+          <PlusIcon className="w-4 h-4" />
+          <span>Criar empresa</span>
+        </button>
+      </form>
 
       {students.length === 0 ? (
         <div className="bg-white dark:bg-gray-800 rounded-xl border border-dashed border-gray-300 dark:border-gray-600 p-10 text-center">
           <UsersIcon className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-          <p className="text-gray-500 dark:text-gray-400">Nenhum aluno cadastrado.</p>
+          <p className="text-gray-500 dark:text-gray-400">Nenhum usuário cadastrado.</p>
         </div>
       ) : (
         <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 divide-y divide-gray-100 dark:divide-gray-700">
@@ -125,16 +189,21 @@ export default function AdminStudentsPage() {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-gray-900 dark:text-white">{student.name}</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">{student.email}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    {student.email}
+                    {student.organization_id ? ` · ${organizations.find((organization) => organization.id === student.organization_id)?.name ?? 'Empresa'}` : ''}
+                  </p>
                 </div>
               </div>
               <div className="flex items-center space-x-3">
                 <span className={`text-xs px-2 py-1 rounded-full font-medium ${
                   student.role === 'admin'
                     ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'
+                    : student.role === 'instructor'
+                      ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
                     : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
                 }`}>
-                  {student.role === 'admin' ? 'Admin' : 'Aluno'}
+                  {roleLabel[student.role]}
                 </span>
                 <span className={`text-xs px-2 py-1 rounded-full font-medium ${
                   student.is_active
@@ -158,7 +227,7 @@ export default function AdminStudentsPage() {
         </div>
       )}
 
-      {showModal && <NewStudentModal onClose={() => setShowModal(false)} onSave={createStudent} />}
+      {showModal && <NewStudentModal organizations={organizations} onClose={() => setShowModal(false)} onSave={createStudent} />}
     </div>
   );
 }

@@ -54,6 +54,15 @@ O projeto ja possui uma base LMS/EAD com autenticacao, cursos, aulas, matriculas
 - Metodos preparados: `manual`, `qr_code`, `webhook`, `biometric`, `facial`.
 - Admin gera token de check-in e consulta quantidade de presencas.
 
+### Usuarios, perfis e empresas
+
+- Papeis expandidos: aluno, instrutor, coordenador, gestor empresa e admin.
+- Empresas B2B.
+- Vinculo de usuario com empresa.
+- Perfil detalhado de aluno.
+- Perfil de instrutor.
+- Admin de usuarios com selecao de papel e empresa.
+
 ### Planejamento e documentacao
 
 - Roadmap reestruturado.
@@ -80,12 +89,9 @@ Observacao: `alembic upgrade head` online nao foi aplicado porque o PostgreSQL c
 
 ### Usuarios e perfis
 
-- Separar `Student` de `User` ou migrar o modelo atual para usuario.
-- Papeis: aluno, instrutor, coordenador, gestor empresa e admin.
-- Perfis detalhados de aluno.
-- Perfis de instrutor.
-- Empresas B2B.
-- Vinculo de usuarios a empresas.
+- Separar `Student` de `User` ou migrar o modelo atual para usuario com nome semantico correto.
+- Telas completas para editar perfis detalhados de aluno e instrutor.
+- Permissoes refinadas por coordenador e gestor empresa.
 
 ### Instrutores
 

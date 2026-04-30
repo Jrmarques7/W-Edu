@@ -100,8 +100,8 @@ Integracao W-Matrix:
 Objetivo: preparar a base correta antes de crescer funcionalidades.
 
 - [ ] Separar `User` de `Student` ou renomear o modelo atual para usuario com perfis.
-- [ ] Adicionar papeis: aluno, instrutor, coordenador, gestor empresa e admin.
-- [ ] Criar empresas B2B.
+- [x] Adicionar papeis: aluno, instrutor, coordenador, gestor empresa e admin.
+- [x] Criar empresas B2B.
 - [x] Expandir curso com modalidade: online, presencial e hibrido.
 - [x] Criar modulos de curso.
 - [x] Expandir aulas com tipos: texto, video, PDF, live, presencial, voz e avaliacao.

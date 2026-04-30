@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from app.models.student import Student
+from app.models.student import InstructorProfile, Organization, Student, StudentProfile
 
 
 class StudentRepository:
@@ -13,7 +13,7 @@ class StudentRepository:
         return self.db.query(Student).filter(Student.email == email).first()
 
     def list_all(self) -> list[Student]:
-        return self.db.query(Student).all()
+        return self.db.query(Student).order_by(Student.created_at.desc()).all()
 
     def create(self, student: Student) -> Student:
         self.db.add(student)
@@ -29,3 +29,56 @@ class StudentRepository:
     def delete(self, student: Student) -> None:
         self.db.delete(student)
         self.db.commit()
+
+
+class OrganizationRepository:
+    def __init__(self, db: Session):
+        self.db = db
+
+    def get_by_id(self, organization_id: int) -> Organization | None:
+        return self.db.get(Organization, organization_id)
+
+    def get_by_name(self, name: str) -> Organization | None:
+        return self.db.query(Organization).filter(Organization.name == name).first()
+
+    def list_all(self) -> list[Organization]:
+        return self.db.query(Organization).order_by(Organization.name).all()
+
+    def create(self, organization: Organization) -> Organization:
+        self.db.add(organization)
+        self.db.commit()
+        self.db.refresh(organization)
+        return organization
+
+    def update(self, organization: Organization) -> Organization:
+        self.db.commit()
+        self.db.refresh(organization)
+        return organization
+
+
+class ProfileRepository:
+    def __init__(self, db: Session):
+        self.db = db
+
+    def get_student_profile(self, student_id: int) -> StudentProfile | None:
+        return self.db.query(StudentProfile).filter(StudentProfile.student_id == student_id).first()
+
+    def get_instructor_profile(self, student_id: int) -> InstructorProfile | None:
+        return self.db.query(InstructorProfile).filter(InstructorProfile.student_id == student_id).first()
+
+    def create_student_profile(self, profile: StudentProfile) -> StudentProfile:
+        self.db.add(profile)
+        self.db.commit()
+        self.db.refresh(profile)
+        return profile
+
+    def create_instructor_profile(self, profile: InstructorProfile) -> InstructorProfile:
+        self.db.add(profile)
+        self.db.commit()
+        self.db.refresh(profile)
+        return profile
+
+    def update(self, profile):
+        self.db.commit()
+        self.db.refresh(profile)
+        return profile

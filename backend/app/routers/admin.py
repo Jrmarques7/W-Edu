@@ -5,8 +5,18 @@ from app.core.database import get_db
 from app.dependencies import get_current_admin
 from app.models.student import Student
 from app.schemas.student import StudentOut, StudentCreate
+from app.schemas.student import (
+    InstructorProfileOut,
+    InstructorProfileUpdate,
+    OrganizationCreate,
+    OrganizationOut,
+    OrganizationUpdate,
+    StudentProfileOut,
+    StudentProfileUpdate,
+    StudentUpdate,
+)
 from app.schemas.quiz import QuizCreate, QuizUpdate, QuizOut, QuizWithAnswers, QuizQuestionCreate, QuizQuestionUpdate, QuizQuestionWithAnswer
-from app.services.student import StudentService
+from app.services.student import OrganizationService, StudentService
 from app.services.enrollment import EnrollmentService
 from app.services.quiz import QuizService
 from app.schemas.enrollment import EnrollmentOut
@@ -24,9 +34,63 @@ def create_student(data: StudentCreate, db: Session = Depends(get_db), _: Studen
     return StudentService(db).create(data)
 
 
+@router.patch("/students/{student_id}", response_model=StudentOut)
+def update_student(
+    student_id: int,
+    data: StudentUpdate,
+    db: Session = Depends(get_db),
+    _: Student = Depends(get_current_admin),
+):
+    return StudentService(db).update(student_id, data)
+
+
 @router.delete("/students/{student_id}", status_code=204)
 def delete_student(student_id: int, db: Session = Depends(get_db), _: Student = Depends(get_current_admin)):
     StudentService(db).delete(student_id)
+
+
+@router.patch("/students/{student_id}/student-profile", response_model=StudentProfileOut)
+def update_student_profile(
+    student_id: int,
+    data: StudentProfileUpdate,
+    db: Session = Depends(get_db),
+    _: Student = Depends(get_current_admin),
+):
+    return StudentService(db).update_student_profile(student_id, data)
+
+
+@router.patch("/students/{student_id}/instructor-profile", response_model=InstructorProfileOut)
+def update_instructor_profile(
+    student_id: int,
+    data: InstructorProfileUpdate,
+    db: Session = Depends(get_db),
+    _: Student = Depends(get_current_admin),
+):
+    return StudentService(db).update_instructor_profile(student_id, data)
+
+
+@router.post("/organizations", response_model=OrganizationOut, status_code=201)
+def create_organization(
+    data: OrganizationCreate,
+    db: Session = Depends(get_db),
+    _: Student = Depends(get_current_admin),
+):
+    return OrganizationService(db).create(data)
+
+
+@router.get("/organizations", response_model=list[OrganizationOut])
+def list_organizations(db: Session = Depends(get_db), _: Student = Depends(get_current_admin)):
+    return OrganizationService(db).list_all()
+
+
+@router.patch("/organizations/{organization_id}", response_model=OrganizationOut)
+def update_organization(
+    organization_id: int,
+    data: OrganizationUpdate,
+    db: Session = Depends(get_db),
+    _: Student = Depends(get_current_admin),
+):
+    return OrganizationService(db).update(organization_id, data)
 
 
 @router.get("/enrollments/course/{course_id}", response_model=list[EnrollmentOut])
