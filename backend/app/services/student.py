@@ -4,8 +4,12 @@ from sqlalchemy.orm import Session
 from app.core.security import hash_password
 from app.models.student import InstructorProfile, Organization, Student, StudentProfile, UserRole
 from app.repositories.student import OrganizationRepository, ProfileRepository, StudentRepository
+from app.repositories.student import InstructorAvailabilityRepository, InstructorRatingRepository
 from app.schemas.student import (
     InstructorProfileUpdate,
+    InstructorAvailabilityCreate,
+    InstructorAvailabilityUpdate,
+    InstructorRatingCreate,
     OrganizationCreate,
     OrganizationUpdate,
     StudentCreate,
@@ -19,6 +23,8 @@ class StudentService:
         self.repo = StudentRepository(db)
         self.org_repo = OrganizationRepository(db)
         self.profile_repo = ProfileRepository(db)
+        self.availability_repo = InstructorAvailabilityRepository(db)
+        self.rating_repo = InstructorRatingRepository(db)
 
     def create(self, data: StudentCreate) -> Student:
         if self.repo.get_by_email(data.email):
@@ -104,6 +110,46 @@ class StudentService:
         if not profile:
             profile = self.profile_repo.create_instructor_profile(InstructorProfile(student_id=student_id))
         return profile
+
+    def list_instructor_availability(self, student_id: int):
+        profile = self.get_instructor_profile(student_id)
+        return self.availability_repo.list_by_instructor_profile(profile.id)
+
+    def add_instructor_availability(self, student_id: int, data: InstructorAvailabilityCreate):
+        profile = self.get_instructor_profile(student_id)
+        return self.availability_repo.create(
+            InstructorAvailability(
+                instructor_profile_id=profile.id,
+                day_of_week=data.day_of_week,
+                start_time=data.start_time,
+                end_time=data.end_time,
+            )
+        )
+
+    def update_instructor_availability(self, availability_id: int, data: InstructorAvailabilityUpdate):
+        availability = self.availability_repo.get_by_id(availability_id)
+        if not availability:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Disponibilidade não encontrada")
+        for field, value in data.model_dump(exclude_none=True).items():
+            setattr(availability, field, value)
+        return self.availability_repo.update(availability)
+
+    def add_instructor_rating(self, student_id: int, instructor_student_id: int, data: InstructorRatingCreate):
+        if data.score < 1 or data.score > 5:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Nota deve estar entre 1 e 5")
+        instructor_profile = self.get_instructor_profile(instructor_student_id)
+        return self.rating_repo.create(
+            InstructorRating(
+                instructor_profile_id=instructor_profile.id,
+                student_id=student_id,
+                score=data.score,
+                comment=data.comment,
+            )
+        )
+
+    def list_instructor_ratings(self, instructor_student_id: int):
+        instructor_profile = self.get_instructor_profile(instructor_student_id)
+        return self.rating_repo.list_by_instructor_profile(instructor_profile.id)
 
 
 class OrganizationService:

@@ -76,3 +76,34 @@ class InstructorProfile(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
     student: Mapped["Student"] = relationship(back_populates="instructor_profile")
+    availability_slots: Mapped[list["InstructorAvailability"]] = relationship(back_populates="instructor_profile", cascade="all, delete-orphan")
+    ratings: Mapped[list["InstructorRating"]] = relationship(back_populates="instructor_profile", cascade="all, delete-orphan")
+
+
+class InstructorAvailability(Base):
+    __tablename__ = "instructor_availability"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    instructor_profile_id: Mapped[int] = mapped_column(ForeignKey("instructor_profiles.id"), index=True)
+    day_of_week: Mapped[int] = mapped_column()
+    start_time: Mapped[str] = mapped_column(String(5))
+    end_time: Mapped[str] = mapped_column(String(5))
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
+    instructor_profile: Mapped["InstructorProfile"] = relationship(back_populates="availability_slots")
+
+
+class InstructorRating(Base):
+    __tablename__ = "instructor_ratings"
+    __table_args__ = ()
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    instructor_profile_id: Mapped[int] = mapped_column(ForeignKey("instructor_profiles.id"), index=True)
+    student_id: Mapped[int] = mapped_column(ForeignKey("students.id"), index=True)
+    score: Mapped[int] = mapped_column()
+    comment: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
+    instructor_profile: Mapped["InstructorProfile"] = relationship(back_populates="ratings")
+    student: Mapped["Student"] = relationship()

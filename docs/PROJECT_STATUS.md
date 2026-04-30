@@ -63,6 +63,13 @@ O projeto ja possui uma base LMS/EAD com autenticacao, cursos, aulas, matriculas
 - Perfil de instrutor.
 - Admin de usuarios com selecao de papel e empresa.
 
+### Instrutores
+
+- Especialidades no perfil de instrutor.
+- Disponibilidade semanal cadastravel.
+- Avaliacoes simples de alunos/admin.
+- Resumo minimo na tela de usuarios.
+
 ### Planejamento e documentacao
 
 - Roadmap reestruturado.
@@ -95,10 +102,7 @@ Observacao: `alembic upgrade head` online nao foi aplicado porque o PostgreSQL c
 
 ### Instrutores
 
-- Especialidades.
-- Disponibilidade.
 - Agenda real do professor.
-- Avaliacao dos alunos sobre instrutores.
 - Regras para evitar conflito de agenda.
 
 ### Presencial avancado

@@ -1,5 +1,12 @@
 from sqlalchemy.orm import Session
-from app.models.student import InstructorProfile, Organization, Student, StudentProfile
+from app.models.student import (
+    InstructorAvailability,
+    InstructorProfile,
+    InstructorRating,
+    Organization,
+    Student,
+    StudentProfile,
+)
 
 
 class StudentRepository:
@@ -90,3 +97,49 @@ class ProfileRepository:
         self.db.commit()
         self.db.refresh(profile)
         return profile
+
+
+class InstructorAvailabilityRepository:
+    def __init__(self, db: Session):
+        self.db = db
+
+    def list_by_instructor_profile(self, instructor_profile_id: int) -> list[InstructorAvailability]:
+        return (
+            self.db.query(InstructorAvailability)
+            .filter(InstructorAvailability.instructor_profile_id == instructor_profile_id)
+            .order_by(InstructorAvailability.day_of_week, InstructorAvailability.start_time)
+            .all()
+        )
+
+    def create(self, availability: InstructorAvailability) -> InstructorAvailability:
+        self.db.add(availability)
+        self.db.commit()
+        self.db.refresh(availability)
+        return availability
+
+    def update(self, availability: InstructorAvailability) -> InstructorAvailability:
+        self.db.commit()
+        self.db.refresh(availability)
+        return availability
+
+    def get_by_id(self, availability_id: int) -> InstructorAvailability | None:
+        return self.db.get(InstructorAvailability, availability_id)
+
+
+class InstructorRatingRepository:
+    def __init__(self, db: Session):
+        self.db = db
+
+    def list_by_instructor_profile(self, instructor_profile_id: int) -> list[InstructorRating]:
+        return (
+            self.db.query(InstructorRating)
+            .filter(InstructorRating.instructor_profile_id == instructor_profile_id)
+            .order_by(InstructorRating.created_at.desc())
+            .all()
+        )
+
+    def create(self, rating: InstructorRating) -> InstructorRating:
+        self.db.add(rating)
+        self.db.commit()
+        self.db.refresh(rating)
+        return rating

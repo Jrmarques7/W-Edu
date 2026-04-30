@@ -7,6 +7,11 @@ from app.models.student import Student
 from app.models.student import UserRole
 from app.schemas.student import StudentOut, StudentCreate
 from app.schemas.student import (
+    InstructorAvailabilityCreate,
+    InstructorAvailabilityOut,
+    InstructorAvailabilityUpdate,
+    InstructorRatingCreate,
+    InstructorRatingOut,
     InstructorProfileOut,
     InstructorProfileUpdate,
     OrganizationCreate,
@@ -125,6 +130,69 @@ def update_instructor_profile(
             from fastapi import HTTPException, status
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Usuário fora da empresa")
     return StudentService(db).update_instructor_profile(student_id, data)
+
+
+@router.get("/students/{student_id}/availability", response_model=list[InstructorAvailabilityOut])
+def list_instructor_availability(
+    student_id: int,
+    db: Session = Depends(get_db),
+    current: Student = Depends(get_current_admin_or_company_manager),
+):
+    if current.role == UserRole.company_manager:
+        target = StudentService(db).get_or_404(student_id)
+        if target.organization_id != current.organization_id:
+            from fastapi import HTTPException, status
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Usuário fora da empresa")
+    return StudentService(db).list_instructor_availability(student_id)
+
+
+@router.post("/students/{student_id}/availability", response_model=InstructorAvailabilityOut, status_code=201)
+def add_instructor_availability(
+    student_id: int,
+    data: InstructorAvailabilityCreate,
+    db: Session = Depends(get_db),
+    current: Student = Depends(get_current_admin_or_company_manager),
+):
+    if current.role == UserRole.company_manager:
+        target = StudentService(db).get_or_404(student_id)
+        if target.organization_id != current.organization_id:
+            from fastapi import HTTPException, status
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Usuário fora da empresa")
+    return StudentService(db).add_instructor_availability(student_id, data)
+
+
+@router.patch("/students/availability/{availability_id}", response_model=InstructorAvailabilityOut)
+def update_instructor_availability(
+    availability_id: int,
+    data: InstructorAvailabilityUpdate,
+    db: Session = Depends(get_db),
+    _: Student = Depends(get_current_admin),
+):
+    return StudentService(db).update_instructor_availability(availability_id, data)
+
+
+@router.get("/students/{student_id}/ratings", response_model=list[InstructorRatingOut])
+def list_instructor_ratings(
+    student_id: int,
+    db: Session = Depends(get_db),
+    current: Student = Depends(get_current_admin_or_company_manager),
+):
+    if current.role == UserRole.company_manager:
+        target = StudentService(db).get_or_404(student_id)
+        if target.organization_id != current.organization_id:
+            from fastapi import HTTPException, status
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Usuário fora da empresa")
+    return StudentService(db).list_instructor_ratings(student_id)
+
+
+@router.post("/students/{student_id}/ratings", response_model=InstructorRatingOut, status_code=201)
+def add_instructor_rating(
+    student_id: int,
+    data: InstructorRatingCreate,
+    db: Session = Depends(get_db),
+    current: Student = Depends(get_current_admin_or_company_manager),
+):
+    return StudentService(db).add_instructor_rating(current.id, student_id, data)
 
 
 @router.post("/organizations", response_model=OrganizationOut, status_code=201)

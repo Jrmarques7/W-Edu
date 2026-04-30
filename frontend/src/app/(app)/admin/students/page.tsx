@@ -98,6 +98,10 @@ function ProfileModal({ student, onClose, onSaved }: {
   const [instructorProfile, setInstructorProfile] = useState<Partial<InstructorProfile>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [availability, setAvailability] = useState<Array<{ id: number; day_of_week: number; start_time: string; end_time: string; is_active: boolean }>>([]);
+  const [ratings, setRatings] = useState<Array<{ id: number; score: number; comment: string | null; created_at: string }>>([]);
+  const [newAvailability, setNewAvailability] = useState({ day_of_week: 1, start_time: '09:00', end_time: '18:00' });
+  const [newRating, setNewRating] = useState({ score: 5, comment: '' });
 
   useEffect(() => {
     const requests: Promise<any>[] = [
@@ -105,7 +109,9 @@ function ProfileModal({ student, onClose, onSaved }: {
     ];
     if (student.role === 'instructor') {
       requests.push(
-        api.get<InstructorProfile>(`/admin/students/${student.id}/instructor-profile`).then((response) => setInstructorProfile(response.data))
+        api.get<InstructorProfile>(`/admin/students/${student.id}/instructor-profile`).then((response) => setInstructorProfile(response.data)),
+        api.get(`/admin/students/${student.id}/availability`).then((response) => setAvailability(response.data)),
+        api.get(`/admin/students/${student.id}/ratings`).then((response) => setRatings(response.data))
       );
     }
     Promise.all(requests).finally(() => setLoading(false));
@@ -136,6 +142,28 @@ function ProfileModal({ student, onClose, onSaved }: {
       toast.error(e.response?.data?.detail ?? 'Erro ao salvar perfil.');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const addAvailability = async () => {
+    try {
+      await api.post(`/admin/students/${student.id}/availability`, newAvailability);
+      const { data } = await api.get(`/admin/students/${student.id}/availability`);
+      setAvailability(data);
+      toast.success('Disponibilidade adicionada.');
+    } catch (e: any) {
+      toast.error(e.response?.data?.detail ?? 'Erro ao adicionar disponibilidade.');
+    }
+  };
+
+  const addRating = async () => {
+    try {
+      await api.post(`/admin/students/${student.id}/ratings`, newRating);
+      const { data } = await api.get(`/admin/students/${student.id}/ratings`);
+      setRatings(data);
+      toast.success('Avaliação registrada.');
+    } catch (e: any) {
+      toast.error(e.response?.data?.detail ?? 'Erro ao registrar avaliação.');
     }
   };
 
@@ -171,6 +199,52 @@ function ProfileModal({ student, onClose, onSaved }: {
                   className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
                 <textarea value={instructorProfile.bio ?? ''} onChange={(e) => setInstructorProfile((prev) => ({ ...prev, bio: e.target.value }))} rows={3} placeholder="Bio do instrutor"
                   className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  <select value={newAvailability.day_of_week} onChange={(e) => setNewAvailability((prev) => ({ ...prev, day_of_week: Number(e.target.value) }))}
+                    className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm">
+                    <option value={1}>Segunda</option>
+                    <option value={2}>Terça</option>
+                    <option value={3}>Quarta</option>
+                    <option value={4}>Quinta</option>
+                    <option value={5}>Sexta</option>
+                    <option value={6}>Sábado</option>
+                    <option value={0}>Domingo</option>
+                  </select>
+                  <input value={newAvailability.start_time} onChange={(e) => setNewAvailability((prev) => ({ ...prev, start_time: e.target.value }))} placeholder="Início 09:00"
+                    className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm" />
+                  <input value={newAvailability.end_time} onChange={(e) => setNewAvailability((prev) => ({ ...prev, end_time: e.target.value }))} placeholder="Fim 18:00"
+                    className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm" />
+                </div>
+                <button type="button" onClick={addAvailability}
+                  className="px-3 py-2 bg-gray-900 text-white rounded-lg text-sm">Adicionar disponibilidade</button>
+                {availability.length > 0 && (
+                  <div className="space-y-2">
+                    {availability.map((slot) => (
+                      <div key={slot.id} className="text-xs text-gray-500 dark:text-gray-400">
+                        Dia {slot.day_of_week} · {slot.start_time} - {slot.end_time}
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <div className="border-t border-gray-100 dark:border-gray-700 pt-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <input type="number" min={1} max={5} value={newRating.score} onChange={(e) => setNewRating((prev) => ({ ...prev, score: Number(e.target.value) }))}
+                      className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm" />
+                    <input value={newRating.comment} onChange={(e) => setNewRating((prev) => ({ ...prev, comment: e.target.value }))} placeholder="Comentário"
+                      className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm" />
+                  </div>
+                  <button type="button" onClick={addRating}
+                    className="mt-2 px-3 py-2 bg-indigo-600 text-white rounded-lg text-sm">Registrar avaliação</button>
+                  {ratings.length > 0 && (
+                    <div className="mt-3 space-y-2">
+                      {ratings.map((rating) => (
+                        <div key={rating.id} className="text-xs text-gray-500 dark:text-gray-400">
+                          {rating.score}/5 {rating.comment ? `· ${rating.comment}` : ''}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 

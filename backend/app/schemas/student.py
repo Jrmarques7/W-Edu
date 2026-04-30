@@ -84,6 +84,47 @@ class InstructorProfileOut(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class InstructorAvailabilityCreate(BaseModel):
+    day_of_week: int
+    start_time: str
+    end_time: str
+
+
+class InstructorAvailabilityUpdate(BaseModel):
+    day_of_week: int | None = None
+    start_time: str | None = None
+    end_time: str | None = None
+    is_active: bool | None = None
+
+
+class InstructorAvailabilityOut(BaseModel):
+    id: int
+    instructor_profile_id: int
+    day_of_week: int
+    start_time: str
+    end_time: str
+    is_active: bool
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class InstructorRatingCreate(BaseModel):
+    score: int
+    comment: str | None = None
+
+
+class InstructorRatingOut(BaseModel):
+    id: int
+    instructor_profile_id: int
+    student_id: int
+    score: int
+    comment: str | None
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
 class StudentOut(BaseModel):
     id: int
     name: str
