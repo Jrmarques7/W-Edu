@@ -5,7 +5,7 @@ After=network.target wedu-backend.service
 [Service]
 Type=simple
 User=www-data
-WorkingDirectory=/var/www/W-Edu/frontend
+WorkingDirectory=/var/www/W-Edu/W-Edu/frontend
 ExecStart=/usr/bin/npm start
 Restart=always
 RestartSec=5
