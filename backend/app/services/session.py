@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session as DBSession
 
+from app.core.config import settings
 from app.models.session import Session
 from app.models.attendance import Attendance
 from app.models.course import Course
@@ -10,7 +11,7 @@ from app.models.progress import ProgressStatus
 from app.repositories.session import SessionRepository
 from app.repositories.attendance import AttendanceRepository
 from app.repositories.progress import ProgressRepository
-from app.schemas.session import BevoxWebhookPayload, SessionHistoryOut
+from app.schemas.session import BevoxWebhookPayload, SessionHistoryOut, VoiceSessionStartOut
 
 
 class SessionService:
@@ -22,6 +23,32 @@ class SessionService:
     def start(self, student_id: int, lesson_id: int) -> Session:
         session = Session(student_id=student_id, lesson_id=lesson_id)
         return self.session_repo.create(session)
+
+    def start_voice(self, student_id: int, lesson_id: int) -> VoiceSessionStartOut:
+        lesson = self.session_repo.db.get(Lesson, lesson_id)
+        if not lesson:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Aula não encontrada")
+
+        course = self.session_repo.db.get(Course, lesson.course_id)
+        if not course:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Curso não encontrado")
+        if not course.agent_id:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Curso sem agente professor configurado")
+
+        session = self.start(student_id, lesson_id)
+        public_url = settings.BEVOX_PUBLIC_URL
+        bevox_ws_url = None
+        if public_url:
+            base = public_url.rstrip("/")
+            base = base.replace("https://", "wss://").replace("http://", "ws://", 1)
+            bevox_ws_url = f"{base}/ws/voice/stream"
+
+        return VoiceSessionStartOut(
+            session=session,
+            agent_id=course.agent_id,
+            caller_id=f"student-{student_id}",
+            bevox_ws_url=bevox_ws_url,
+        )
 
     def update_voice_state(
         self,

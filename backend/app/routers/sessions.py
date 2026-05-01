@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session as DBSession
 from app.core.database import get_db
 from app.dependencies import get_current_student
 from app.models.student import Student
-from app.schemas.session import SessionCreate, SessionHistoryOut, SessionOut, SessionVoiceUpdate
+from app.schemas.session import SessionCreate, SessionHistoryOut, SessionOut, SessionVoiceUpdate, VoiceSessionStartOut
 from app.services.session import SessionService
 
 router = APIRouter()
@@ -17,6 +17,15 @@ def start_session(
     current: Student = Depends(get_current_student),
 ):
     return SessionService(db).start(current.id, data.lesson_id)
+
+
+@router.post("/voice/start", response_model=VoiceSessionStartOut, status_code=201)
+def start_voice_session(
+    data: SessionCreate,
+    db: DBSession = Depends(get_db),
+    current: Student = Depends(get_current_student),
+):
+    return SessionService(db).start_voice(current.id, data.lesson_id)
 
 
 @router.get("/me", response_model=list[SessionOut])

@@ -127,6 +127,7 @@ Observacao: `alembic upgrade head` online nao foi aplicado porque o PostgreSQL c
 - Dashboard de progresso por curso para o aluno.
 - Historico de sessoes de voz com aula, curso, duracao e transcricao.
 - Botao "Falar com professor" integrado ao BeVox realtime por WebSocket.
+- Endpoint dedicado de inicio de voz retorna sessao local, agente, caller e WebSocket publico do BeVox.
 - Certificacao por curso com regra configuravel.
 - Emissao automatica de certificado quando o aluno atende aos criterios.
 - Validacao publica de certificado por codigo.

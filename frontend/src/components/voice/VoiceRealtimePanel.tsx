@@ -7,7 +7,7 @@ import api from '@/lib/api/client';
 import { endpoints } from '@/lib/api/endpoints';
 import { useAudioPlaybackQueue } from '@/lib/voice/useAudioPlaybackQueue';
 import { useMicrophoneStream } from '@/lib/voice/useMicrophoneStream';
-import type { Session } from '@/types/course';
+import type { Session, VoiceSessionStart } from '@/types/course';
 
 type VoiceState = 'idle' | 'connecting' | 'active';
 
@@ -18,13 +18,11 @@ interface TranscriptEntry {
 }
 
 interface VoiceRealtimePanelProps {
-  agentId: string | null;
-  callerId: string;
   lessonId: number;
   onSessionUpdate: (session: Session) => void;
 }
 
-function getBevoxWsUrl() {
+function getFallbackBevoxWsUrl() {
   const configured = process.env.NEXT_PUBLIC_BEVOX_URL;
   if (configured) {
     return `${configured.replace(/\/$/, '').replace(/^https/, 'wss').replace(/^http/, 'ws')}/ws/voice/stream`;
@@ -34,7 +32,7 @@ function getBevoxWsUrl() {
   return `${protocol}//${window.location.hostname}:8001/ws/voice/stream`;
 }
 
-export function VoiceRealtimePanel({ agentId, callerId, lessonId, onSessionUpdate }: VoiceRealtimePanelProps) {
+export function VoiceRealtimePanel({ lessonId, onSessionUpdate }: VoiceRealtimePanelProps) {
   const [state, setState] = useState<VoiceState>('idle');
   const [statusText, setStatusText] = useState('Pronto para conectar');
   const [chatId, setChatId] = useState<string | null>(null);
@@ -87,11 +85,6 @@ export function VoiceRealtimePanel({ agentId, callerId, lessonId, onSessionUpdat
   }, [cleanup]);
 
   const connect = async () => {
-    if (!agentId?.trim()) {
-      toast.error('Este curso ainda não possui agent_id configurado.');
-      return;
-    }
-
     setState('connecting');
     setStatusText('Criando sessão...');
     setTranscript([]);
@@ -100,17 +93,17 @@ export function VoiceRealtimePanel({ agentId, callerId, lessonId, onSessionUpdat
     manualCloseRef.current = false;
     playback.stop();
 
-    let created: Session;
+    let startConfig: VoiceSessionStart;
     try {
-      const { data } = await api.post<Session>(endpoints.sessions.create, { lesson_id: lessonId });
-      created = data;
-      setLocalSession(data);
-      localSessionRef.current = data;
-      onSessionUpdate(data);
-    } catch {
+      const { data } = await api.post<VoiceSessionStart>(endpoints.sessions.voiceStart, { lesson_id: lessonId });
+      startConfig = data;
+      setLocalSession(data.session);
+      localSessionRef.current = data.session;
+      onSessionUpdate(data.session);
+    } catch (error: any) {
       setState('idle');
       setStatusText('Pronto para conectar');
-      toast.error('Erro ao criar sessão no W-Edu.');
+      toast.error(error?.response?.data?.detail ?? 'Erro ao criar sessão de voz no W-Edu.');
       return;
     }
 
@@ -134,7 +127,7 @@ export function VoiceRealtimePanel({ agentId, callerId, lessonId, onSessionUpdat
       return;
     }
 
-    const ws = new WebSocket(getBevoxWsUrl());
+    const ws = new WebSocket(startConfig.bevox_ws_url || getFallbackBevoxWsUrl());
     ws.binaryType = 'arraybuffer';
     wsRef.current = ws;
 
@@ -142,11 +135,11 @@ export function VoiceRealtimePanel({ agentId, callerId, lessonId, onSessionUpdat
       setStatusText('Iniciando professor IA...');
       ws.send(JSON.stringify({
         type: 'start',
-        agent_id: agentId,
-        session_id: created.bevox_session_id || undefined,
-        language: 'pt-BR',
-        output_format: 'mp3',
-        caller_phone: callerId,
+        agent_id: startConfig.agent_id,
+        session_id: startConfig.session.bevox_session_id || undefined,
+        language: startConfig.language,
+        output_format: startConfig.output_format,
+        caller_phone: startConfig.caller_id,
       }));
     };
 
@@ -163,7 +156,7 @@ export function VoiceRealtimePanel({ agentId, callerId, lessonId, onSessionUpdat
           setChatId(nextChatId);
           setState('active');
           setStatusText('Sessão ativa. Pode falar.');
-          void api.patch<Session>(endpoints.sessions.voice(created.id), { bevox_session_id: nextChatId })
+          void api.patch<Session>(endpoints.sessions.voice(startConfig.session.id), { bevox_session_id: nextChatId })
             .then(({ data }) => {
               setLocalSession(data);
               localSessionRef.current = data;

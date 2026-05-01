@@ -83,3 +83,12 @@ export interface SessionHistory {
   started_at: string;
   ended_at: string | null;
 }
+
+export interface VoiceSessionStart {
+  session: Session;
+  agent_id: string;
+  caller_id: string;
+  bevox_ws_url: string | null;
+  language: string;
+  output_format: string;
+}

@@ -7,19 +7,16 @@ import { MicrophoneIcon, CheckCircleIcon, ClipboardDocumentListIcon } from '@her
 import toast from 'react-hot-toast';
 import api from '@/lib/api/client';
 import { endpoints } from '@/lib/api/endpoints';
-import { useAuthStore } from '@/store/authStore';
-import type { Course, Lesson, Progress, Session } from '@/types/course';
+import type { Lesson, Progress, Session } from '@/types/course';
 import type { Quiz, QuizAttempt } from '@/types/quiz';
 import QuizPanel from '@/components/lesson/QuizPanel';
 import { VoiceRealtimePanel } from '@/components/voice/VoiceRealtimePanel';
 
 export default function LessonPage() {
   const { id } = useParams<{ id: string }>();
-  const { student } = useAuthStore();
   const lessonId = Number(id);
 
   const [lesson, setLesson] = useState<Lesson | null>(null);
-  const [course, setCourse] = useState<Course | null>(null);
   const [progress, setProgress] = useState<Progress | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [quiz, setQuiz] = useState<Quiz | null>(null);
@@ -39,9 +36,8 @@ export default function LessonPage() {
       api.get<Session[]>(endpoints.sessions.me),
       api.get<Quiz>(`/quizzes/lesson/${lessonId}`).catch(() => null),
       api.get<QuizAttempt[]>(`/quizzes/lesson/${lessonId}/attempts`).catch(() => null),
-    ]).then(async ([l, p, s, q, a]) => {
+    ]).then(([l, p, s, q, a]) => {
       setLesson(l.data);
-      api.get<Course>(endpoints.courses.detail(l.data.course_id)).then(({ data }) => setCourse(data));
       setProgress(p.data.find((x) => x.lesson_id === lessonId) ?? null);
       setSession(s.data.filter((x) => x.lesson_id === lessonId).sort((a, b) => b.id - a.id)[0] ?? null);
       if (q) setQuiz(q.data);
@@ -138,8 +134,6 @@ export default function LessonPage() {
             </div>
           </div>
           <VoiceRealtimePanel
-            agentId={course?.agent_id ?? null}
-            callerId={student ? `student-${student.id}` : 'student-unknown'}
             lessonId={lessonId}
             onSessionUpdate={async (updatedSession) => {
               setSession(updatedSession);

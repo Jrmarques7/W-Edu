@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440
 
     BEVOX_URL: str = "http://localhost:8001"
+    BEVOX_PUBLIC_URL: str | None = None
     WMATRIX_URL: str = "http://localhost:8000"
     DOCUMENTS_STORAGE_DIR: str = str(Path(__file__).resolve().parents[2] / "storage" / "documents")
 
