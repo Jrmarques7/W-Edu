@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import api from '@/lib/api/client';
+import { endpoints } from '@/lib/api/endpoints';
 import type { Quiz, QuizAttempt } from '@/types/quiz';
 
 interface Props {
@@ -24,7 +25,7 @@ export default function QuizPanel({ quiz, lessonId, onClose, onPass, onAttempt }
   const submit = async () => {
     try {
       setSubmitting(true);
-      const { data } = await api.post<QuizAttempt>(`/quizzes/lesson/${lessonId}/attempt`, { answers });
+      const { data } = await api.post<QuizAttempt>(endpoints.quizzes.attempt(lessonId), { answers });
       setAttempt(data);
       onAttempt(data);
       if (data.passed) {

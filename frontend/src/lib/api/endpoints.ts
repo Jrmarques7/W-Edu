@@ -69,6 +69,13 @@ export const endpoints = {
     eventSent: (id: number) => `/notifications/events/${id}/mark-sent`,
     eventFailed: (id: number) => `/notifications/events/${id}/mark-failed`,
   },
+  quizzes: {
+    lesson: (lessonId: number) => `/quizzes/lesson/${lessonId}`,
+    lessonOptional: (lessonId: number) => `/quizzes/lesson/${lessonId}/optional`,
+    attempts: (lessonId: number) => `/quizzes/lesson/${lessonId}/attempts`,
+    attemptsOptional: (lessonId: number) => `/quizzes/lesson/${lessonId}/attempts/optional`,
+    attempt: (lessonId: number) => `/quizzes/lesson/${lessonId}/attempt`,
+  },
   finance: {
     plans: '/finance/plans',
     plan: (id: number) => `/finance/plans/${id}`,

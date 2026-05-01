@@ -34,8 +34,8 @@ export default function LessonPage() {
       api.get<Lesson>(`/lessons/${lessonId}`),
       api.get<Progress[]>(endpoints.progress.me),
       api.get<Session[]>(endpoints.sessions.me),
-      api.get<Quiz>(`/quizzes/lesson/${lessonId}`).catch(() => null),
-      api.get<QuizAttempt[]>(`/quizzes/lesson/${lessonId}/attempts`).catch(() => null),
+      api.get<Quiz | null>(endpoints.quizzes.lessonOptional(lessonId)),
+      api.get<QuizAttempt[]>(endpoints.quizzes.attemptsOptional(lessonId)),
     ]).then(([l, p, s, q, a]) => {
       setLesson(l.data);
       setProgress(p.data.find((x) => x.lesson_id === lessonId) ?? null);

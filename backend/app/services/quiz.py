@@ -53,6 +53,9 @@ class QuizService:
     def get_quiz_for_student(self, lesson_id: int) -> Quiz:
         return self._get_quiz_or_404(lesson_id)
 
+    def get_optional_quiz_for_student(self, lesson_id: int) -> Quiz | None:
+        return self.repo.get_by_lesson(lesson_id)
+
     def submit_attempt(self, lesson_id: int, student_id: int, data: QuizAnswerSubmit) -> QuizAttempt:
         quiz = self._get_quiz_or_404(lesson_id)
 
@@ -79,6 +82,12 @@ class QuizService:
 
     def get_attempts(self, lesson_id: int, student_id: int) -> list[QuizAttempt]:
         quiz = self._get_quiz_or_404(lesson_id)
+        return self.attempt_repo.list_by_student_and_quiz(student_id, quiz.id)
+
+    def get_optional_attempts(self, lesson_id: int, student_id: int) -> list[QuizAttempt]:
+        quiz = self.repo.get_by_lesson(lesson_id)
+        if not quiz:
+            return []
         return self.attempt_repo.list_by_student_and_quiz(student_id, quiz.id)
 
     # --- Internal ---

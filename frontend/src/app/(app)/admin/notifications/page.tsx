@@ -36,12 +36,19 @@ export default function AdminNotificationsPage() {
   const [loading, setLoading] = useState(true);
 
   const load = async () => {
-    const [templateRes, eventRes] = await Promise.all([
+    const [templateRes, eventRes] = await Promise.allSettled([
       api.get<NotificationTemplate[]>(endpoints.notifications.templates),
       api.get<NotificationEvent[]>(endpoints.notifications.events),
     ]);
-    setTemplates(templateRes.data);
-    setEvents(eventRes.data);
+    if (templateRes.status === 'fulfilled') {
+      setTemplates(templateRes.value.data);
+    }
+    if (eventRes.status === 'fulfilled') {
+      setEvents(eventRes.value.data);
+    } else {
+      setEvents([]);
+      toast.error('Eventos de comunicação indisponíveis. Verifique migrações e logs do backend.');
+    }
     setLoading(false);
   };
 
