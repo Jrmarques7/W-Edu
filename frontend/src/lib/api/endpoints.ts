@@ -29,6 +29,7 @@ export const endpoints = {
     me: '/sessions/me',
     history: '/sessions/me/history',
     create: '/sessions',
+    voice: (id: number) => `/sessions/${id}/voice`,
   },
   schedule: {
     locations: '/schedule/locations',

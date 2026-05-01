@@ -6,6 +6,12 @@ class SessionCreate(BaseModel):
     lesson_id: int
 
 
+class SessionVoiceUpdate(BaseModel):
+    bevox_session_id: str | None = None
+    transcript: str | None = None
+    ended: bool = False
+
+
 class SessionOut(BaseModel):
     id: int
     student_id: int

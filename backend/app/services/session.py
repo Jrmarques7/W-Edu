@@ -23,6 +23,41 @@ class SessionService:
         session = Session(student_id=student_id, lesson_id=lesson_id)
         return self.session_repo.create(session)
 
+    def update_voice_state(
+        self,
+        session_id: int,
+        student_id: int,
+        bevox_session_id: str | None = None,
+        transcript: str | None = None,
+        ended: bool = False,
+    ) -> Session:
+        session = self.session_repo.get_by_id(session_id)
+        if not session or session.student_id != student_id:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Sessão não encontrada")
+
+        if bevox_session_id:
+            session.bevox_session_id = bevox_session_id
+        if transcript is not None:
+            session.transcript = transcript
+        if ended and not session.ended_at:
+            session.ended_at = datetime.now(timezone.utc)
+
+        session = self.session_repo.update(session)
+
+        if ended:
+            exists = (
+                self.attendance_repo.db.query(Attendance)
+                .filter(Attendance.session_id == session.id)
+                .first()
+            )
+            if not exists:
+                self.attendance_repo.create(
+                    Attendance(student_id=session.student_id, lesson_id=session.lesson_id, session_id=session.id)
+                )
+            self.progress_repo.upsert(session.student_id, session.lesson_id, ProgressStatus.done)
+
+        return session
+
     def handle_bevox_webhook(self, payload: BevoxWebhookPayload) -> Session:
         session = self.session_repo.get_by_bevox_session_id(payload.bevox_session_id)
         if not session:
@@ -32,9 +67,15 @@ class SessionService:
         session.ended_at = payload.ended_at or datetime.now(timezone.utc)
         self.session_repo.update(session)
 
-        self.attendance_repo.create(
-            Attendance(student_id=session.student_id, lesson_id=session.lesson_id, session_id=session.id)
+        exists = (
+            self.attendance_repo.db.query(Attendance)
+            .filter(Attendance.session_id == session.id)
+            .first()
         )
+        if not exists:
+            self.attendance_repo.create(
+                Attendance(student_id=session.student_id, lesson_id=session.lesson_id, session_id=session.id)
+            )
         self.progress_repo.upsert(session.student_id, session.lesson_id, ProgressStatus.done)
 
         return session

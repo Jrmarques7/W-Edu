@@ -83,11 +83,11 @@ Frontend:
 
 Integracao BeVox:
 
-- [ ] Endpoint: iniciar sessao de voz.
-- [ ] Botao "Falar com professor" no frontend.
+- [x] Endpoint: iniciar sessao de voz.
+- [x] Botao "Falar com professor" no frontend.
 - [ ] Webhook BeVox para receber fim de sessao.
 - [ ] Registro automatico de presenca via webhook.
-- [ ] Armazenamento de transcricao da sessao.
+- [x] Armazenamento de transcricao da sessao.
 
 Integracao W-Matrix:
 

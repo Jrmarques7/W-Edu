@@ -3,25 +3,28 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { MicrophoneIcon, CheckCircleIcon, ArrowPathIcon, ClipboardDocumentListIcon } from '@heroicons/react/24/outline';
+import { MicrophoneIcon, CheckCircleIcon, ClipboardDocumentListIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import api from '@/lib/api/client';
 import { endpoints } from '@/lib/api/endpoints';
-import type { Lesson, Progress, Session } from '@/types/course';
+import { useAuthStore } from '@/store/authStore';
+import type { Course, Lesson, Progress, Session } from '@/types/course';
 import type { Quiz, QuizAttempt } from '@/types/quiz';
 import QuizPanel from '@/components/lesson/QuizPanel';
+import { VoiceRealtimePanel } from '@/components/voice/VoiceRealtimePanel';
 
 export default function LessonPage() {
   const { id } = useParams<{ id: string }>();
+  const { student } = useAuthStore();
   const lessonId = Number(id);
 
   const [lesson, setLesson] = useState<Lesson | null>(null);
+  const [course, setCourse] = useState<Course | null>(null);
   const [progress, setProgress] = useState<Progress | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [quiz, setQuiz] = useState<Quiz | null>(null);
   const [lastAttempt, setLastAttempt] = useState<QuizAttempt | null>(null);
   const [showQuiz, setShowQuiz] = useState(false);
-  const [starting, setStarting] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
 
   const refreshProgress = useCallback(async () => {
@@ -36,8 +39,9 @@ export default function LessonPage() {
       api.get<Session[]>(endpoints.sessions.me),
       api.get<Quiz>(`/quizzes/lesson/${lessonId}`).catch(() => null),
       api.get<QuizAttempt[]>(`/quizzes/lesson/${lessonId}/attempts`).catch(() => null),
-    ]).then(([l, p, s, q, a]) => {
+    ]).then(async ([l, p, s, q, a]) => {
       setLesson(l.data);
+      api.get<Course>(endpoints.courses.detail(l.data.course_id)).then(({ data }) => setCourse(data));
       setProgress(p.data.find((x) => x.lesson_id === lessonId) ?? null);
       setSession(s.data.filter((x) => x.lesson_id === lessonId).sort((a, b) => b.id - a.id)[0] ?? null);
       if (q) setQuiz(q.data);
@@ -66,21 +70,6 @@ export default function LessonPage() {
     if (sentinel) observer.observe(sentinel);
     return () => observer.disconnect();
   }, [lesson, lessonId, progress?.content_consumed_at]);
-
-  const startVoiceSession = async () => {
-    try {
-      setStarting(true);
-      const { data } = await api.post<Session>(endpoints.sessions.create, { lesson_id: lessonId });
-      setSession(data);
-      // Voice session = content consumed
-      await api.post<Progress>(`/progress/consume/${lessonId}`).then(({ data }) => setProgress(data));
-      toast.success('Sessão de voz iniciada! O BeVox entrará em contato.');
-    } catch {
-      toast.error('Erro ao iniciar sessão de voz.');
-    } finally {
-      setStarting(false);
-    }
-  };
 
   const handleQuizPass = async () => {
     const { data } = await api.put<Progress>(endpoints.progress.update(lessonId), { status: 'done' });
@@ -144,18 +133,19 @@ export default function LessonPage() {
             <div className="flex-1">
               <h2 className="text-base font-semibold text-gray-900 dark:text-white">Professor IA por Voz</h2>
               <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                Fale com o professor IA sobre o conteúdo desta aula. A sessão será gravada e transcrita automaticamente.
+                Fale com o professor IA sobre o conteúdo desta aula em tempo real. A conversa será salva no histórico de sessões.
               </p>
-              <button
-                onClick={startVoiceSession}
-                disabled={starting}
-                className="mt-4 flex items-center space-x-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50"
-              >
-                {starting ? <ArrowPathIcon className="w-4 h-4 animate-spin" /> : <MicrophoneIcon className="w-4 h-4" />}
-                <span>{starting ? 'Iniciando...' : 'Falar com o Professor'}</span>
-              </button>
             </div>
           </div>
+          <VoiceRealtimePanel
+            agentId={course?.agent_id ?? null}
+            callerId={student ? `student-${student.id}` : 'student-unknown'}
+            lessonId={lessonId}
+            onSessionUpdate={async (updatedSession) => {
+              setSession(updatedSession);
+              await refreshProgress();
+            }}
+          />
           {session?.transcript && (
             <div className="mt-5 pt-5 border-t border-indigo-200 dark:border-indigo-700">
               <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
