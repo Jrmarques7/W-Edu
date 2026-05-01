@@ -17,3 +17,14 @@ class ProgressOut(BaseModel):
     updated_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class CourseProgressOut(BaseModel):
+    course_id: int
+    course_name: str
+    total_lessons: int
+    done_lessons: int
+    in_progress_lessons: int
+    pending_lessons: int
+    progress_percent: int
+    last_activity_at: Optional[datetime] = None

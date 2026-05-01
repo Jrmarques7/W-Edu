@@ -65,6 +65,7 @@ Aceite:
 Objetivo: concluir o ciclo academico.
 
 - Regras de aprovacao por progresso, nota e frequencia.
+- Dashboard de progresso por curso.
 - Avaliacao hibrida: quiz online e validacao presencial.
 - Entregas de trabalho.
 - Certificado PDF.

@@ -48,6 +48,17 @@ export interface Progress {
   updated_at: string;
 }
 
+export interface CourseProgress {
+  course_id: number;
+  course_name: string;
+  total_lessons: number;
+  done_lessons: number;
+  in_progress_lessons: number;
+  pending_lessons: number;
+  progress_percent: number;
+  last_activity_at: string | null;
+}
+
 export interface Session {
   id: number;
   student_id: number;

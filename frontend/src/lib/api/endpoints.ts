@@ -22,6 +22,7 @@ export const endpoints = {
   },
   progress: {
     me: '/progress/me',
+    courses: '/progress/me/courses',
     update: (lessonId: number) => `/progress/${lessonId}`,
   },
   sessions: {
