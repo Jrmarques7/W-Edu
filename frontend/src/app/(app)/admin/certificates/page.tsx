@@ -6,6 +6,8 @@ import toast from 'react-hot-toast';
 import api from '@/lib/api/client';
 import { endpoints } from '@/lib/api/endpoints';
 import type { Course } from '@/types/course';
+import type { Enrollment } from '@/types/course';
+import type { Student } from '@/types/auth';
 import type { Certificate, CertificateEligibility, CertificateIssueResult, CertificateRule, CertificateValidation } from '@/types/certificate';
 
 const emptyRule = {
@@ -20,6 +22,8 @@ const emptyRule = {
 
 export default function AdminCertificatesPage() {
   const [courses, setCourses] = useState<Course[]>([]);
+  const [students, setStudents] = useState<Student[]>([]);
+  const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const [selectedCourseId, setSelectedCourseId] = useState('');
   const [rule, setRule] = useState<CertificateRule | null>(null);
   const [certificates, setCertificates] = useState<Certificate[]>([]);
@@ -30,20 +34,32 @@ export default function AdminCertificatesPage() {
   const [loading, setLoading] = useState(true);
 
   const selectedCourse = courses.find((course) => String(course.id) === selectedCourseId);
+  const enrolledStudents = enrollments
+    .map((enrollment) => students.find((student) => student.id === enrollment.student_id))
+    .filter((student): student is Student => Boolean(student));
+  const selectedStudent = students.find((student) => String(student.id) === studentId);
+  const certificateStudentName = (studentIdValue: number) => students.find((student) => student.id === studentIdValue)?.name ?? `Aluno #${studentIdValue}`;
 
   const loadCourses = async () => {
-    const { data } = await api.get<Course[]>(endpoints.courses.list);
-    setCourses(data);
+    const [courseRes, studentRes] = await Promise.all([
+      api.get<Course[]>(endpoints.courses.list),
+      api.get<Student[]>('/admin/students'),
+    ]);
+    setCourses(courseRes.data);
+    setStudents(studentRes.data);
     setLoading(false);
   };
 
   const loadCourseData = async (courseId: number) => {
-    const [ruleRes, certRes] = await Promise.all([
+    const [ruleRes, certRes, enrollmentRes] = await Promise.all([
       api.get<CertificateRule>(endpoints.certificates.rule(courseId)),
       api.get<Certificate[]>(endpoints.certificates.courseCertificates(courseId)),
+      api.get<Enrollment[]>(`/admin/enrollments/course/${courseId}`),
     ]);
     setRule(ruleRes.data);
     setCertificates(certRes.data);
+    setEnrollments(enrollmentRes.data);
+    setStudentId('');
     setEligibility(null);
   };
 
@@ -78,6 +94,18 @@ export default function AdminCertificatesPage() {
     } catch (error: any) {
       const detail = error?.response?.data?.detail;
       toast.error(typeof detail === 'string' ? detail : 'Erro ao emitir certificado.');
+    }
+  };
+
+  const revokeCertificate = async (certificate: Certificate) => {
+    const reason = prompt('Motivo da revogação')?.trim();
+    if (reason === undefined) return;
+    try {
+      await api.post<Certificate>(endpoints.certificates.revoke(certificate.id), { reason: reason || null });
+      toast.success('Certificado revogado.');
+      await loadCourseData(Number(selectedCourseId));
+    } catch (error: any) {
+      toast.error(error?.response?.data?.detail ?? 'Erro ao revogar certificado.');
     }
   };
 
@@ -196,8 +224,19 @@ export default function AdminCertificatesPage() {
                 <CheckBadgeIcon className="w-5 h-5 text-indigo-600" />
                 <h2 className="font-semibold text-gray-900 dark:text-white">Emissão</h2>
               </div>
-              <input value={studentId} onChange={(e) => setStudentId(e.target.value)} type="number" min={1} placeholder="ID do aluno"
-                className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+              <select value={studentId} onChange={(e) => setStudentId(e.target.value)}
+                className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <option value="">Selecione um aluno matriculado</option>
+                {enrolledStudents.map((student) => (
+                  <option key={student.id} value={student.id}>{student.name} - {student.email}</option>
+                ))}
+              </select>
+              {selectedStudent && (
+                <p className="text-xs text-gray-500 dark:text-gray-400">Aluno selecionado: {selectedStudent.name}</p>
+              )}
+              {enrolledStudents.length === 0 && (
+                <p className="text-xs text-amber-600 dark:text-amber-400">Este curso ainda não possui alunos matriculados.</p>
+              )}
               <div className="flex flex-wrap gap-2">
                 <button onClick={checkEligibility}
                   className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
@@ -257,16 +296,25 @@ export default function AdminCertificatesPage() {
             {certificates.map((certificate) => (
               <div key={certificate.id} className="px-5 py-4 flex items-center justify-between gap-3">
                 <div>
-                  <p className="font-medium text-gray-900 dark:text-white">Aluno #{certificate.student_id}</p>
+                  <p className="font-medium text-gray-900 dark:text-white">{certificateStudentName(certificate.student_id)}</p>
                   <p className="text-xs text-gray-500 dark:text-gray-400">{certificate.validation_code}</p>
+                  {certificate.revoked_reason && <p className="text-xs text-red-600 dark:text-red-400">{certificate.revoked_reason}</p>}
                 </div>
-                <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-                  certificate.revoked_at
-                    ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
-                    : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                }`}>
-                  {certificate.revoked_at ? 'Revogado' : 'Válido'}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                    certificate.revoked_at
+                      ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                      : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                  }`}>
+                    {certificate.revoked_at ? 'Revogado' : 'Válido'}
+                  </span>
+                  {!certificate.revoked_at && (
+                    <button onClick={() => revokeCertificate(certificate)}
+                      className="px-3 py-1.5 text-xs font-medium rounded-lg border border-red-200 text-red-700 hover:bg-red-50 dark:border-red-900/40 dark:text-red-400 dark:hover:bg-red-900/20">
+                      Revogar
+                    </button>
+                  )}
+                </div>
               </div>
             ))}
           </div>

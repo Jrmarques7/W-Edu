@@ -52,6 +52,7 @@ export const endpoints = {
     eligibility: (courseId: number, studentId: number) => `/certificates/courses/${courseId}/students/${studentId}/eligibility`,
     issue: (courseId: number, studentId: number) => `/certificates/courses/${courseId}/students/${studentId}/issue`,
     courseCertificates: (courseId: number) => `/certificates/courses/${courseId}/certificates`,
+    revoke: (id: number) => `/certificates/${id}/revoke`,
     validate: (code: string) => `/certificates/validate/${code}`,
     my: '/certificates/students/me',
     student: (studentId: number) => `/certificates/students/${studentId}`,

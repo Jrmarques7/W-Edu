@@ -8,6 +8,7 @@ from app.schemas.certificate import (
     CertificateEligibilityOut,
     CertificateIssueOut,
     CertificateOut,
+    CertificateRevokeIn,
     CertificateRuleOut,
     CertificateRuleUpdate,
     CertificateValidationOut,
@@ -56,6 +57,16 @@ def issue_certificate(
 @router.get("/courses/{course_id}/certificates", response_model=list[CertificateOut])
 def list_course_certificates(course_id: int, db: Session = Depends(get_db), _: Student = Depends(get_current_admin)):
     return CertificateService(db).list_by_course(course_id)
+
+
+@router.post("/{certificate_id}/revoke", response_model=CertificateOut)
+def revoke_certificate(
+    certificate_id: int,
+    data: CertificateRevokeIn,
+    db: Session = Depends(get_db),
+    _: Student = Depends(get_current_admin),
+):
+    return CertificateService(db).revoke(certificate_id, data.reason)
 
 
 @router.get("/students/me", response_model=list[CertificateOut])

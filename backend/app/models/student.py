@@ -50,7 +50,11 @@ class Student(Base):
     sessions: Mapped[list["Session"]] = relationship(back_populates="student")
     attendance: Mapped[list["Attendance"]] = relationship(back_populates="student")
     quiz_attempts: Mapped[list["QuizAttempt"]] = relationship(back_populates="student")
-    certificates: Mapped[list["Certificate"]] = relationship(back_populates="student", cascade="all, delete-orphan")
+    certificates: Mapped[list["Certificate"]] = relationship(
+        back_populates="student",
+        cascade="all, delete-orphan",
+        foreign_keys="Certificate.student_id",
+    )
     issued_certificates: Mapped[list["Certificate"]] = relationship(
         back_populates="issued_by",
         foreign_keys="Certificate.issued_by_id",

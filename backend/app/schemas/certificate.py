@@ -34,6 +34,10 @@ class CertificateIssueOut(BaseModel):
     validation_code: str | None = None
 
 
+class CertificateRevokeIn(BaseModel):
+    reason: str | None = None
+
+
 class CertificateOut(BaseModel):
     id: int
     student_id: int
