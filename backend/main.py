@@ -1,10 +1,31 @@
+import asyncio
+from contextlib import asynccontextmanager, suppress
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
 from app.routers import auth, students, courses, lessons, enrollments, progress, sessions, webhooks, admin, quiz, learning_paths, schedule, certificates, notifications, finance, documents, analytics, forum, chat
+from app.services.notification_worker import run_notification_worker
 
-app = FastAPI(title="W-Edu API", version="0.1.0")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    stop_event = asyncio.Event()
+    worker_task: asyncio.Task | None = None
+    if settings.NOTIFICATION_WORKER_ENABLED:
+        worker_task = asyncio.create_task(run_notification_worker(stop_event))
+    try:
+        yield
+    finally:
+        stop_event.set()
+        if worker_task:
+            worker_task.cancel()
+            with suppress(asyncio.CancelledError):
+                await worker_task
+
+
+app = FastAPI(title="W-Edu API", version="0.1.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,

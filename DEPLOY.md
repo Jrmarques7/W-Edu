@@ -60,6 +60,9 @@ Para envio de notificações via W-Omni/WhatsApp, configure:
 WOMNI_URL=https://seu-womni
 WOMNI_API_TOKEN=token-opcional
 NOTIFICATION_DISPATCH_TIMEOUT_SECONDS=10
+NOTIFICATION_WORKER_ENABLED=true
+NOTIFICATION_WORKER_INTERVAL_SECONDS=60
+NOTIFICATION_WORKER_BATCH_SIZE=100
 ```
 
 O W-Edu envia eventos WhatsApp para `POST {WOMNI_URL}/messages`.

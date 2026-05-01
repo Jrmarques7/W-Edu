@@ -86,6 +86,7 @@ Objetivo: comunicar eventos academicos sem acoplar rotas a canais.
 - [x] Criar templates.
 - [x] Publicar eventos de aula marcada, falta, presenca, conteudo publicado e certificado.
 - [x] Publicar lembretes de aula agendados.
+- [x] Processar eventos pendentes automaticamente.
 - [x] Integrar envio via W-Omni para WhatsApp.
 - [x] Adicionar email como canal secundario.
 - [x] Criar forum por curso.

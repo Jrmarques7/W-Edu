@@ -92,6 +92,7 @@ O projeto ja possui uma base LMS/EAD com autenticacao, cursos, aulas, matriculas
 - Eventos automaticos para turma criada, encontro agendado, falta registrada, presenca registrada, conteudo publicado e certificado emitido.
 - Lembretes de encontro agendados automaticamente 24h antes do inicio.
 - Tela admin permite criar eventos futuros e processar eventos pendentes prontos.
+- Worker interno processa eventos pendentes automaticamente em intervalo configuravel.
 - Adaptador inicial W-Omni/WhatsApp via `POST {WOMNI_URL}/messages`.
 - Adaptador de email via SMTP.
 - Fórum por curso com tópicos e respostas.

@@ -16,6 +16,9 @@ class Settings(BaseSettings):
     WOMNI_URL: str | None = None
     WOMNI_API_TOKEN: str | None = None
     NOTIFICATION_DISPATCH_TIMEOUT_SECONDS: float = 10.0
+    NOTIFICATION_WORKER_ENABLED: bool = True
+    NOTIFICATION_WORKER_INTERVAL_SECONDS: int = 60
+    NOTIFICATION_WORKER_BATCH_SIZE: int = 100
     SMTP_HOST: str | None = None
     SMTP_PORT: int = 587
     SMTP_USERNAME: str | None = None
