@@ -27,6 +27,7 @@ export const endpoints = {
   },
   sessions: {
     me: '/sessions/me',
+    history: '/sessions/me/history',
     create: '/sessions',
   },
   schedule: {

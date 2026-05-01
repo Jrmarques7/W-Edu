@@ -161,7 +161,7 @@ checkin_tokens
 - [ ] Progresso automatico via sessoes concluidas.
 - [ ] Avaliacao do aluno pelo agente IA durante a conversa.
 - [x] Dashboard de progresso por curso.
-- [ ] Historico de sessoes com transcricoes.
+- [x] Historico de sessoes com transcricoes.
 - [ ] Relatorio do professor com visao geral da turma.
 - [ ] Avaliacao hibrida: prova online e validacao presencial.
 - [ ] Trabalhos/atividades com entrega.

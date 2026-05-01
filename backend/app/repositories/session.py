@@ -13,7 +13,12 @@ class SessionRepository:
         return self.db.query(Session).filter(Session.bevox_session_id == bevox_session_id).first()
 
     def list_by_student(self, student_id: int) -> list[Session]:
-        return self.db.query(Session).filter(Session.student_id == student_id).all()
+        return (
+            self.db.query(Session)
+            .filter(Session.student_id == student_id)
+            .order_by(Session.started_at.desc())
+            .all()
+        )
 
     def create(self, session: Session) -> Session:
         self.db.add(session)

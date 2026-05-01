@@ -125,6 +125,7 @@ Observacao: `alembic upgrade head` online nao foi aplicado porque o PostgreSQL c
 
 - Regras de aprovacao por progresso, nota e frequencia.
 - Dashboard de progresso por curso para o aluno.
+- Historico de sessoes de voz com aula, curso, duracao e transcricao.
 - Certificacao por curso com regra configuravel.
 - Emissao automatica de certificado quando o aluno atende aos criterios.
 - Validacao publica de certificado por codigo.

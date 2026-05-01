@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session as DBSession
 from app.core.database import get_db
 from app.dependencies import get_current_student
 from app.models.student import Student
-from app.schemas.session import SessionCreate, SessionOut
+from app.schemas.session import SessionCreate, SessionHistoryOut, SessionOut
 from app.services.session import SessionService
 
 router = APIRouter()
@@ -22,3 +22,8 @@ def start_session(
 @router.get("/me", response_model=list[SessionOut])
 def my_sessions(db: DBSession = Depends(get_db), current: Student = Depends(get_current_student)):
     return SessionService(db).list_by_student(current.id)
+
+
+@router.get("/me/history", response_model=list[SessionHistoryOut])
+def my_session_history(db: DBSession = Depends(get_db), current: Student = Depends(get_current_student)):
+    return SessionService(db).history_by_student(current.id)

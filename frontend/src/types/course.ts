@@ -68,3 +68,18 @@ export interface Session {
   started_at: string;
   ended_at: string | null;
 }
+
+export interface SessionHistory {
+  id: number;
+  student_id: number;
+  lesson_id: number;
+  lesson_title: string;
+  course_id: number;
+  course_name: string;
+  bevox_session_id: string | null;
+  transcript: string | null;
+  has_transcript: boolean;
+  duration_minutes: number | null;
+  started_at: string;
+  ended_at: string | null;
+}

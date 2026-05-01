@@ -18,6 +18,21 @@ class SessionOut(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class SessionHistoryOut(BaseModel):
+    id: int
+    student_id: int
+    lesson_id: int
+    lesson_title: str
+    course_id: int
+    course_name: str
+    bevox_session_id: str | None
+    transcript: str | None
+    has_transcript: bool
+    duration_minutes: int | None
+    started_at: datetime
+    ended_at: datetime | None
+
+
 class BevoxWebhookPayload(BaseModel):
     bevox_session_id: str
     transcript: str | None = None
