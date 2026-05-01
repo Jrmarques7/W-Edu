@@ -127,6 +127,27 @@ Aceite:
 - Documento pode ter versoes e download.
 - Estrutura fica pronta para integracao com GED externo.
 
+### Marco 8 — Relatorios, Analytics e IA
+
+Objetivo: dar visibilidade operacional e preparacao para IA sem misturar com a operacao.
+
+- [x] Criar base de analytics operacional com overview, curso, turma e aluno.
+- [x] Relatorio de conclusao por curso/turma.
+- [x] Relatorio de frequencia presencial.
+- [x] Relatorio de engajamento online.
+- [x] Relatorio de desempenho por turma.
+- [x] Relatorio de ROI corporativo.
+- [ ] Eventos para Cassandra quando houver volume.
+- [ ] Identificacao de risco de evasao.
+- [ ] Recomendacao de trilhas por IA.
+- [ ] Tutor virtual com contexto academico completo.
+
+Aceite:
+
+- Admin visualiza KPI geral e detalhamento por curso/turma/aluno.
+- Gestor consegue enxergar seus proprios indicadores.
+- Estrutura de dados fica pronta para IA e eventos de volume.
+
 ## Primeiro Pacote de Codigo
 
 O primeiro pacote deve ser pequeno e migravel:

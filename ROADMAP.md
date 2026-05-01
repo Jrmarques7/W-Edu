@@ -203,11 +203,12 @@ checkin_tokens
 
 ### Fase 9 — Relatorios, Analytics e IA
 
-- [ ] Relatorio de conclusao por curso/turma.
-- [ ] Relatorio de frequencia presencial.
-- [ ] Relatorio de engajamento online.
-- [ ] Relatorio de desempenho por turma.
-- [ ] Relatorio de ROI corporativo.
+- [x] Base de analytics operacional com overview, curso, turma e aluno.
+- [x] Relatorio de conclusao por curso/turma.
+- [x] Relatorio de frequencia presencial.
+- [x] Relatorio de engajamento online.
+- [x] Relatorio de desempenho por turma.
+- [x] Relatorio de ROI corporativo.
 - [ ] Eventos para Cassandra quando houver volume.
 - [ ] Identificacao de risco de evasao.
 - [ ] Recomendacao de trilhas por IA.

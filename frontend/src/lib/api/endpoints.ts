@@ -73,6 +73,21 @@ export const endpoints = {
     chargePaid: (id: number) => `/finance/charges/${id}/paid`,
     chargeFailed: (id: number) => `/finance/charges/${id}/failed`,
   },
+  analytics: {
+    overview: '/analytics/overview',
+    courses: '/analytics/courses',
+    course: (id: number) => `/analytics/courses/${id}`,
+    me: '/analytics/students/me',
+    student: (id: number) => `/analytics/students/${id}`,
+    class: (id: number) => `/analytics/classes/${id}`,
+    reports: {
+      completion: '/analytics/reports/completion',
+      attendance: '/analytics/reports/attendance',
+      engagement: '/analytics/reports/engagement',
+      performance: '/analytics/reports/performance',
+      roi: '/analytics/reports/roi',
+    },
+  },
   documents: {
     list: '/documents',
     detail: (id: number) => `/documents/${id}`,

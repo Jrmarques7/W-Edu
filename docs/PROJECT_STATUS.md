@@ -167,11 +167,13 @@ Observacao: `alembic upgrade head` online nao foi aplicado porque o PostgreSQL c
 
 ### Relatorios, analytics e IA
 
-- Taxa de conclusao.
-- Frequencia presencial.
-- Engajamento online.
-- Desempenho por turma.
-- ROI corporativo.
+- Base de analytics operacional com overview, curso, turma e aluno.
+- Painel admin em `/admin/analytics`.
+- Relatorio de conclusao por curso/turma.
+- Relatorio de frequencia presencial.
+- Relatorio de engajamento online.
+- Relatorio de desempenho por turma.
+- Relatorio de ROI corporativo.
 - Eventos para Cassandra.
 - Identificacao de risco de evasao.
 - Recomendacao de trilhas por IA.

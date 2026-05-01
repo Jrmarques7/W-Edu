@@ -45,6 +45,7 @@ const adminMenu = [
   { name: 'Comunicação', href: '/admin/notifications', icon: ChatBubbleLeftRightIcon },
   { name: 'Financeiro', href: '/admin/finance', icon: BanknotesIcon },
   { name: 'Documentos', href: '/admin/documents', icon: DocumentTextIcon },
+  { name: 'Relatórios', href: '/admin/analytics', icon: ChartBarIcon },
   { name: 'Alunos', href: '/admin/students', icon: UsersIcon },
   { name: 'Catálogo', href: '/courses', icon: Squares2X2Icon },
   { name: 'Configurações', href: '/settings', icon: Cog6ToothIcon },
@@ -53,8 +54,8 @@ const adminMenu = [
 export function Sidebar({ open, collapsed, onClose, onToggleCollapse }: SidebarProps) {
   const pathname = usePathname();
   const { student } = useAuthStore();
-  const isAdmin = student?.role === 'admin';
-  const menuItems = isAdmin ? adminMenu : studentMenu;
+  const isAdminArea = student?.role === 'admin' || student?.role === 'company_manager';
+  const menuItems = isAdminArea ? adminMenu : studentMenu;
 
   useEffect(() => {
     if (open) {
@@ -109,7 +110,7 @@ export function Sidebar({ open, collapsed, onClose, onToggleCollapse }: SidebarP
           </div>
           <div>
             <span className="text-xl font-bold text-white">W-Edu</span>
-            {isAdmin && <span className="ml-2 text-xs text-indigo-400 font-medium">Admin</span>}
+            {isAdminArea && <span className="ml-2 text-xs text-indigo-400 font-medium">Gestão</span>}
           </div>
         </Link>
       )}
@@ -145,9 +146,9 @@ export function Sidebar({ open, collapsed, onClose, onToggleCollapse }: SidebarP
         <nav className="flex-1 overflow-y-auto px-2 py-4">
           <ul className="space-y-1">{navItems()}</ul>
         </nav>
-        {!collapsed && isAdmin && (
+        {!collapsed && isAdminArea && (
           <div className="px-4 py-3 border-t border-gray-800">
-            <span className="text-xs text-indigo-400 font-medium uppercase tracking-wide">Modo Administrador</span>
+            <span className="text-xs text-indigo-400 font-medium uppercase tracking-wide">Modo Gestão</span>
           </div>
         )}
       </aside>
