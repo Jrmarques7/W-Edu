@@ -60,6 +60,9 @@ def update_student(
         if target.organization_id != current.organization_id:
             from fastapi import HTTPException, status
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Usuário fora da empresa")
+        if data.role in {UserRole.admin, UserRole.coordinator, UserRole.company_manager}:
+            from fastapi import HTTPException, status
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Gestor não pode atribuir este perfil")
         data = data.model_copy(update={"organization_id": current.organization_id})
     return StudentService(db).update(student_id, data)
 

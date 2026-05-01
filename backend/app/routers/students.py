@@ -1,9 +1,9 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.dependencies import get_current_student
-from app.models.student import Student
+from app.models.student import Student, UserRole
 from app.schemas.student import StudentCreate, StudentUpdate, StudentOut
 from app.services.student import StudentService
 
@@ -32,6 +32,10 @@ def update_student(
     db: Session = Depends(get_db),
     current: Student = Depends(get_current_student),
 ):
+    if current.id != student_id and current.role != UserRole.admin:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Usuário fora do seu escopo")
+    if current.role != UserRole.admin:
+        data = StudentUpdate(name=data.name, email=data.email)
     return StudentService(db).update(student_id, data)
 
 
@@ -39,6 +43,8 @@ def update_student(
 def delete_student(
     student_id: int,
     db: Session = Depends(get_db),
-    _: Student = Depends(get_current_student),
+    current: Student = Depends(get_current_student),
 ):
+    if current.role != UserRole.admin:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acesso restrito a administradores")
     StudentService(db).delete(student_id)

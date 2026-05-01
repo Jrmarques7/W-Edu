@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { PencilIcon, PlusIcon, TrashIcon, UsersIcon } from '@heroicons/react/24/outline';
+import { BuildingOfficeIcon, PencilIcon, PlusIcon, TrashIcon, UserCircleIcon, UsersIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import api from '@/lib/api/client';
 import type { InstructorProfile, Organization, Student, StudentProfile, UserRole } from '@/types/auth';
@@ -81,6 +81,146 @@ function NewStudentModal({ organizations, onClose, onSave }: {
             <button type="submit" disabled={saving}
               className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50">
               {saving ? 'Criando...' : 'Criar usuário'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function EditUserModal({ student, organizations, onClose, onSave }: {
+  student: Student;
+  organizations: Organization[];
+  onClose: () => void;
+  onSave: (id: number, data: { name: string; email: string; role: UserRole; organization_id: number | null; is_active: boolean }) => Promise<void>;
+}) {
+  const [name, setName] = useState(student.name);
+  const [email, setEmail] = useState(student.email);
+  const [role, setRole] = useState<UserRole>(student.role);
+  const [organizationId, setOrganizationId] = useState(student.organization_id?.toString() ?? '');
+  const [isActive, setIsActive] = useState(student.is_active);
+  const [saving, setSaving] = useState(false);
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setSaving(true);
+    await onSave(student.id, {
+      name,
+      email,
+      role,
+      organization_id: organizationId ? Number(organizationId) : null,
+      is_active: isActive,
+    });
+    setSaving(false);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-md p-6 space-y-4">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Editar usuário</h2>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nome *</label>
+            <input value={name} onChange={(e) => setName(e.target.value)} required
+              className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">E-mail *</label>
+            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required
+              className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Perfil</label>
+              <select value={role} onChange={(e) => setRole(e.target.value as UserRole)}
+                className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                {Object.entries(roleLabel).map(([value, label]) => (
+                  <option key={value} value={value}>{label}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Empresa</label>
+              <select value={organizationId} onChange={(e) => setOrganizationId(e.target.value)}
+                className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <option value="">Sem empresa</option>
+                {organizations.map((organization) => (
+                  <option key={organization.id} value={organization.id}>{organization.name}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+            <input type="checkbox" checked={isActive} onChange={(event) => setIsActive(event.target.checked)}
+              className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" />
+            Usuário ativo
+          </label>
+          <div className="flex justify-end space-x-3 pt-2">
+            <button type="button" onClick={onClose} className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+              Cancelar
+            </button>
+            <button type="submit" disabled={saving}
+              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50">
+              {saving ? 'Salvando...' : 'Salvar usuário'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function EditOrganizationModal({ organization, onClose, onSave }: {
+  organization: Organization;
+  onClose: () => void;
+  onSave: (id: number, data: { name: string; legal_name: string | null; document: string | null; contact_email: string | null; is_active: boolean }) => Promise<void>;
+}) {
+  const [name, setName] = useState(organization.name);
+  const [legalName, setLegalName] = useState(organization.legal_name ?? '');
+  const [document, setDocument] = useState(organization.document ?? '');
+  const [contactEmail, setContactEmail] = useState(organization.contact_email ?? '');
+  const [isActive, setIsActive] = useState(organization.is_active);
+  const [saving, setSaving] = useState(false);
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setSaving(true);
+    await onSave(organization.id, {
+      name,
+      legal_name: legalName || null,
+      document: document || null,
+      contact_email: contactEmail || null,
+      is_active: isActive,
+    });
+    setSaving(false);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-md p-6 space-y-4">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Editar empresa</h2>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <input value={name} onChange={(e) => setName(e.target.value)} required placeholder="Nome"
+            className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          <input value={legalName} onChange={(e) => setLegalName(e.target.value)} placeholder="Razão social"
+            className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          <input value={document} onChange={(e) => setDocument(e.target.value)} placeholder="Documento"
+            className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          <input type="email" value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} placeholder="E-mail de contato"
+            className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+            <input type="checkbox" checked={isActive} onChange={(event) => setIsActive(event.target.checked)}
+              className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" />
+            Empresa ativa
+          </label>
+          <div className="flex justify-end space-x-3 pt-2">
+            <button type="button" onClick={onClose} className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+              Cancelar
+            </button>
+            <button type="submit" disabled={saving}
+              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50">
+              {saving ? 'Salvando...' : 'Salvar empresa'}
             </button>
           </div>
         </form>
@@ -268,9 +408,14 @@ export default function AdminStudentsPage() {
   const [students, setStudents] = useState<Student[]>([]);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [showModal, setShowModal] = useState(false);
+  const [editingStudent, setEditingStudent] = useState<Student | null>(null);
   const [profileStudent, setProfileStudent] = useState<Student | null>(null);
+  const [editingOrganization, setEditingOrganization] = useState<Organization | null>(null);
   const [loading, setLoading] = useState(true);
   const [organizationName, setOrganizationName] = useState('');
+  const [organizationLegalName, setOrganizationLegalName] = useState('');
+  const [organizationDocument, setOrganizationDocument] = useState('');
+  const [organizationContactEmail, setOrganizationContactEmail] = useState('');
 
   const loadData = () =>
     Promise.all([
@@ -294,15 +439,45 @@ export default function AdminStudentsPage() {
     }
   };
 
+  const updateStudent = async (id: number, data: { name: string; email: string; role: UserRole; organization_id: number | null; is_active: boolean }) => {
+    try {
+      await api.patch(`/admin/students/${id}`, data);
+      toast.success('Usuário atualizado.');
+      setEditingStudent(null);
+      loadData();
+    } catch (e: any) {
+      toast.error(e.response?.data?.detail ?? 'Erro ao atualizar usuário.');
+    }
+  };
+
   const createOrganization = async (event: React.FormEvent) => {
     event.preventDefault();
     try {
-      await api.post('/admin/organizations', { name: organizationName });
+      await api.post('/admin/organizations', {
+        name: organizationName,
+        legal_name: organizationLegalName || null,
+        document: organizationDocument || null,
+        contact_email: organizationContactEmail || null,
+      });
       setOrganizationName('');
+      setOrganizationLegalName('');
+      setOrganizationDocument('');
+      setOrganizationContactEmail('');
       toast.success('Empresa criada!');
       loadData();
     } catch (e: any) {
       toast.error(e.response?.data?.detail ?? 'Erro ao criar empresa.');
+    }
+  };
+
+  const updateOrganization = async (id: number, data: { name: string; legal_name: string | null; document: string | null; contact_email: string | null; is_active: boolean }) => {
+    try {
+      await api.patch(`/admin/organizations/${id}`, data);
+      toast.success('Empresa atualizada.');
+      setEditingOrganization(null);
+      loadData();
+    } catch (e: any) {
+      toast.error(e.response?.data?.detail ?? 'Erro ao atualizar empresa.');
     }
   };
 
@@ -338,17 +513,58 @@ export default function AdminStudentsPage() {
         </button>
       </div>
 
-      <form onSubmit={createOrganization} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 flex flex-col sm:flex-row gap-3">
-        <div className="flex-1">
+      <form onSubmit={createOrganization} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 space-y-3">
+        <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nova empresa B2B</label>
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-3">
           <input value={organizationName} onChange={(e) => setOrganizationName(e.target.value)} required placeholder="Nome da empresa"
             className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          <input value={organizationLegalName} onChange={(e) => setOrganizationLegalName(e.target.value)} placeholder="Razão social"
+            className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          <input value={organizationDocument} onChange={(e) => setOrganizationDocument(e.target.value)} placeholder="Documento"
+            className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          <input type="email" value={organizationContactEmail} onChange={(e) => setOrganizationContactEmail(e.target.value)} placeholder="E-mail de contato"
+            className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          </div>
         </div>
-        <button className="self-end flex items-center space-x-2 px-4 py-2 bg-gray-900 hover:bg-gray-800 dark:bg-gray-700 dark:hover:bg-gray-600 text-white text-sm font-medium rounded-lg transition-colors">
+        <button className="inline-flex items-center space-x-2 px-4 py-2 bg-gray-900 hover:bg-gray-800 dark:bg-gray-700 dark:hover:bg-gray-600 text-white text-sm font-medium rounded-lg transition-colors">
           <PlusIcon className="w-4 h-4" />
           <span>Criar empresa</span>
         </button>
       </form>
+
+      {organizations.length > 0 && (
+        <section className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 divide-y divide-gray-100 dark:divide-gray-700">
+          {organizations.map((organization) => (
+            <div key={organization.id} className="flex items-center justify-between px-5 py-4 gap-4">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-9 h-9 bg-gray-900 dark:bg-gray-700 rounded-lg flex items-center justify-center shrink-0">
+                  <BuildingOfficeIcon className="w-5 h-5 text-white" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{organization.name}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                    {[organization.legal_name, organization.document, organization.contact_email].filter(Boolean).join(' · ') || 'Sem dados adicionais'}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                  organization.is_active
+                    ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                    : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                }`}>
+                  {organization.is_active ? 'Ativa' : 'Inativa'}
+                </span>
+                <button type="button" onClick={() => setEditingOrganization(organization)}
+                  className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-colors">
+                  <PencilIcon className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          ))}
+        </section>
+      )}
 
       {students.length === 0 ? (
         <div className="bg-white dark:bg-gray-800 rounded-xl border border-dashed border-gray-300 dark:border-gray-600 p-10 text-center">
@@ -393,9 +609,13 @@ export default function AdminStudentsPage() {
                 </p>
                 {student.role !== 'admin' && (
                   <>
-                  <button onClick={() => setProfileStudent(student)}
+                  <button onClick={() => setEditingStudent(student)}
                     className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-colors">
                     <PencilIcon className="w-4 h-4" />
+                  </button>
+                  <button onClick={() => setProfileStudent(student)}
+                    className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-colors">
+                    <UserCircleIcon className="w-4 h-4" />
                   </button>
                   <button onClick={() => deleteStudent(student.id)}
                     className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">
@@ -410,7 +630,9 @@ export default function AdminStudentsPage() {
       )}
 
       {showModal && <NewStudentModal organizations={organizations} onClose={() => setShowModal(false)} onSave={createStudent} />}
+      {editingStudent && <EditUserModal student={editingStudent} organizations={organizations} onClose={() => setEditingStudent(null)} onSave={updateStudent} />}
       {profileStudent && <ProfileModal student={profileStudent} onClose={() => setProfileStudent(null)} onSaved={loadData} />}
+      {editingOrganization && <EditOrganizationModal organization={editingOrganization} onClose={() => setEditingOrganization(null)} onSave={updateOrganization} />}
     </div>
   );
 }

@@ -2,7 +2,15 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.core.security import hash_password
-from app.models.student import InstructorProfile, Organization, Student, StudentProfile, UserRole
+from app.models.student import (
+    InstructorAvailability,
+    InstructorProfile,
+    InstructorRating,
+    Organization,
+    Student,
+    StudentProfile,
+    UserRole,
+)
 from app.repositories.student import OrganizationRepository, ProfileRepository, StudentRepository
 from app.repositories.student import InstructorAvailabilityRepository, InstructorRatingRepository
 from app.schemas.student import (
@@ -57,6 +65,8 @@ class StudentService:
     def update(self, student_id: int, data: StudentUpdate) -> Student:
         student = self.get_or_404(student_id)
         payload = data.model_dump(exclude_none=True)
+        if "email" in payload and payload["email"] != student.email and self.repo.get_by_email(payload["email"]):
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="E-mail já cadastrado")
         if "organization_id" in payload and payload["organization_id"] and not self.org_repo.get_by_id(payload["organization_id"]):
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Empresa não encontrada")
         for field, value in payload.items():
