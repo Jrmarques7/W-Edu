@@ -24,10 +24,21 @@ class SessionOut(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class VoiceSessionContextOut(BaseModel):
+    course_id: int
+    course_name: str
+    lesson_id: int
+    lesson_title: str
+    lesson_content: str | None = None
+    module_id: int | None = None
+    module_title: str | None = None
+
+
 class VoiceSessionStartOut(BaseModel):
     session: SessionOut
     agent_id: str
     caller_id: str
+    context: VoiceSessionContextOut
     bevox_ws_url: str | None = None
     language: str = "pt-BR"
     output_format: str = "mp3"

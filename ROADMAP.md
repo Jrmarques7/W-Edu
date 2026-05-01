@@ -85,14 +85,14 @@ Integracao BeVox:
 
 - [x] Endpoint: iniciar sessao de voz.
 - [x] Botao "Falar com professor" no frontend.
-- [ ] Webhook BeVox para receber fim de sessao.
-- [ ] Registro automatico de presenca via webhook.
+- [x] Webhook BeVox para receber fim de sessao.
+- [x] Registro automatico de presenca via webhook.
 - [x] Armazenamento de transcricao da sessao.
 
 Integracao W-Matrix:
 
-- [ ] Configuracao de agente professor por curso.
-- [ ] Passagem de contexto da aula para o agente.
+- [x] Configuracao de agente professor por curso.
+- [x] Passagem de contexto da aula para o agente.
 - [ ] Recebimento de feedback do agente ao W-Edu.
 
 ### Fase 3 — Reorganizacao do Dominio Academico

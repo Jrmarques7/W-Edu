@@ -140,6 +140,7 @@ export function VoiceRealtimePanel({ lessonId, onSessionUpdate }: VoiceRealtimeP
         language: startConfig.language,
         output_format: startConfig.output_format,
         caller_phone: startConfig.caller_id,
+        context: startConfig.context,
       }));
     };
 

@@ -88,6 +88,15 @@ export interface VoiceSessionStart {
   session: Session;
   agent_id: string;
   caller_id: string;
+  context: {
+    course_id: number;
+    course_name: string;
+    lesson_id: number;
+    lesson_title: string;
+    lesson_content: string | null;
+    module_id: number | null;
+    module_title: string | null;
+  };
   bevox_ws_url: string | null;
   language: string;
   output_format: string;

@@ -11,7 +11,7 @@ from app.models.progress import ProgressStatus
 from app.repositories.session import SessionRepository
 from app.repositories.attendance import AttendanceRepository
 from app.repositories.progress import ProgressRepository
-from app.schemas.session import BevoxWebhookPayload, SessionHistoryOut, VoiceSessionStartOut
+from app.schemas.session import BevoxWebhookPayload, SessionHistoryOut, VoiceSessionContextOut, VoiceSessionStartOut
 
 
 class SessionService:
@@ -47,6 +47,15 @@ class SessionService:
             session=session,
             agent_id=course.agent_id,
             caller_id=f"student-{student_id}",
+            context=VoiceSessionContextOut(
+                course_id=course.id,
+                course_name=course.name,
+                lesson_id=lesson.id,
+                lesson_title=lesson.title,
+                lesson_content=lesson.content,
+                module_id=lesson.module_id,
+                module_title=lesson.module.title if lesson.module else None,
+            ),
             bevox_ws_url=bevox_ws_url,
         )
 
