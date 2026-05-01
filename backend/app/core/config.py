@@ -13,6 +13,15 @@ class Settings(BaseSettings):
     BEVOX_URL: str = "http://localhost:8001"
     BEVOX_PUBLIC_URL: str | None = None
     WMATRIX_URL: str = "http://localhost:8000"
+    WOMNI_URL: str | None = None
+    WOMNI_API_TOKEN: str | None = None
+    NOTIFICATION_DISPATCH_TIMEOUT_SECONDS: float = 10.0
+    SMTP_HOST: str | None = None
+    SMTP_PORT: int = 587
+    SMTP_USERNAME: str | None = None
+    SMTP_PASSWORD: str | None = None
+    SMTP_FROM_EMAIL: str | None = None
+    SMTP_USE_TLS: bool = True
     DOCUMENTS_STORAGE_DIR: str = str(Path(__file__).resolve().parents[2] / "storage" / "documents")
 
     ALLOWED_ORIGINS: list[str] = ["http://localhost:3002"]

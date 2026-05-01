@@ -173,13 +173,14 @@ checkin_tokens
 
 ### Fase 6 — Comunicacao com W-Omni
 
-- [ ] Criar eventos de dominio: aula marcada, falta registrada, conteudo publicado, certificado emitido.
-- [ ] Criar templates de notificacao.
-- [ ] Integrar WhatsApp via W-Omni.
-- [ ] Adicionar email.
+- [x] Criar eventos de dominio: aula marcada, falta registrada, conteudo publicado, certificado emitido.
+- [x] Criar templates de notificacao.
+- [x] Criar lembretes de aula agendados.
+- [x] Integrar WhatsApp via W-Omni.
+- [x] Adicionar email.
 - [ ] Preparar push mobile.
-- [ ] Criar chat aluno/instrutor ou integracao inicial com grupos WhatsApp.
-- [ ] Criar forum por curso/turma.
+- [x] Criar chat aluno/instrutor ou integracao inicial com grupos WhatsApp.
+- [x] Criar forum por curso/turma.
 
 ### Fase 7 — Financeiro
 

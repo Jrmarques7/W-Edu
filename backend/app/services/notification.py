@@ -1,8 +1,12 @@
 from datetime import datetime, timezone
+from email.message import EmailMessage
+import smtplib
 
+import httpx
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.models.notification import (
     NotificationChannel,
     NotificationEvent,
@@ -11,6 +15,7 @@ from app.models.notification import (
     NotificationTemplate,
 )
 from app.repositories.notification import NotificationEventRepository, NotificationTemplateRepository
+from app.repositories.student import StudentRepository
 from app.schemas.notification import NotificationEventCreate, NotificationTemplateCreate, NotificationTemplateUpdate
 
 
@@ -36,6 +41,10 @@ class NotificationService:
             "Certificado emitido",
             "O certificado do curso {course_name} foi emitido para {student_name}.",
         ),
+        (NotificationEventType.content_published, NotificationChannel.internal): (
+            "Novo conteúdo publicado",
+            "A aula {lesson_title} foi publicada no curso {course_name}.",
+        ),
         (NotificationEventType.meeting_reminder, NotificationChannel.internal): (
             "Lembrete de encontro",
             "Você tem um encontro em {starts_at}: {meeting_title}.",
@@ -46,6 +55,7 @@ class NotificationService:
         self.db = db
         self.template_repo = NotificationTemplateRepository(db)
         self.event_repo = NotificationEventRepository(db)
+        self.student_repo = StudentRepository(db)
 
     def list_templates(self) -> list[NotificationTemplate]:
         self._ensure_default_templates()
@@ -87,7 +97,13 @@ class NotificationService:
         template = self._get_template(key, channel)
         rendered_title = self._render(template.title_template, payload)
         rendered_body = self._render(template.body_template, payload)
-        status_value = NotificationStatus.sent if channel == NotificationChannel.internal else NotificationStatus.pending
+        now = datetime.now(timezone.utc)
+        scheduled_in_future = scheduled_for is not None and scheduled_for > now
+        status_value = (
+            NotificationStatus.sent
+            if channel == NotificationChannel.internal and not scheduled_in_future
+            else NotificationStatus.pending
+        )
         event = NotificationEvent(
             event_type=event_type,
             channel=channel,
@@ -101,7 +117,7 @@ class NotificationService:
             body=rendered_body,
             status=status_value,
             scheduled_for=scheduled_for,
-            sent_at=datetime.now(timezone.utc) if status_value == NotificationStatus.sent else None,
+            sent_at=now if status_value == NotificationStatus.sent else None,
         )
         return self.event_repo.create(event)
 
@@ -134,6 +150,98 @@ class NotificationService:
         event.status = NotificationStatus.failed
         event.error_message = error_message
         return self.event_repo.update(event)
+
+    def process_due(self, limit: int = 100) -> list[NotificationEvent]:
+        events = self.event_repo.list_ready(datetime.now(timezone.utc), limit=limit)
+        for event in events:
+            try:
+                self._dispatch(event)
+                event.status = NotificationStatus.sent
+                event.sent_at = datetime.now(timezone.utc)
+                event.error_message = None
+            except Exception as exc:
+                event.status = NotificationStatus.failed
+                event.error_message = str(exc)
+            self.event_repo.update(event)
+        return events
+
+    def _dispatch(self, event: NotificationEvent) -> None:
+        if event.channel == NotificationChannel.internal:
+            return
+        if event.channel == NotificationChannel.whatsapp:
+            self._dispatch_whatsapp(event)
+            return
+        if event.channel == NotificationChannel.email:
+            self._dispatch_email(event)
+            return
+        raise RuntimeError(f"Canal {event.channel.value} ainda não possui adaptador configurado")
+
+    def _dispatch_whatsapp(self, event: NotificationEvent) -> None:
+        if not settings.WOMNI_URL:
+            raise RuntimeError("WOMNI_URL não configurado")
+        if not event.recipient_student_id:
+            raise RuntimeError("Evento WhatsApp sem recipient_student_id")
+
+        student = self.student_repo.get_by_id(event.recipient_student_id)
+        phone = student.student_profile.phone if student and student.student_profile else None
+        if not student or not phone:
+            raise RuntimeError("Destinatário sem telefone cadastrado")
+
+        headers = {}
+        if settings.WOMNI_API_TOKEN:
+            headers["Authorization"] = f"Bearer {settings.WOMNI_API_TOKEN}"
+
+        base_url = settings.WOMNI_URL.rstrip("/")
+        payload = {
+            "channel": "whatsapp",
+            "to": phone,
+            "recipient": {
+                "student_id": student.id,
+                "name": student.name,
+                "email": student.email,
+            },
+            "message": {
+                "title": event.title,
+                "body": event.body,
+            },
+            "metadata": {
+                "source": "w-edu",
+                "event_id": event.id,
+                "event_type": event.event_type.value,
+                "course_id": event.course_id,
+                "class_offering_id": event.class_offering_id,
+                "scheduled_meeting_id": event.scheduled_meeting_id,
+                "payload": event.payload,
+            },
+        }
+        with httpx.Client(timeout=settings.NOTIFICATION_DISPATCH_TIMEOUT_SECONDS) as client:
+            response = client.post(f"{base_url}/messages", json=payload, headers=headers)
+            response.raise_for_status()
+
+    def _dispatch_email(self, event: NotificationEvent) -> None:
+        if not settings.SMTP_HOST:
+            raise RuntimeError("SMTP_HOST não configurado")
+        if not settings.SMTP_FROM_EMAIL:
+            raise RuntimeError("SMTP_FROM_EMAIL não configurado")
+        if not event.recipient_student_id:
+            raise RuntimeError("Evento email sem recipient_student_id")
+
+        student = self.student_repo.get_by_id(event.recipient_student_id)
+        if not student or not student.email:
+            raise RuntimeError("Destinatário sem email cadastrado")
+
+        message = EmailMessage()
+        message["Subject"] = event.title
+        message["From"] = settings.SMTP_FROM_EMAIL
+        message["To"] = student.email
+        message.set_content(event.body)
+
+        with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT, timeout=settings.NOTIFICATION_DISPATCH_TIMEOUT_SECONDS) as smtp:
+            if settings.SMTP_USE_TLS:
+                smtp.starttls()
+            if settings.SMTP_USERNAME:
+                smtp.login(settings.SMTP_USERNAME, settings.SMTP_PASSWORD or "")
+            smtp.send_message(message)
 
     def _get_template(self, key: str, channel: NotificationChannel) -> NotificationTemplate:
         template = self.template_repo.get_by_key_and_channel(key, channel)

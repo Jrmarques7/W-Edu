@@ -85,6 +85,18 @@ O projeto ja possui uma base LMS/EAD com autenticacao, cursos, aulas, matriculas
 - Vinculo de documentos com curso, turma, empresa e aluno.
 - Admin de documentos em `/admin/documents`.
 
+### Comunicacao
+
+- Tabela de eventos de notificacao.
+- Templates de notificacao internos.
+- Eventos automaticos para turma criada, encontro agendado, falta registrada, presenca registrada, conteudo publicado e certificado emitido.
+- Lembretes de encontro agendados automaticamente 24h antes do inicio.
+- Tela admin permite criar eventos futuros e processar eventos pendentes prontos.
+- Adaptador inicial W-Omni/WhatsApp via `POST {WOMNI_URL}/messages`.
+- Adaptador de email via SMTP.
+- Fórum por curso com tópicos e respostas.
+- Chat persistido por curso entre aluno e instrutor/coordenação.
+
 ## Migrations Criadas
 
 - `9d8f1c2a3b4e_expand_academic_domain.py`
@@ -139,18 +151,9 @@ Observacao: `alembic upgrade head` online nao foi aplicado porque o PostgreSQL c
 
 ### Comunicacao
 
-- Eventos de dominio persistidos.
-- Templates de notificacao.
 - Base para integracao W-Omni.
-- Lembrete de aula.
-- Falta registrada.
-- Presenca registrada.
-- Certificado emitido.
-- WhatsApp, email e push ainda dependem de adaptadores reais.
-- Novo conteudo publicado.
-- Chat aluno/instrutor.
+- Push ainda depende de adaptador real.
 - Grupos por turma.
-- Forum.
 
 ### Financeiro
 

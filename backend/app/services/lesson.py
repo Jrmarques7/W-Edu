@@ -2,20 +2,36 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.models.lesson import Lesson
-from app.repositories.course import CourseModuleRepository
+from app.models.notification import NotificationEventType
+from app.repositories.course import CourseModuleRepository, CourseRepository
 from app.repositories.lesson import LessonRepository
 from app.schemas.lesson import LessonCreate, LessonUpdate
+from app.services.notification import NotificationService
 
 
 class LessonService:
     def __init__(self, db: Session):
         self.repo = LessonRepository(db)
         self.module_repo = CourseModuleRepository(db)
+        self.course_repo = CourseRepository(db)
+        self.notification_service = NotificationService(db)
 
     def create(self, data: LessonCreate) -> Lesson:
         self._validate_module(data.course_id, data.module_id)
         lesson = Lesson(**data.model_dump())
-        return self.repo.create(lesson)
+        lesson = self.repo.create(lesson)
+        course = self.course_repo.get_by_id(lesson.course_id)
+        if course:
+            self.notification_service.publish(
+                event_type=NotificationEventType.content_published,
+                payload={
+                    "course_name": course.name,
+                    "lesson_title": lesson.title,
+                    "lesson_type": lesson.type.value,
+                },
+                course_id=course.id,
+            )
+        return lesson
 
     def get_or_404(self, lesson_id: int) -> Lesson:
         lesson = self.repo.get_by_id(lesson_id)

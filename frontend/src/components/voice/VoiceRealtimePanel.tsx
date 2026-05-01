@@ -32,6 +32,30 @@ function getFallbackBevoxWsUrl() {
   return `${protocol}//${window.location.hostname}:8001/ws/voice/stream`;
 }
 
+function getMicrophoneErrorMessage(error: unknown) {
+  if (typeof window !== 'undefined' && !window.isSecureContext) {
+    return 'O navegador só libera o microfone em HTTPS ou localhost. Acesse a plataforma por HTTPS para usar a aula de voz.';
+  }
+
+  if (error instanceof DOMException) {
+    if (error.name === 'NotAllowedError' || error.name === 'SecurityError') {
+      return 'Permissão de microfone negada. Libere o microfone no navegador e tente novamente.';
+    }
+    if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
+      return 'Nenhum microfone foi encontrado neste dispositivo.';
+    }
+    if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
+      return 'O microfone está em uso por outro aplicativo ou não pôde ser iniciado.';
+    }
+  }
+
+  if (error instanceof Error && error.message === 'microphone_api_unavailable') {
+    return 'Este navegador não disponibiliza acesso ao microfone neste contexto.';
+  }
+
+  return 'Não foi possível acessar o microfone.';
+}
+
 export function VoiceRealtimePanel({ lessonId, onSessionUpdate }: VoiceRealtimePanelProps) {
   const [state, setState] = useState<VoiceState>('idle');
   const [statusText, setStatusText] = useState('Pronto para conectar');
@@ -119,11 +143,11 @@ export function VoiceRealtimePanel({ lessonId, onSessionUpdate }: VoiceRealtimeP
     let stream: MediaStream;
     try {
       stream = await microphone.requestAccess();
-    } catch {
+    } catch (error) {
       playback.cleanup();
       setState('idle');
       setStatusText('Pronto para conectar');
-      toast.error('Não foi possível acessar o microfone.');
+      toast.error(getMicrophoneErrorMessage(error), { duration: 7000 });
       return;
     }
 

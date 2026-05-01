@@ -61,3 +61,8 @@ def mark_failed(
     _: Student = Depends(get_current_admin),
 ):
     return NotificationService(db).mark_failed(event_id, error_message)
+
+
+@router.post("/events/process-due", response_model=list[NotificationEventOut])
+def process_due(limit: int = 100, db: Session = Depends(get_db), _: Student = Depends(get_current_admin)):
+    return NotificationService(db).process_due(limit=limit)

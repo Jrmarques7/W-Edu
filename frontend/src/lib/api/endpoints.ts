@@ -65,6 +65,7 @@ export const endpoints = {
     templates: '/notifications/templates',
     template: (key: string, channel: string) => `/notifications/templates/${key}/${channel}`,
     events: '/notifications/events',
+    processDue: '/notifications/events/process-due',
     eventSent: (id: number) => `/notifications/events/${id}/mark-sent`,
     eventFailed: (id: number) => `/notifications/events/${id}/mark-failed`,
   },
@@ -99,5 +100,15 @@ export const endpoints = {
     versions: (id: number) => `/documents/${id}/versions`,
     versionDownload: (documentId: number, versionId: number) => `/documents/${documentId}/versions/${versionId}/download`,
     download: (id: number) => `/documents/${id}/download`,
+  },
+  forum: {
+    courseThreads: (courseId: number) => `/forum/courses/${courseId}/threads`,
+    thread: (threadId: number) => `/forum/threads/${threadId}`,
+    posts: (threadId: number) => `/forum/threads/${threadId}/posts`,
+  },
+  chat: {
+    conversations: '/chat/conversations',
+    conversation: (id: number) => `/chat/conversations/${id}`,
+    messages: (id: number) => `/chat/conversations/${id}/messages`,
   },
 };

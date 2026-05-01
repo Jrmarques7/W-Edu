@@ -238,6 +238,7 @@ class ScheduledMeetingService:
                 course_id=course.id,
                 class_offering_id=class_offering.id,
             )
+            self._schedule_reminder(meeting, class_offering.name, course.name, class_offering.course_id)
         return meeting
 
     def get_or_404(self, meeting_id: int) -> ScheduledMeeting:
@@ -301,6 +302,24 @@ class ScheduledMeetingService:
                 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Aula não pertence ao curso da turma")
         if room_id and not self.room_repo.get_by_id(room_id):
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Sala não encontrada")
+
+    def _schedule_reminder(self, meeting: ScheduledMeeting, class_name: str, course_name: str, course_id: int) -> None:
+        reminder_at = meeting.starts_at - timedelta(hours=24)
+        if reminder_at <= datetime.now(timezone.utc):
+            return
+        self.notification_service.publish(
+            event_type=NotificationEventType.meeting_reminder,
+            payload={
+                "meeting_title": meeting.title,
+                "starts_at": meeting.starts_at.isoformat(),
+                "class_name": class_name,
+                "course_name": course_name,
+            },
+            course_id=course_id,
+            class_offering_id=meeting.class_offering_id,
+            scheduled_meeting_id=meeting.id,
+            scheduled_for=reminder_at,
+        )
 
     def _mark_absences(self, meeting: ScheduledMeeting) -> None:
         enrolled = self.repo.list_active_enrollments(meeting.class_offering_id)

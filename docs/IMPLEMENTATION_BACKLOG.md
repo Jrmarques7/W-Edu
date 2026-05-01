@@ -82,11 +82,14 @@ Aceite:
 
 Objetivo: comunicar eventos academicos sem acoplar rotas a canais.
 
-- Criar tabela/fila de `NotificationEvent`.
-- Criar templates.
-- Publicar eventos de aula marcada, lembrete, falta, presenca e certificado.
-- Integrar envio via W-Omni para WhatsApp.
-- Adicionar email como canal secundario.
+- [x] Criar tabela/fila de `NotificationEvent`.
+- [x] Criar templates.
+- [x] Publicar eventos de aula marcada, falta, presenca, conteudo publicado e certificado.
+- [x] Publicar lembretes de aula agendados.
+- [x] Integrar envio via W-Omni para WhatsApp.
+- [x] Adicionar email como canal secundario.
+- [x] Criar forum por curso.
+- [x] Criar chat aluno/instrutor.
 
 Aceite:
 

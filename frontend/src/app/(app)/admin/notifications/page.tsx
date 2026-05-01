@@ -31,6 +31,7 @@ export default function AdminNotificationsPage() {
     course_id: '',
     class_offering_id: '',
     scheduled_meeting_id: '',
+    scheduled_for: '',
   });
   const [loading, setLoading] = useState(true);
 
@@ -60,11 +61,22 @@ export default function AdminNotificationsPage() {
         course_id: form.course_id ? Number(form.course_id) : null,
         class_offering_id: form.class_offering_id ? Number(form.class_offering_id) : null,
         scheduled_meeting_id: form.scheduled_meeting_id ? Number(form.scheduled_meeting_id) : null,
+        scheduled_for: form.scheduled_for ? new Date(form.scheduled_for).toISOString() : null,
       });
       toast.success('Evento criado.');
       await load();
     } catch {
       toast.error('Erro ao criar evento.');
+    }
+  };
+
+  const processDue = async () => {
+    try {
+      const { data } = await api.post<NotificationEvent[]>(endpoints.notifications.processDue);
+      toast.success(`${data.length} evento(s) pendente(s) processado(s).`);
+      await load();
+    } catch {
+      toast.error('Erro ao processar eventos pendentes.');
     }
   };
 
@@ -136,6 +148,8 @@ export default function AdminNotificationsPage() {
             <input value={form.scheduled_meeting_id} onChange={(e) => setForm((prev) => ({ ...prev, scheduled_meeting_id: e.target.value }))} placeholder="scheduled_meeting_id"
               className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white" />
           </div>
+          <input type="datetime-local" value={form.scheduled_for} onChange={(e) => setForm((prev) => ({ ...prev, scheduled_for: e.target.value }))}
+            className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white" />
           <button className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg">
             <SparklesIcon className="w-4 h-4" />
             <span>Criar evento</span>
@@ -163,7 +177,12 @@ export default function AdminNotificationsPage() {
 
       <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
         <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-700">
-          <h2 className="font-semibold text-gray-900 dark:text-white">Eventos recentes</h2>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <h2 className="font-semibold text-gray-900 dark:text-white">Eventos recentes</h2>
+            <button onClick={processDue} className="inline-flex items-center justify-center px-3 py-2 text-xs font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300">
+              Processar pendentes
+            </button>
+          </div>
         </div>
         <div className="divide-y divide-gray-100 dark:divide-gray-700">
           {events.map((event) => (
@@ -175,6 +194,9 @@ export default function AdminNotificationsPage() {
                 </div>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 break-all">{event.title}</p>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 break-all">{event.body}</p>
+                {event.scheduled_for && (
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Agendado para {new Date(event.scheduled_for).toLocaleString('pt-BR')}</p>
+                )}
               </div>
               <div className="flex shrink-0 gap-2">
                 <button onClick={() => markSent(event.id)} className="px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300">

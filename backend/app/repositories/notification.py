@@ -1,6 +1,8 @@
 from sqlalchemy.orm import Session
+from datetime import datetime
+from sqlalchemy import or_
 
-from app.models.notification import NotificationEvent, NotificationTemplate, NotificationChannel
+from app.models.notification import NotificationEvent, NotificationTemplate, NotificationChannel, NotificationStatus
 
 
 class NotificationTemplateRepository:
@@ -38,6 +40,16 @@ class NotificationEventRepository:
 
     def list_all(self, limit: int = 100) -> list[NotificationEvent]:
         return self.db.query(NotificationEvent).order_by(NotificationEvent.created_at.desc()).limit(limit).all()
+
+    def list_ready(self, now: datetime, limit: int = 100) -> list[NotificationEvent]:
+        return (
+            self.db.query(NotificationEvent)
+            .filter(NotificationEvent.status == NotificationStatus.pending)
+            .filter(or_(NotificationEvent.scheduled_for.is_(None), NotificationEvent.scheduled_for <= now))
+            .order_by(NotificationEvent.scheduled_for.asc().nullsfirst(), NotificationEvent.created_at.asc())
+            .limit(limit)
+            .all()
+        )
 
     def create(self, event: NotificationEvent) -> NotificationEvent:
         self.db.add(event)

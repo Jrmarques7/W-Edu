@@ -8,14 +8,27 @@ export function useMicrophoneStream() {
   const streamRef = useRef<MediaStream | null>(null);
 
   const requestAccess = useCallback(async () => {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      audio: {
-        sampleRate: 16000,
-        channelCount: 1,
-        echoCancellation: true,
-        noiseSuppression: true,
-      },
-    });
+    if (!navigator.mediaDevices?.getUserMedia) {
+      throw new Error('microphone_api_unavailable');
+    }
+
+    let stream: MediaStream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          sampleRate: 16000,
+          channelCount: 1,
+          echoCancellation: true,
+          noiseSuppression: true,
+        },
+      });
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'OverconstrainedError') {
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      } else {
+        throw error;
+      }
+    }
     streamRef.current = stream;
     return stream;
   }, []);

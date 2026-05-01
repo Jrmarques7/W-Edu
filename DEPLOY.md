@@ -54,6 +54,27 @@ journalctl -u wedu-frontend -f
 Edite `/var/www/W-Edu/backend/.env` antes de subir os serviços.  
 Troque obrigatoriamente o `SECRET_KEY` em produção.
 
+Para envio de notificações via W-Omni/WhatsApp, configure:
+
+```env
+WOMNI_URL=https://seu-womni
+WOMNI_API_TOKEN=token-opcional
+NOTIFICATION_DISPATCH_TIMEOUT_SECONDS=10
+```
+
+O W-Edu envia eventos WhatsApp para `POST {WOMNI_URL}/messages`.
+
+Para envio de notificações por email, configure SMTP:
+
+```env
+SMTP_HOST=smtp.exemplo.com
+SMTP_PORT=587
+SMTP_USERNAME=usuario
+SMTP_PASSWORD=senha
+SMTP_FROM_EMAIL=noreply@exemplo.com
+SMTP_USE_TLS=true
+```
+
 ## Portas internas
 | Serviço   | Porta |
 |-----------|-------|
@@ -61,6 +82,29 @@ Troque obrigatoriamente o `SECRET_KEY` em produção.
 | Frontend  | 3000  |
 | Nginx     | 80    |
 | PostgreSQL| 5432  |
+
+## Microfone em rede local
+
+Navegadores só liberam `getUserMedia` em contexto seguro: `https://` ou `http://localhost`.
+Ao acessar por IP, por exemplo `http://172.16.102.76:3000`, o microfone será bloqueado pelo navegador.
+
+Para testar a aula de voz em outro dispositivo na mesma rede, suba o frontend em HTTPS:
+
+```bash
+cd frontend
+npm run dev:https
+```
+
+Depois acesse:
+
+```text
+https://172.16.102.76:3000
+```
+
+Na primeira execução, o Next pode pedir a senha do sistema para instalar uma CA local via `mkcert`.
+Aceite o certificado local no navegador. Se o BeVox estiver em outro serviço/domínio, configure `BEVOX_PUBLIC_URL` com uma URL pública HTTPS para que o frontend receba um WebSocket `wss://`.
+
+Um `404` em `/api/quizzes/lesson/<id>/attempts` significa que a aula não tem quiz cadastrado para esse aluno; essa chamada é opcional e não bloqueia o microfone.
 
 ## Atualizar após mudanças
 
