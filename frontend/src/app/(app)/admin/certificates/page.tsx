@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { AcademicCapIcon, CheckBadgeIcon, ListBulletIcon, QrCodeIcon, ShieldCheckIcon } from '@heroicons/react/24/outline';
+import { AcademicCapIcon, ArrowLeftIcon, CheckBadgeIcon, ListBulletIcon, QrCodeIcon, ShieldCheckIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import api from '@/lib/api/client';
 import { endpoints } from '@/lib/api/endpoints';
@@ -28,9 +28,16 @@ export default function AdminCertificatesPage() {
   const [studentId, setStudentId] = useState('');
   const [eligibility, setEligibility] = useState<CertificateEligibility | null>(null);
   const [loading, setLoading] = useState(true);
+  const [courseLoading, setCourseLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<CertificateTab>('rules');
 
   const enrolledStudents = enrollments.map((e) => students.find((s) => s.id === e.student_id)).filter((s): s is Student => Boolean(s));
+  const selectedCourse = courses.find((course) => String(course.id) === selectedCourseId);
+  const modalityLabel: Record<Course['modality'], string> = {
+    online: 'Online',
+    in_person: 'Presencial',
+    hybrid: 'Híbrido',
+  };
 
   useEffect(() => {
     Promise.all([api.get<Course[]>(endpoints.courses.list), api.get<Student[]>('/admin/users')])
@@ -52,10 +59,31 @@ export default function AdminCertificatesPage() {
     setActiveTab('rules');
   };
 
-  useEffect(() => {
-    if (!selectedCourseId) return;
-    loadCourseData(Number(selectedCourseId)).catch(() => toast.error('Erro ao carregar certificação do curso.'));
-  }, [selectedCourseId]);
+  const selectCourse = async (courseId: number) => {
+    setSelectedCourseId(String(courseId));
+    setRule(null);
+    setCertificates([]);
+    setEnrollments([]);
+    setCourseLoading(true);
+    try {
+      await loadCourseData(courseId);
+    } catch {
+      toast.error('Erro ao carregar certificação do curso.');
+      setSelectedCourseId('');
+    } finally {
+      setCourseLoading(false);
+    }
+  };
+
+  const backToCourses = () => {
+    setSelectedCourseId('');
+    setRule(null);
+    setCertificates([]);
+    setEnrollments([]);
+    setStudentId('');
+    setEligibility(null);
+    setActiveTab('rules');
+  };
 
   const saveRule = async () => {
     if (!selectedCourseId || !rule) return;
@@ -119,19 +147,78 @@ export default function AdminCertificatesPage() {
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Regras de aprovação, emissão e validação pública.</p>
       </div>
 
-      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 space-y-4">
-        <div className="flex items-center gap-2">
-          <AcademicCapIcon className="w-5 h-5 text-indigo-600" />
-          <h2 className="font-semibold text-gray-900 dark:text-white">Selecionar curso</h2>
+      {!selectedCourseId && (
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <AcademicCapIcon className="w-5 h-5 text-indigo-600" />
+            <h2 className="font-semibold text-gray-900 dark:text-white">Selecione um curso</h2>
+          </div>
+          {courses.length === 0 ? (
+            <div className="rounded-xl border border-gray-200 bg-white p-5 text-sm text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400">
+              Nenhum curso cadastrado.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {courses.map((course) => (
+                <button
+                  key={course.id}
+                  type="button"
+                  onClick={() => selectCourse(course.id)}
+                  className="group rounded-xl border border-gray-200 bg-white p-5 text-left transition-colors hover:border-indigo-300 hover:bg-indigo-50/40 dark:border-gray-700 dark:bg-gray-800 dark:hover:border-indigo-700 dark:hover:bg-indigo-900/10"
+                >
+                  <div className="mb-4 flex items-start justify-between gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-50 dark:bg-indigo-900/20">
+                      <AcademicCapIcon className="h-5 w-5 text-indigo-600" />
+                    </div>
+                    <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600 dark:bg-gray-700 dark:text-gray-300">
+                      {modalityLabel[course.modality]}
+                    </span>
+                  </div>
+                  <h3 className="line-clamp-2 font-semibold text-gray-900 group-hover:text-indigo-700 dark:text-white dark:group-hover:text-indigo-300">
+                    {course.name}
+                  </h3>
+                  <p className="mt-2 line-clamp-2 min-h-10 text-sm text-gray-500 dark:text-gray-400">
+                    {course.description || 'Gerencie regras, emissão e validação dos certificados deste curso.'}
+                  </p>
+                  <span className="mt-4 inline-flex text-sm font-medium text-indigo-600 dark:text-indigo-400">
+                    Gerenciar certificados
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
-        <select value={selectedCourseId} onChange={(e) => setSelectedCourseId(e.target.value)}
-          className="block w-full max-w-xl px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
-          <option value="">Escolha um curso</option>
-          {courses.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-        </select>
-      </div>
+      )}
 
-      {selectedCourseId && rule && (
+      {selectedCourseId && (
+        <div className="space-y-5">
+          <button
+            type="button"
+            onClick={backToCourses}
+            className="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+          >
+            <ArrowLeftIcon className="h-4 w-4" />
+            <span>Voltar para cursos</span>
+          </button>
+          <div>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">{selectedCourse?.name ?? 'Curso selecionado'}</h2>
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              Configure e acompanhe certificados deste curso.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {courseLoading && (
+        <div className="flex items-center justify-center rounded-xl border border-gray-200 bg-white py-16 dark:border-gray-700 dark:bg-gray-800">
+          <svg className="h-7 w-7 animate-spin text-indigo-600" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+          </svg>
+        </div>
+      )}
+
+      {selectedCourseId && rule && !courseLoading && (
         <div className="space-y-5">
           <div className="border-b border-gray-200 dark:border-gray-700">
             <nav className="-mb-px flex gap-6 overflow-x-auto" role="tablist" aria-label="Gestão de certificados">
