@@ -4,11 +4,12 @@ import { useState } from 'react';
 import { BuildingOfficeIcon, PencilIcon, PlusIcon } from '@heroicons/react/24/outline';
 import type { Organization } from '@/types/auth';
 
-export default function OrganizationsSection({ organizations, isAdmin, onCreated, onEdit }: {
+export default function OrganizationsSection({ organizations, isAdmin, onCreated, onEdit, showCreateForm }: {
   organizations: Organization[];
   isAdmin: boolean;
   onCreated: () => void;
   onEdit: (org: Organization) => void;
+  showCreateForm?: boolean;
 }) {
   const [name, setName] = useState('');
   const [legalName, setLegalName] = useState('');
@@ -31,7 +32,7 @@ export default function OrganizationsSection({ organizations, isAdmin, onCreated
 
   return (
     <>
-      {isAdmin && (
+      {isAdmin && showCreateForm !== false && (
         <form onSubmit={handleCreate} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 space-y-3">
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Nova empresa B2B</label>
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-3">

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { AcademicCapIcon, PlusIcon } from '@heroicons/react/24/outline';
+import { AcademicCapIcon, PlusIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import api from '@/lib/api/client';
 import { endpoints } from '@/lib/api/endpoints';
@@ -17,6 +17,8 @@ export default function AdminLearningPathsPage() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [pathCourses, setPathCourses] = useState<Record<number, LearningPathCourse[]>>({});
   const [modal, setModal] = useState<{ open: boolean; path?: LearningPath }>({ open: false });
+  const [courseModalPathId, setCourseModalPathId] = useState<number | null>(null);
+  const [selectedCourseId, setSelectedCourseId] = useState('');
   const [loading, setLoading] = useState(true);
 
   const loadPathCourses = async (pathId: number) => {
@@ -57,19 +59,27 @@ export default function AdminLearningPathsPage() {
     catch { toast.error('Erro ao excluir trilha.'); }
   };
 
-  const addCourse = async (pathId: number) => {
+  const openAddCourse = (pathId: number) => {
     const linkedIds = new Set((pathCourses[pathId] ?? []).map((item) => item.course_id));
     const options = courses.filter((c) => !linkedIds.has(c.id));
     if (!options.length) { toast.error('Não há cursos disponíveis para adicionar.'); return; }
-    const selected = prompt(`ID do curso:\n${options.map((c) => `${c.id} - ${c.name}`).join('\n')}`);
-    if (!selected) return;
-    const courseId = Number(selected);
+    setCourseModalPathId(pathId);
+    setSelectedCourseId('');
+  };
+
+  const addCourse = async () => {
+    if (!courseModalPathId || !selectedCourseId) return;
+    const linkedIds = new Set((pathCourses[courseModalPathId] ?? []).map((item) => item.course_id));
+    const options = courses.filter((c) => !linkedIds.has(c.id));
+    const courseId = Number(selectedCourseId);
     if (!Number.isInteger(courseId) || !options.some((c) => c.id === courseId)) { toast.error('Curso inválido.'); return; }
     try {
-      const order = (pathCourses[pathId]?.length ?? 0) + 1;
-      await api.post(endpoints.learningPaths.courses(pathId), { course_id: courseId, order });
+      const order = (pathCourses[courseModalPathId]?.length ?? 0) + 1;
+      await api.post(endpoints.learningPaths.courses(courseModalPathId), { course_id: courseId, order });
       toast.success('Curso adicionado.');
-      await loadPathCourses(pathId);
+      await loadPathCourses(courseModalPathId);
+      setCourseModalPathId(null);
+      setSelectedCourseId('');
     } catch (e: any) { toast.error(e?.response?.data?.detail ?? 'Erro ao adicionar curso.'); }
   };
 
@@ -110,12 +120,37 @@ export default function AdminLearningPathsPage() {
           {paths.map((path) => (
             <LearningPathCard key={path.id} path={path} courses={courses} pathCourses={pathCourses[path.id] ?? []}
               canDelete={canDelete ?? false} onEdit={(p) => setModal({ open: true, path: p })} onDelete={deletePath}
-              onAddCourse={addCourse} onRemoveCourse={removeCourse} />
+              onAddCourse={openAddCourse} onRemoveCourse={removeCourse} />
           ))}
         </div>
       )}
 
       {modal.open && <LearningPathModal path={modal.path} onClose={() => setModal({ open: false })} onSave={savePath} />}
+      {courseModalPathId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 py-6">
+          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl dark:bg-gray-800">
+            <div className="mb-5 flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Adicionar curso</h2>
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Escolha um curso para incluir na trilha.</p>
+              </div>
+              <button type="button" onClick={() => setCourseModalPathId(null)} aria-label="Fechar modal" className="rounded-lg p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-700 dark:hover:text-white">
+                <XMarkIcon className="h-5 w-5" />
+              </button>
+            </div>
+            <select value={selectedCourseId} onChange={(e) => setSelectedCourseId(e.target.value)} className="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-900 dark:text-white">
+              <option value="">Selecione um curso</option>
+              {courses
+                .filter((course) => !(pathCourses[courseModalPathId] ?? []).some((item) => item.course_id === course.id))
+                .map((course) => <option key={course.id} value={course.id}>{course.name}</option>)}
+            </select>
+            <div className="mt-5 flex justify-end gap-3">
+              <button type="button" onClick={() => setCourseModalPathId(null)} className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700">Cancelar</button>
+              <button type="button" onClick={addCourse} className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">Adicionar</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

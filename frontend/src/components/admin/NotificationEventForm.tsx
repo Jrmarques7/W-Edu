@@ -11,7 +11,11 @@ const eventTypes: NotificationEventType[] = ['class_created', 'meeting_created',
 const channels: NotificationChannel[] = ['internal', 'whatsapp', 'email', 'push'];
 const inputCls = 'block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white';
 
-export default function NotificationEventForm({ onCreated }: { onCreated: () => void }) {
+export default function NotificationEventForm({ onCreated, onCancel, variant = 'card' }: {
+  onCreated: () => void;
+  onCancel?: () => void;
+  variant?: 'card' | 'plain';
+}) {
   const [form, setForm] = useState({
     event_type: 'meeting_created' as NotificationEventType,
     channel: 'internal' as NotificationChannel,
@@ -19,6 +23,9 @@ export default function NotificationEventForm({ onCreated }: { onCreated: () => 
     payload: '{\n  "meeting_title": "Aula de exemplo",\n  "starts_at": "2026-04-30T10:00:00Z"\n}',
     recipient_student_id: '', course_id: '', class_offering_id: '', scheduled_meeting_id: '', scheduled_for: '',
   });
+  const formCls = variant === 'card'
+    ? 'bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 space-y-3'
+    : 'space-y-4';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,11 +45,13 @@ export default function NotificationEventForm({ onCreated }: { onCreated: () => 
   };
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 space-y-3">
-      <div className="flex items-center gap-2">
-        <PaperAirplaneIcon className="w-5 h-5 text-indigo-600" />
-        <h2 className="font-semibold text-gray-900 dark:text-white">Disparar evento</h2>
-      </div>
+    <form onSubmit={handleSubmit} className={formCls}>
+      {variant === 'card' && (
+        <div className="flex items-center gap-2">
+          <PaperAirplaneIcon className="w-5 h-5 text-indigo-600" />
+          <h2 className="font-semibold text-gray-900 dark:text-white">Disparar evento</h2>
+        </div>
+      )}
       <select value={form.event_type} onChange={(e) => setForm((p) => ({ ...p, event_type: e.target.value as NotificationEventType }))} className={inputCls}>
         {eventTypes.map((t) => <option key={t} value={t}>{t}</option>)}
       </select>
@@ -58,9 +67,16 @@ export default function NotificationEventForm({ onCreated }: { onCreated: () => 
         <input value={form.scheduled_meeting_id} onChange={(e) => setForm((p) => ({ ...p, scheduled_meeting_id: e.target.value }))} placeholder="scheduled_meeting_id" className={inputCls} />
       </div>
       <input type="datetime-local" value={form.scheduled_for} onChange={(e) => setForm((p) => ({ ...p, scheduled_for: e.target.value }))} className={inputCls} />
-      <button className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg">
-        <SparklesIcon className="w-4 h-4" /><span>Criar evento</span>
-      </button>
+      <div className={variant === 'plain' ? 'flex justify-end gap-3 pt-2' : ''}>
+        {onCancel && (
+          <button type="button" onClick={onCancel} className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-white">
+            Cancelar
+          </button>
+        )}
+        <button className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg">
+          <SparklesIcon className="w-4 h-4" /><span>Criar evento</span>
+        </button>
+      </div>
     </form>
   );
 }

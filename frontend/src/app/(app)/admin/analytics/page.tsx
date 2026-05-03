@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { ArrowPathIcon } from '@heroicons/react/24/outline';
+import { ArrowPathIcon, ChartBarIcon, ClipboardDocumentCheckIcon, CurrencyDollarIcon, PresentationChartLineIcon, UserGroupIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import api from '@/lib/api/client';
 import { endpoints } from '@/lib/api/endpoints';
@@ -17,6 +17,8 @@ import type {
 import AnalyticsOverviewSection from '@/components/admin/AnalyticsOverviewSection';
 import { AttendanceTable, CompletionTable, EngagementTable, PerformanceTable, RoiTable } from '@/components/admin/AnalyticsReportsTables';
 
+type ReportTab = 'completion' | 'attendance' | 'engagement' | 'performance' | 'roi';
+
 export default function AdminAnalyticsPage() {
   const [overview, setOverview] = useState<AnalyticsOverview | null>(null);
   const [courses, setCourses] = useState<CourseAnalytics[]>([]);
@@ -26,6 +28,7 @@ export default function AdminAnalyticsPage() {
   const [performanceRows, setPerformanceRows] = useState<ClassPerformanceReportRow[]>([]);
   const [roiRows, setRoiRows] = useState<RoiReportRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<ReportTab>('completion');
 
   const load = async () => {
     try {
@@ -48,6 +51,14 @@ export default function AdminAnalyticsPage() {
   };
 
   useEffect(() => { load(); }, []);
+
+  const tabs = [
+    { id: 'completion' as ReportTab, label: 'Conclusão', icon: ClipboardDocumentCheckIcon, badge: completionRows.length },
+    { id: 'attendance' as ReportTab, label: 'Presença', icon: UserGroupIcon, badge: attendanceRows.length },
+    { id: 'engagement' as ReportTab, label: 'Engajamento', icon: ChartBarIcon, badge: engagementRows.length },
+    { id: 'performance' as ReportTab, label: 'Performance', icon: PresentationChartLineIcon, badge: performanceRows.length },
+    { id: 'roi' as ReportTab, label: 'ROI', icon: CurrencyDollarIcon, badge: roiRows.length },
+  ];
 
   if (loading || !overview) return (
     <div className="flex items-center justify-center py-20">
@@ -72,17 +83,31 @@ export default function AdminAnalyticsPage() {
 
       <AnalyticsOverviewSection overview={overview} courses={courses} />
 
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-        <CompletionTable rows={completionRows} />
-        <AttendanceTable rows={attendanceRows} />
+      <div className="space-y-5">
+        <div className="border-b border-gray-200 dark:border-gray-700">
+          <nav className="-mb-px flex gap-6 overflow-x-auto" role="tablist" aria-label="Relatórios">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              const active = activeTab === tab.id;
+              return (
+                <button key={tab.id} type="button" role="tab" aria-selected={active} aria-controls={`report-${tab.id}`} onClick={() => setActiveTab(tab.id)}
+                  className={`flex shrink-0 items-center gap-2 border-b-2 px-1 py-4 text-sm font-medium transition-colors ${active ? 'border-blue-500 text-blue-600 dark:text-blue-400' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'}`}>
+                  <Icon className="h-5 w-5" />
+                  <span>{tab.label}</span>
+                  <span className={`inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-xs font-medium ${active ? 'bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300' : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'}`}>{tab.badge}</span>
+                </button>
+              );
+            })}
+          </nav>
+        </div>
+        <div id={`report-${activeTab}`} role="tabpanel">
+          {activeTab === 'completion' && <CompletionTable rows={completionRows} />}
+          {activeTab === 'attendance' && <AttendanceTable rows={attendanceRows} />}
+          {activeTab === 'engagement' && <EngagementTable rows={engagementRows} />}
+          {activeTab === 'performance' && <PerformanceTable rows={performanceRows} />}
+          {activeTab === 'roi' && <RoiTable rows={roiRows} />}
+        </div>
       </div>
-
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-        <EngagementTable rows={engagementRows} />
-        <PerformanceTable rows={performanceRows} />
-      </div>
-
-      <RoiTable rows={roiRows} />
     </div>
   );
 }
