@@ -8,10 +8,12 @@ import type { ClassOffering, Room } from '@/types/schedule';
 const toDateTimeLocal = (v: string) => v.slice(0, 16);
 const toApiDateTime = (v: string) => new Date(v).toISOString();
 
-export default function ClassOfferingForm({ courses, rooms, onCreated }: {
+export default function ClassOfferingForm({ courses, rooms, onCreated, onCancel, variant = 'card' }: {
   courses: Course[];
   rooms: Room[];
   onCreated: () => void;
+  onCancel?: () => void;
+  variant?: 'card' | 'plain';
 }) {
   const [form, setForm] = useState({
     course_id: '', name: '',
@@ -39,13 +41,18 @@ export default function ClassOfferingForm({ courses, rooms, onCreated }: {
   };
 
   const inputCls = 'block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500';
+  const formCls = variant === 'card'
+    ? 'bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 space-y-3'
+    : 'space-y-4';
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 space-y-3">
-      <div className="flex items-center space-x-2">
-        <AcademicCapIcon className="w-5 h-5 text-indigo-600" />
-        <h2 className="font-semibold text-gray-900 dark:text-white">Turma</h2>
-      </div>
+    <form onSubmit={handleSubmit} className={formCls}>
+      {variant === 'card' && (
+        <div className="flex items-center space-x-2">
+          <AcademicCapIcon className="w-5 h-5 text-indigo-600" />
+          <h2 className="font-semibold text-gray-900 dark:text-white">Turma</h2>
+        </div>
+      )}
       <select value={form.course_id} onChange={(e) => setForm((p) => ({ ...p, course_id: e.target.value }))} required className={inputCls}>
         <option value="">Selecione o curso</option>
         {courses.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -62,9 +69,16 @@ export default function ClassOfferingForm({ courses, rooms, onCreated }: {
           {rooms.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
         </select>
       </div>
-      <button className="flex items-center justify-center space-x-2 w-full px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors">
-        <PlusIcon className="w-4 h-4" /><span>Criar turma</span>
-      </button>
+      <div className={variant === 'plain' ? 'flex justify-end gap-3 pt-2' : ''}>
+        {onCancel && (
+          <button type="button" onClick={onCancel} className="px-4 py-2 text-sm text-gray-600 transition-colors hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
+            Cancelar
+          </button>
+        )}
+        <button className={`flex items-center justify-center space-x-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors ${variant === 'card' ? 'w-full' : ''}`}>
+          <PlusIcon className="w-4 h-4" /><span>Criar turma</span>
+        </button>
+      </div>
     </form>
   );
 }

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { AcademicCapIcon, BuildingOffice2Icon, MapPinIcon } from '@heroicons/react/24/outline';
+import { AcademicCapIcon, BuildingOffice2Icon, MapPinIcon, PlusIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import api from '@/lib/api/client';
 import { endpoints } from '@/lib/api/endpoints';
 import type { Course } from '@/types/course';
@@ -24,6 +24,7 @@ export default function AdminSchedulePage() {
   const [summaries, setSummaries] = useState<Record<number, MeetingAttendanceSummary>>({});
   const [loading, setLoading] = useState(true);
   const [activeSetupTab, setActiveSetupTab] = useState<SetupTab>('classes');
+  const [classModalOpen, setClassModalOpen] = useState(false);
 
   const load = async () => {
     const [courseRes, locationRes, roomRes, classRes] = await Promise.all([
@@ -150,15 +151,65 @@ export default function AdminSchedulePage() {
           </nav>
         </div>
 
-        <div id={`schedule-setup-${activeSetupTab}`} role="tabpanel" className="max-w-3xl">
-          {activeSetupTab === 'classes' && <ClassOfferingForm courses={courses} rooms={rooms} onCreated={load} />}
+        <div id={`schedule-setup-${activeSetupTab}`} role="tabpanel">
+          {activeSetupTab === 'classes' && (
+            <div className="space-y-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Turmas cadastradas</h2>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Gerencie ofertas, encontros e presenças em um só lugar.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setClassModalOpen(true)}
+                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700"
+                >
+                  <PlusIcon className="h-4 w-4" />
+                  <span>Adicionar turma</span>
+                </button>
+              </div>
+              <ClassOfferingsList classes={classes} courses={courses} rooms={rooms} meetings={meetings} attendance={attendance} summaries={summaries}
+                showHeader={false}
+                onCreateMeeting={createMeeting} onLoadMeetings={loadMeetings} onGenerateCheckin={generateCheckinToken}
+                onLoadAttendance={loadAttendance} onLoadSummary={loadSummary} onCloseMeeting={closeMeeting} />
+            </div>
+          )}
           {activeSetupTab === 'rooms' && <RoomForm locations={locations} onCreated={load} />}
           {activeSetupTab === 'locations' && <LocationForm onCreated={load} />}
         </div>
       </div>
-      <ClassOfferingsList classes={classes} courses={courses} rooms={rooms} meetings={meetings} attendance={attendance} summaries={summaries}
-        onCreateMeeting={createMeeting} onLoadMeetings={loadMeetings} onGenerateCheckin={generateCheckinToken}
-        onLoadAttendance={loadAttendance} onLoadSummary={loadSummary} onCloseMeeting={closeMeeting} />
+      {classModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 py-6">
+          <div className="w-full max-w-2xl rounded-xl bg-white p-6 shadow-xl dark:bg-gray-800">
+            <div className="mb-5 flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Adicionar turma</h2>
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Defina curso, período, capacidade e sala.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setClassModalOpen(false)}
+                aria-label="Fechar modal"
+                className="rounded-lg p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-700 dark:hover:text-white"
+              >
+                <XMarkIcon className="h-5 w-5" />
+              </button>
+            </div>
+            <ClassOfferingForm
+              courses={courses}
+              rooms={rooms}
+              variant="plain"
+              onCancel={() => setClassModalOpen(false)}
+              onCreated={() => {
+                setClassModalOpen(false);
+                load();
+              }}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

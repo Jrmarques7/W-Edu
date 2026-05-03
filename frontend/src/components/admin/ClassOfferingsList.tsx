@@ -5,7 +5,7 @@ import MeetingRow from './MeetingRow';
 import type { Course } from '@/types/course';
 import type { AttendanceRecord, ClassOffering, MeetingAttendanceSummary, Room, ScheduledMeeting } from '@/types/schedule';
 
-export default function ClassOfferingsList({ classes, courses, rooms, meetings, attendance, summaries, onCreateMeeting, onLoadMeetings, onGenerateCheckin, onLoadAttendance, onLoadSummary, onCloseMeeting }: {
+export default function ClassOfferingsList({ classes, courses, rooms, meetings, attendance, summaries, onCreateMeeting, onLoadMeetings, onGenerateCheckin, onLoadAttendance, onLoadSummary, onCloseMeeting, showHeader = true }: {
   classes: ClassOffering[];
   courses: Course[];
   rooms: Room[];
@@ -18,12 +18,15 @@ export default function ClassOfferingsList({ classes, courses, rooms, meetings, 
   onLoadAttendance: (meetingId: number) => void;
   onLoadSummary: (meetingId: number) => void;
   onCloseMeeting: (meeting: ScheduledMeeting) => void;
+  showHeader?: boolean;
 }) {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-      <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-700">
-        <h2 className="font-semibold text-gray-900 dark:text-white">Turmas cadastradas</h2>
-      </div>
+      {showHeader && (
+        <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-700">
+          <h2 className="font-semibold text-gray-900 dark:text-white">Turmas cadastradas</h2>
+        </div>
+      )}
       {classes.length === 0 ? (
         <p className="p-5 text-sm text-gray-500 dark:text-gray-400">Nenhuma turma cadastrada.</p>
       ) : (
