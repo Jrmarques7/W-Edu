@@ -13,14 +13,19 @@ const inputCls = 'block w-full px-3 py-2 border border-gray-300 dark:border-gray
 
 const emptyForm = { title: '', document_type: 'other' as DocumentType, description: '', status: 'draft' as DocumentStatus, course_id: '', class_offering_id: '', organization_id: '', student_id: '', external_reference: '', version_notes: '', external_url: '', file: null as File | null };
 
-export default function DocumentForm({ courses, classes, organizations, students, onCreated }: {
+export default function DocumentForm({ courses, classes, organizations, students, onCreated, onCancel, variant = 'card' }: {
   courses: Course[];
   classes: ClassOffering[];
   organizations: Organization[];
   students: Student[];
   onCreated: () => void;
+  onCancel?: () => void;
+  variant?: 'card' | 'plain';
 }) {
   const [form, setForm] = useState(emptyForm);
+  const formCls = variant === 'card'
+    ? 'bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 space-y-4'
+    : 'space-y-4';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,11 +54,13 @@ export default function DocumentForm({ courses, classes, organizations, students
   };
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 space-y-4">
-      <div className="flex items-center gap-2">
-        <DocumentTextIcon className="w-5 h-5 text-indigo-600" />
-        <h2 className="font-semibold text-gray-900 dark:text-white">Novo documento</h2>
-      </div>
+    <form onSubmit={handleSubmit} className={formCls}>
+      {variant === 'card' && (
+        <div className="flex items-center gap-2">
+          <DocumentTextIcon className="w-5 h-5 text-indigo-600" />
+          <h2 className="font-semibold text-gray-900 dark:text-white">Novo documento</h2>
+        </div>
+      )}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <input value={form.title} onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))} placeholder="Título" className={inputCls} />
         <select value={form.document_type} onChange={(e) => setForm((p) => ({ ...p, document_type: e.target.value as DocumentType }))} className={inputCls}>
@@ -84,9 +91,16 @@ export default function DocumentForm({ courses, classes, organizations, students
         <input value={form.external_url} onChange={(e) => setForm((p) => ({ ...p, external_url: e.target.value }))} placeholder="URL externa" className={inputCls} />
         <input type="file" onChange={(e) => setForm((p) => ({ ...p, file: e.target.files?.[0] ?? null }))} className="block w-full text-sm text-gray-500 dark:text-gray-400 file:mr-4 file:rounded-lg file:border-0 file:bg-indigo-600 file:px-4 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-indigo-700" />
       </div>
-      <button className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg">
-        <PlusIcon className="w-4 h-4" /><span>Criar documento</span>
-      </button>
+      <div className={variant === 'plain' ? 'flex justify-end gap-3 pt-2' : ''}>
+        {onCancel && (
+          <button type="button" onClick={onCancel} className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-white">
+            Cancelar
+          </button>
+        )}
+        <button className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg">
+          <PlusIcon className="w-4 h-4" /><span>Criar documento</span>
+        </button>
+      </div>
     </form>
   );
 }
