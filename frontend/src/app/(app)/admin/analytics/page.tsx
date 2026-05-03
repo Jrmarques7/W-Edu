@@ -83,24 +83,51 @@ export default function AdminAnalyticsPage() {
 
       <AnalyticsOverviewSection overview={overview} courses={courses} />
 
-      <div className="space-y-5">
-        <div className="border-b border-gray-200 dark:border-gray-700">
-          <nav className="-mb-px flex gap-6 overflow-x-auto" role="tablist" aria-label="Relatórios">
+      <div className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-800">
+        <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Relatórios detalhados</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Navegue pelos recortes operacionais sem sair da visão executiva.</p>
+          </div>
+        </div>
+
+        <div className="mt-4 rounded-xl bg-gray-50 p-1 dark:bg-gray-900/40">
+          <nav className="flex gap-2 overflow-x-auto" role="tablist" aria-label="Relatórios">
             {tabs.map((tab) => {
               const Icon = tab.icon;
               const active = activeTab === tab.id;
               return (
-                <button key={tab.id} type="button" role="tab" aria-selected={active} aria-controls={`report-${tab.id}`} onClick={() => setActiveTab(tab.id)}
-                  className={`flex shrink-0 items-center gap-2 border-b-2 px-1 py-4 text-sm font-medium transition-colors ${active ? 'border-blue-500 text-blue-600 dark:text-blue-400' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'}`}>
-                  <Icon className="h-5 w-5" />
+                <button
+                  key={tab.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  aria-controls={`report-${tab.id}`}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                    active
+                      ? 'bg-white text-blue-600 shadow-sm ring-1 ring-gray-200 dark:bg-gray-800 dark:text-blue-400 dark:ring-gray-700'
+                      : 'text-gray-500 hover:bg-white hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200'
+                  }`}
+                >
+                  <Icon className="h-4 w-4" />
                   <span>{tab.label}</span>
-                  <span className={`inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-xs font-medium ${active ? 'bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300' : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'}`}>{tab.badge}</span>
+                  <span
+                    className={`inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-xs font-medium ${
+                      active
+                        ? 'bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300'
+                        : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
+                    }`}
+                  >
+                    {tab.badge}
+                  </span>
                 </button>
               );
             })}
           </nav>
         </div>
-        <div id={`report-${activeTab}`} role="tabpanel">
+
+        <div className="mt-5" id={`report-${activeTab}`} role="tabpanel">
           {activeTab === 'completion' && <CompletionTable rows={completionRows} />}
           {activeTab === 'attendance' && <AttendanceTable rows={attendanceRows} />}
           {activeTab === 'engagement' && <EngagementTable rows={engagementRows} />}
