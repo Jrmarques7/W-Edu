@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { AcademicCapIcon } from '@heroicons/react/24/outline';
+import { AcademicCapIcon, CheckBadgeIcon, ListBulletIcon, QrCodeIcon, ShieldCheckIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import api from '@/lib/api/client';
 import { endpoints } from '@/lib/api/endpoints';
@@ -13,6 +13,8 @@ import CertificateIssuancePanel from '@/components/admin/CertificateIssuancePane
 import CertificateRuleForm from '@/components/admin/CertificateRuleForm';
 import CertificatesList from '@/components/admin/CertificatesList';
 import CertificateValidationPanel from '@/components/admin/CertificateValidationPanel';
+
+type CertificateTab = 'rules' | 'issue' | 'validation' | 'issued';
 
 export default function AdminCertificatesPage() {
   const { student } = useAuthStore();
@@ -26,6 +28,7 @@ export default function AdminCertificatesPage() {
   const [studentId, setStudentId] = useState('');
   const [eligibility, setEligibility] = useState<CertificateEligibility | null>(null);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<CertificateTab>('rules');
 
   const enrolledStudents = enrollments.map((e) => students.find((s) => s.id === e.student_id)).filter((s): s is Student => Boolean(s));
 
@@ -46,6 +49,7 @@ export default function AdminCertificatesPage() {
     setEnrollments(enrollmentRes.data);
     setStudentId('');
     setEligibility(null);
+    setActiveTab('rules');
   };
 
   useEffect(() => {
@@ -92,6 +96,13 @@ export default function AdminCertificatesPage() {
     } catch { toast.error('Erro ao verificar elegibilidade.'); }
   };
 
+  const tabs = [
+    { id: 'rules' as CertificateTab, label: 'Regras', icon: ShieldCheckIcon },
+    { id: 'issue' as CertificateTab, label: 'Emitir', icon: CheckBadgeIcon, badge: enrolledStudents.length },
+    { id: 'validation' as CertificateTab, label: 'Validação', icon: QrCodeIcon },
+    { id: 'issued' as CertificateTab, label: 'Emitidos', icon: ListBulletIcon, badge: certificates.length },
+  ];
+
   if (loading) return (
     <div className="flex items-center justify-center py-20">
       <svg className="animate-spin h-8 w-8 text-indigo-600" fill="none" viewBox="0 0 24 24">
@@ -121,18 +132,57 @@ export default function AdminCertificatesPage() {
       </div>
 
       {selectedCourseId && rule && (
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-          <CertificateRuleForm rule={rule} onChange={setRule} onSave={saveRule} />
-          <div className="space-y-4">
-            <CertificateIssuancePanel enrolledStudents={enrolledStudents} studentId={studentId} eligibility={eligibility}
-              onStudentChange={setStudentId} onCheckEligibility={checkEligibility} onIssue={issueCertificate} />
-            <CertificateValidationPanel />
+        <div className="space-y-5">
+          <div className="border-b border-gray-200 dark:border-gray-700">
+            <nav className="-mb-px flex gap-6 overflow-x-auto" role="tablist" aria-label="Gestão de certificados">
+              {tabs.map((tab) => {
+                const Icon = tab.icon;
+                const active = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    role="tab"
+                    aria-selected={active}
+                    aria-controls={`certificates-${tab.id}`}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`flex shrink-0 items-center gap-2 border-b-2 px-1 py-4 text-sm font-medium transition-colors ${
+                      active
+                        ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                        : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+                    }`}
+                  >
+                    <Icon className="h-5 w-5" />
+                    <span>{tab.label}</span>
+                    {tab.badge !== undefined && (
+                      <span
+                        className={`inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-xs font-medium ${
+                          active
+                            ? 'bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300'
+                            : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
+                        }`}
+                      >
+                        {tab.badge}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </nav>
+          </div>
+
+          <div id={`certificates-${activeTab}`} role="tabpanel" className="max-w-3xl">
+            {activeTab === 'rules' && <CertificateRuleForm rule={rule} onChange={setRule} onSave={saveRule} />}
+            {activeTab === 'issue' && (
+              <CertificateIssuancePanel enrolledStudents={enrolledStudents} studentId={studentId} eligibility={eligibility}
+                onStudentChange={setStudentId} onCheckEligibility={checkEligibility} onIssue={issueCertificate} />
+            )}
+            {activeTab === 'validation' && <CertificateValidationPanel />}
+            {activeTab === 'issued' && (
+              <CertificatesList certificates={certificates} students={students} canRevoke={canRevoke ?? false} onRevoke={revokeCertificate} />
+            )}
           </div>
         </div>
-      )}
-
-      {selectedCourseId && certificates.length > 0 && (
-        <CertificatesList certificates={certificates} students={students} canRevoke={canRevoke ?? false} onRevoke={revokeCertificate} />
       )}
     </div>
   );

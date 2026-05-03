@@ -16,6 +16,9 @@ export default function CertificatesList({ certificates, students, canRevoke, on
       <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-700">
         <h2 className="font-semibold text-gray-900 dark:text-white">Certificados emitidos</h2>
       </div>
+      {certificates.length === 0 ? (
+        <p className="p-5 text-sm text-gray-500 dark:text-gray-400">Nenhum certificado emitido para este curso.</p>
+      ) : (
       <div className="divide-y divide-gray-100 dark:divide-gray-700">
         {certificates.map((cert) => (
           <div key={cert.id} className="px-5 py-4 flex items-center justify-between gap-3">
@@ -37,6 +40,7 @@ export default function CertificatesList({ certificates, students, canRevoke, on
           </div>
         ))}
       </div>
+      )}
     </div>
   );
 }
