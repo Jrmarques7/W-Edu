@@ -54,18 +54,20 @@ export function Sidebar({ open, collapsed, onClose, onToggleCollapse }: SidebarP
     menuItems.map((item) => {
       const Icon = item.icon;
       const active = isActive(item.href);
+      const itemCollapsed = collapsed && !mobile;
       return (
         <li key={item.name}>
           <Link
             href={item.href}
             onClick={mobile ? onClose : undefined}
-            title={collapsed ? item.name : undefined}
+            title={itemCollapsed ? item.name : undefined}
+            aria-current={active ? 'page' : undefined}
             className={`flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
               active ? 'bg-gray-800 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white'
-            } ${collapsed ? 'justify-center' : ''}`}
+            } ${itemCollapsed ? 'justify-center' : ''}`}
           >
             <Icon className="w-5 h-5 flex-shrink-0" />
-            {!collapsed && <span className="ml-3">{item.name}</span>}
+            {!itemCollapsed && <span className="ml-3">{item.name}</span>}
           </Link>
         </li>
       );
@@ -94,13 +96,18 @@ export function Sidebar({ open, collapsed, onClose, onToggleCollapse }: SidebarP
       {!mobile && (
         <button
           onClick={onToggleCollapse}
+          aria-label={collapsed ? 'Expandir menu lateral' : 'Recolher menu lateral'}
           className="p-1 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
         >
           {collapsed ? <ChevronRightIcon className="w-5 h-5" /> : <ChevronLeftIcon className="w-5 h-5" />}
         </button>
       )}
       {mobile && (
-        <button onClick={onClose} className="p-1 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors">
+        <button
+          onClick={onClose}
+          aria-label="Fechar menu"
+          className="p-1 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
+        >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
           </svg>
