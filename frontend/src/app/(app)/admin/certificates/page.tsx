@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { AcademicCapIcon, ArrowLeftIcon, CheckBadgeIcon, ListBulletIcon, QrCodeIcon, ShieldCheckIcon } from '@heroicons/react/24/outline';
+import { AcademicCapIcon, ArrowLeftIcon, CheckBadgeIcon, ListBulletIcon, QrCodeIcon, ShieldCheckIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import api from '@/lib/api/client';
 import { endpoints } from '@/lib/api/endpoints';
@@ -30,6 +30,8 @@ export default function AdminCertificatesPage() {
   const [loading, setLoading] = useState(true);
   const [courseLoading, setCourseLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<CertificateTab>('rules');
+  const [certificateToRevoke, setCertificateToRevoke] = useState<Certificate | null>(null);
+  const [revokeReason, setRevokeReason] = useState('');
 
   const enrolledStudents = enrollments.map((e) => students.find((s) => s.id === e.student_id)).filter((s): s is Student => Boolean(s));
   const selectedCourse = courses.find((course) => String(course.id) === selectedCourseId);
@@ -106,12 +108,13 @@ export default function AdminCertificatesPage() {
     }
   };
 
-  const revokeCertificate = async (certificate: Certificate) => {
-    const reason = prompt('Motivo da revogação')?.trim();
-    if (reason === undefined) return;
+  const revokeCertificate = async () => {
+    if (!certificateToRevoke) return;
     try {
-      await api.post<Certificate>(endpoints.certificates.revoke(certificate.id), { reason: reason || null });
+      await api.post<Certificate>(endpoints.certificates.revoke(certificateToRevoke.id), { reason: revokeReason.trim() || null });
       toast.success('Certificado revogado.');
+      setCertificateToRevoke(null);
+      setRevokeReason('');
       await loadCourseData(Number(selectedCourseId));
     } catch (e: any) { toast.error(e?.response?.data?.detail ?? 'Erro ao revogar certificado.'); }
   };
@@ -266,8 +269,38 @@ export default function AdminCertificatesPage() {
             )}
             {activeTab === 'validation' && <CertificateValidationPanel />}
             {activeTab === 'issued' && (
-              <CertificatesList certificates={certificates} students={students} canRevoke={canRevoke ?? false} onRevoke={revokeCertificate} />
+              <CertificatesList certificates={certificates} students={students} canRevoke={canRevoke ?? false} onRevoke={setCertificateToRevoke} />
             )}
+          </div>
+        </div>
+      )}
+      {certificateToRevoke && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 py-6">
+          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl dark:bg-gray-800">
+            <div className="mb-5 flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Revogar certificado</h2>
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Informe o motivo da revogação, se houver.</p>
+              </div>
+              <button type="button" onClick={() => setCertificateToRevoke(null)} aria-label="Fechar modal" className="rounded-lg p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-700 dark:hover:text-white">
+                <XMarkIcon className="h-5 w-5" />
+              </button>
+            </div>
+            <textarea
+              value={revokeReason}
+              onChange={(e) => setRevokeReason(e.target.value)}
+              rows={4}
+              placeholder="Motivo opcional"
+              className="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-900 dark:text-white"
+            />
+            <div className="mt-5 flex justify-end gap-3">
+              <button type="button" onClick={() => setCertificateToRevoke(null)} className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700">
+                Cancelar
+              </button>
+              <button type="button" onClick={revokeCertificate} className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700">
+                Revogar
+              </button>
+            </div>
           </div>
         </div>
       )}

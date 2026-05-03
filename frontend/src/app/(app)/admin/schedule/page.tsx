@@ -6,13 +6,14 @@ import { AcademicCapIcon, BuildingOffice2Icon, MapPinIcon, PlusIcon, XMarkIcon }
 import api from '@/lib/api/client';
 import { endpoints } from '@/lib/api/endpoints';
 import type { Course } from '@/types/course';
-import type { AttendanceRecord, ClassOffering, Location, MeetingAttendanceSummary, Room, ScheduledMeeting } from '@/types/schedule';
+import type { AttendanceRecord, ClassOffering, Location, MeetingAttendanceSummary, MeetingType, Room, ScheduledMeeting } from '@/types/schedule';
 import ClassOfferingForm from '@/components/admin/ClassOfferingForm';
 import ClassOfferingsList from '@/components/admin/ClassOfferingsList';
 import LocationForm from '@/components/admin/LocationForm';
 import RoomForm from '@/components/admin/RoomForm';
 
 type SetupTab = 'classes' | 'rooms' | 'locations';
+const toDateTimeLocal = (value: string) => value.slice(0, 16);
 
 export default function AdminSchedulePage() {
   const [courses, setCourses] = useState<Course[]>([]);
@@ -27,6 +28,14 @@ export default function AdminSchedulePage() {
   const [classModalOpen, setClassModalOpen] = useState(false);
   const [roomModalOpen, setRoomModalOpen] = useState(false);
   const [locationModalOpen, setLocationModalOpen] = useState(false);
+  const [meetingClass, setMeetingClass] = useState<ClassOffering | null>(null);
+  const [meetingForm, setMeetingForm] = useState({
+    title: '',
+    room_id: '',
+    starts_at: '',
+    ends_at: '',
+    type: 'live' as MeetingType,
+  });
 
   const load = async () => {
     const [courseRes, locationRes, roomRes, classRes] = await Promise.all([
@@ -44,17 +53,32 @@ export default function AdminSchedulePage() {
 
   useEffect(() => { load(); }, []);
 
-  const createMeeting = async (cls: ClassOffering) => {
-    const title = prompt('Título do encontro');
-    if (!title) return;
+  const openMeetingModal = (cls: ClassOffering) => {
+    setMeetingClass(cls);
+    setMeetingForm({
+      title: '',
+      room_id: cls.room_id ? String(cls.room_id) : '',
+      starts_at: toDateTimeLocal(cls.starts_at),
+      ends_at: toDateTimeLocal(cls.ends_at),
+      type: cls.room_id ? 'in_person' : 'live',
+    });
+  };
+
+  const createMeeting = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!meetingClass) return;
     try {
       const { data } = await api.post<ScheduledMeeting>(endpoints.schedule.meetings, {
-        class_offering_id: cls.id, room_id: cls.room_id, title,
-        starts_at: cls.starts_at, ends_at: cls.ends_at,
-        type: cls.room_id ? 'in_person' : 'live',
+        class_offering_id: meetingClass.id,
+        room_id: meetingForm.room_id ? Number(meetingForm.room_id) : null,
+        title: meetingForm.title,
+        starts_at: new Date(meetingForm.starts_at).toISOString(),
+        ends_at: new Date(meetingForm.ends_at).toISOString(),
+        type: meetingForm.type,
       });
       toast.success('Encontro criado.');
-      setMeetings((prev) => ({ ...prev, [cls.id]: [...(prev[cls.id] ?? []), data] }));
+      setMeetings((prev) => ({ ...prev, [meetingClass.id]: [...(prev[meetingClass.id] ?? []), data] }));
+      setMeetingClass(null);
     } catch { toast.error('Erro ao criar encontro.'); }
   };
 
@@ -174,7 +198,7 @@ export default function AdminSchedulePage() {
               </div>
               <ClassOfferingsList classes={classes} courses={courses} rooms={rooms} meetings={meetings} attendance={attendance} summaries={summaries}
                 showHeader={false}
-                onCreateMeeting={createMeeting} onLoadMeetings={loadMeetings} onGenerateCheckin={generateCheckinToken}
+                onCreateMeeting={openMeetingModal} onLoadMeetings={loadMeetings} onGenerateCheckin={generateCheckinToken}
                 onLoadAttendance={loadAttendance} onLoadSummary={loadSummary} onCloseMeeting={closeMeeting} />
             </div>
           )}
@@ -372,6 +396,78 @@ export default function AdminSchedulePage() {
                 load();
               }}
             />
+          </div>
+        </div>
+      )}
+      {meetingClass && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 py-6">
+          <div className="w-full max-w-lg rounded-xl bg-white p-6 shadow-xl dark:bg-gray-800">
+            <div className="mb-5 flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Criar encontro</h2>
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{meetingClass.name}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setMeetingClass(null)}
+                aria-label="Fechar modal"
+                className="rounded-lg p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-700 dark:hover:text-white"
+              >
+                <XMarkIcon className="h-5 w-5" />
+              </button>
+            </div>
+            <form onSubmit={createMeeting} className="space-y-4">
+              <input
+                value={meetingForm.title}
+                onChange={(e) => setMeetingForm((prev) => ({ ...prev, title: e.target.value }))}
+                required
+                placeholder="Título do encontro"
+                className="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-900 dark:text-white"
+              />
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <input
+                  type="datetime-local"
+                  value={meetingForm.starts_at}
+                  onChange={(e) => setMeetingForm((prev) => ({ ...prev, starts_at: e.target.value }))}
+                  required
+                  className="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-900 dark:text-white"
+                />
+                <input
+                  type="datetime-local"
+                  value={meetingForm.ends_at}
+                  onChange={(e) => setMeetingForm((prev) => ({ ...prev, ends_at: e.target.value }))}
+                  required
+                  className="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-900 dark:text-white"
+                />
+              </div>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <select
+                  value={meetingForm.type}
+                  onChange={(e) => setMeetingForm((prev) => ({ ...prev, type: e.target.value as MeetingType }))}
+                  className="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-900 dark:text-white"
+                >
+                  <option value="live">Live</option>
+                  <option value="in_person">Presencial</option>
+                  <option value="hybrid">Híbrido</option>
+                </select>
+                <select
+                  value={meetingForm.room_id}
+                  onChange={(e) => setMeetingForm((prev) => ({ ...prev, room_id: e.target.value }))}
+                  className="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-900 dark:text-white"
+                >
+                  <option value="">Sem sala</option>
+                  {rooms.map((room) => <option key={room.id} value={room.id}>{room.name}</option>)}
+                </select>
+              </div>
+              <div className="flex justify-end gap-3 pt-2">
+                <button type="button" onClick={() => setMeetingClass(null)} className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700">
+                  Cancelar
+                </button>
+                <button className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">
+                  Criar encontro
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

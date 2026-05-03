@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import api from '@/lib/api/client';
 import { endpoints } from '@/lib/api/endpoints';
 import type { Course, CourseModule, CoursePrerequisite, Lesson } from '@/types/course';
+import ConfirmDialog from './ConfirmDialog';
 import ModulesPanel from './ModulesPanel';
 import PrerequisitesPanel from './PrerequisitesPanel';
 import LessonsPanel from './LessonsPanel';
@@ -23,6 +24,7 @@ export default function CourseListItem({ course, courses, canDelete, onEdit, onD
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [modules, setModules] = useState<CourseModule[]>([]);
   const [prerequisites, setPrerequisites] = useState<CoursePrerequisite[]>([]);
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   const loadLessons = async () => {
     const { data } = await api.get<Lesson[]>(endpoints.courses.lessons(course.id));
@@ -50,10 +52,10 @@ export default function CourseListItem({ course, courses, canDelete, onEdit, onD
   };
 
   const deleteCourse = async () => {
-    if (!confirm('Excluir este curso?')) return;
     try {
       await api.delete(endpoints.courses.detail(course.id));
       toast.success('Curso excluído.');
+      setDeleteOpen(false);
       onDeleted();
     } catch { toast.error('Erro ao excluir curso.'); }
   };
@@ -79,7 +81,7 @@ export default function CourseListItem({ course, courses, canDelete, onEdit, onD
             <PencilIcon className="w-4 h-4" />
           </button>
           {canDelete && (
-            <button onClick={deleteCourse} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">
+            <button onClick={() => setDeleteOpen(true)} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">
               <TrashIcon className="w-4 h-4" />
             </button>
           )}
@@ -92,6 +94,16 @@ export default function CourseListItem({ course, courses, canDelete, onEdit, onD
           <PrerequisitesPanel courseId={course.id} courses={courses} prerequisites={prerequisites} canDelete={canDelete} onChanged={loadPrerequisites} />
           <LessonsPanel courseId={course.id} lessons={lessons} modules={modules} canDelete={canDelete} onChanged={loadLessons} />
         </div>
+      )}
+      {deleteOpen && (
+        <ConfirmDialog
+          title="Excluir curso"
+          message={`Deseja excluir "${course.name}"?`}
+          confirmLabel="Excluir"
+          danger
+          onCancel={() => setDeleteOpen(false)}
+          onConfirm={deleteCourse}
+        />
       )}
     </div>
   );

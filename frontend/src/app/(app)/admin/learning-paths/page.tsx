@@ -7,6 +7,7 @@ import api from '@/lib/api/client';
 import { endpoints } from '@/lib/api/endpoints';
 import { useAuthStore } from '@/store/authStore';
 import type { Course, LearningPath, LearningPathCourse } from '@/types/course';
+import ConfirmDialog from '@/components/admin/ConfirmDialog';
 import LearningPathCard from '@/components/admin/LearningPathCard';
 import LearningPathModal from '@/components/admin/LearningPathModal';
 
@@ -19,6 +20,8 @@ export default function AdminLearningPathsPage() {
   const [modal, setModal] = useState<{ open: boolean; path?: LearningPath }>({ open: false });
   const [courseModalPathId, setCourseModalPathId] = useState<number | null>(null);
   const [selectedCourseId, setSelectedCourseId] = useState('');
+  const [pathToDelete, setPathToDelete] = useState<LearningPath | null>(null);
+  const [courseToRemove, setCourseToRemove] = useState<{ pathId: number; courseId: number } | null>(null);
   const [loading, setLoading] = useState(true);
 
   const loadPathCourses = async (pathId: number) => {
@@ -53,9 +56,14 @@ export default function AdminLearningPathsPage() {
     } catch { toast.error('Erro ao salvar trilha.'); }
   };
 
-  const deletePath = async (pathId: number) => {
-    if (!confirm('Excluir esta trilha?')) return;
-    try { await api.delete(endpoints.learningPaths.detail(pathId)); toast.success('Trilha excluída.'); await load(); }
+  const deletePath = async () => {
+    if (!pathToDelete) return;
+    try {
+      await api.delete(endpoints.learningPaths.detail(pathToDelete.id));
+      toast.success('Trilha excluída.');
+      setPathToDelete(null);
+      await load();
+    }
     catch { toast.error('Erro ao excluir trilha.'); }
   };
 
@@ -83,9 +91,14 @@ export default function AdminLearningPathsPage() {
     } catch (e: any) { toast.error(e?.response?.data?.detail ?? 'Erro ao adicionar curso.'); }
   };
 
-  const removeCourse = async (pathId: number, courseId: number) => {
-    if (!confirm('Remover este curso da trilha?')) return;
-    try { await api.delete(`${endpoints.learningPaths.courses(pathId)}/${courseId}`); toast.success('Curso removido.'); await loadPathCourses(pathId); }
+  const removeCourse = async () => {
+    if (!courseToRemove) return;
+    try {
+      await api.delete(`${endpoints.learningPaths.courses(courseToRemove.pathId)}/${courseToRemove.courseId}`);
+      toast.success('Curso removido.');
+      await loadPathCourses(courseToRemove.pathId);
+      setCourseToRemove(null);
+    }
     catch { toast.error('Erro ao remover curso.'); }
   };
 
@@ -119,13 +132,33 @@ export default function AdminLearningPathsPage() {
         <div className="space-y-3">
           {paths.map((path) => (
             <LearningPathCard key={path.id} path={path} courses={courses} pathCourses={pathCourses[path.id] ?? []}
-              canDelete={canDelete ?? false} onEdit={(p) => setModal({ open: true, path: p })} onDelete={deletePath}
-              onAddCourse={openAddCourse} onRemoveCourse={removeCourse} />
+              canDelete={canDelete ?? false} onEdit={(p) => setModal({ open: true, path: p })} onDelete={() => setPathToDelete(path)}
+              onAddCourse={openAddCourse} onRemoveCourse={(pathId, courseId) => setCourseToRemove({ pathId, courseId })} />
           ))}
         </div>
       )}
 
       {modal.open && <LearningPathModal path={modal.path} onClose={() => setModal({ open: false })} onSave={savePath} />}
+      {pathToDelete && (
+        <ConfirmDialog
+          title="Excluir trilha"
+          message={`Deseja excluir "${pathToDelete.name}"?`}
+          confirmLabel="Excluir"
+          danger
+          onCancel={() => setPathToDelete(null)}
+          onConfirm={deletePath}
+        />
+      )}
+      {courseToRemove && (
+        <ConfirmDialog
+          title="Remover curso"
+          message="Este curso será removido da trilha."
+          confirmLabel="Remover"
+          danger
+          onCancel={() => setCourseToRemove(null)}
+          onConfirm={removeCourse}
+        />
+      )}
       {courseModalPathId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 py-6">
           <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl dark:bg-gray-800">

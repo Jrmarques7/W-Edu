@@ -8,6 +8,7 @@ import { endpoints } from '@/lib/api/endpoints';
 import { useAuthStore } from '@/store/authStore';
 import type { Course, CourseModule, CoursePrerequisite, Lesson } from '@/types/course';
 import CourseModal from '@/components/admin/CourseModal';
+import ConfirmDialog from '@/components/admin/ConfirmDialog';
 import LessonsPanel from '@/components/admin/LessonsPanel';
 import ModulesPanel from '@/components/admin/ModulesPanel';
 import PrerequisitesPanel from '@/components/admin/PrerequisitesPanel';
@@ -32,6 +33,7 @@ export default function AdminCoursesPage() {
   const [modules, setModules] = useState<CourseModule[]>([]);
   const [prerequisites, setPrerequisites] = useState<CoursePrerequisite[]>([]);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [courseToDelete, setCourseToDelete] = useState<Course | null>(null);
 
   const loadCourses = () =>
     api.get<Course[]>(endpoints.courses.list).then((r) => setCourses(r.data)).finally(() => setLoading(false));
@@ -98,12 +100,13 @@ export default function AdminCoursesPage() {
     await Promise.all([loadModules(), loadLessons()]);
   };
 
-  const deleteCourse = async (course: Course) => {
-    if (!confirm('Excluir este curso?')) return;
+  const deleteCourse = async () => {
+    if (!courseToDelete) return;
     try {
-      await api.delete(endpoints.courses.detail(course.id));
+      await api.delete(endpoints.courses.detail(courseToDelete.id));
       toast.success('Curso excluído.');
-      if (selectedCourse?.id === course.id) backToCourses();
+      if (selectedCourse?.id === courseToDelete.id) backToCourses();
+      setCourseToDelete(null);
       loadCourses();
     } catch { toast.error('Erro ao excluir curso.'); }
   };
@@ -169,7 +172,7 @@ export default function AdminCoursesPage() {
                   <PencilIcon className="h-4 w-4" />
                 </button>
                 {canDelete && (
-                  <button onClick={() => deleteCourse(course)} aria-label={`Excluir ${course.name}`} className="rounded-lg border border-gray-300 p-2 text-gray-500 transition-colors hover:bg-red-50 hover:text-red-600 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-red-900/20">
+                  <button onClick={() => setCourseToDelete(course)} aria-label={`Excluir ${course.name}`} className="rounded-lg border border-gray-300 p-2 text-gray-500 transition-colors hover:bg-red-50 hover:text-red-600 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-red-900/20">
                     <TrashIcon className="h-4 w-4" />
                   </button>
                 )}
@@ -258,6 +261,16 @@ export default function AdminCoursesPage() {
           course={courseModal.course}
           onClose={() => setCourseModal({ open: false })}
           onSave={saveCourse}
+        />
+      )}
+      {courseToDelete && (
+        <ConfirmDialog
+          title="Excluir curso"
+          message={`Deseja excluir "${courseToDelete.name}"?`}
+          confirmLabel="Excluir"
+          danger
+          onCancel={() => setCourseToDelete(null)}
+          onConfirm={deleteCourse}
         />
       )}
     </div>

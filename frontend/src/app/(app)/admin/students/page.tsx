@@ -9,6 +9,7 @@ import type { Organization, User, UserRole } from '@/types/auth';
 import EditOrganizationModal from '@/components/admin/EditOrganizationModal';
 import EditUserModal from '@/components/admin/EditUserModal';
 import NewUserModal from '@/components/admin/NewUserModal';
+import ConfirmDialog from '@/components/admin/ConfirmDialog';
 import OrganizationsSection from '@/components/admin/OrganizationsSection';
 import ProfileModal from '@/components/admin/ProfileModal';
 import UsersList from '@/components/admin/UsersList';
@@ -33,6 +34,7 @@ export default function AdminStudentsPage() {
   const [showModal, setShowModal] = useState(false);
   const [organizationModalOpen, setOrganizationModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [userToDelete, setUserToDelete] = useState<User | null>(null);
   const [profileUser, setProfileUser] = useState<User | null>(null);
   const [editingOrganization, setEditingOrganization] = useState<Organization | null>(null);
   const [activeTab, setActiveTab] = useState<PeopleTab>('users');
@@ -88,11 +90,12 @@ export default function AdminStudentsPage() {
     } catch (error: any) { toast.error(error.response?.data?.detail ?? 'Erro ao criar empresa.'); }
   };
 
-  const deleteUser = async (id: number) => {
-    if (!confirm('Excluir este usuário?')) return;
+  const deleteUser = async () => {
+    if (!userToDelete) return;
     try {
-      await api.delete(`/admin/users/${id}`);
+      await api.delete(`/admin/users/${userToDelete.id}`);
       toast.success('Usuário excluído.');
+      setUserToDelete(null);
       loadData();
     } catch { toast.error('Erro ao excluir usuário.'); }
   };
@@ -151,7 +154,7 @@ export default function AdminStudentsPage() {
           </nav>
         </div>
         <div id={`people-${activeTab}`} role="tabpanel">
-          {activeTab === 'users' && <UsersList users={users} organizations={organizations} canDelete={canDelete ?? false} canManageUser={canManageUser} onEdit={setEditingUser} onProfile={setProfileUser} onDelete={deleteUser} />}
+          {activeTab === 'users' && <UsersList users={users} organizations={organizations} canDelete={canDelete ?? false} canManageUser={canManageUser} onEdit={setEditingUser} onProfile={setProfileUser} onDelete={(id) => setUserToDelete(users.find((user) => user.id === id) ?? null)} />}
           {activeTab === 'organizations' && <OrganizationsSection organizations={organizations} isAdmin={isAdmin ?? false} showCreateForm={false} onCreated={loadData} onEdit={setEditingOrganization} />}
         </div>
       </div>
@@ -160,6 +163,16 @@ export default function AdminStudentsPage() {
       {editingUser && <EditUserModal user={editingUser} organizations={organizations} availableRoles={availableRoles} onClose={() => setEditingUser(null)} onSave={updateUser} />}
       {profileUser && <ProfileModal user={profileUser} onClose={() => setProfileUser(null)} onSaved={loadData} />}
       {editingOrganization && <EditOrganizationModal organization={editingOrganization} onClose={() => setEditingOrganization(null)} onSave={updateOrganization} />}
+      {userToDelete && (
+        <ConfirmDialog
+          title="Excluir usuário"
+          message={`Deseja excluir "${userToDelete.name}"?`}
+          confirmLabel="Excluir"
+          danger
+          onCancel={() => setUserToDelete(null)}
+          onConfirm={deleteUser}
+        />
+      )}
       {organizationModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 py-6">
           <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl dark:bg-gray-800">

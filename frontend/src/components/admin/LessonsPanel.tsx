@@ -5,6 +5,7 @@ import { PlusIcon, PencilIcon, TrashIcon, FilmIcon } from '@heroicons/react/24/o
 import toast from 'react-hot-toast';
 import api from '@/lib/api/client';
 import type { CourseModule, Lesson } from '@/types/course';
+import ConfirmDialog from './ConfirmDialog';
 import LessonModal from './LessonModal';
 import VideoUploadButton from './VideoUploadButton';
 
@@ -18,6 +19,7 @@ interface Props {
 
 export default function LessonsPanel({ courseId, lessons, modules, canDelete, onChanged }: Props) {
   const [lessonModal, setLessonModal] = useState<{ open: boolean; lesson?: Lesson }>({ open: false });
+  const [lessonToDelete, setLessonToDelete] = useState<Lesson | null>(null);
 
   const saveLesson = async (data: Partial<Lesson>) => {
     try {
@@ -33,11 +35,12 @@ export default function LessonsPanel({ courseId, lessons, modules, canDelete, on
     } catch { toast.error('Erro ao salvar aula.'); }
   };
 
-  const deleteLesson = async (lessonId: number) => {
-    if (!confirm('Excluir esta aula?')) return;
+  const deleteLesson = async () => {
+    if (!lessonToDelete) return;
     try {
-      await api.delete(`/lessons/${lessonId}`);
+      await api.delete(`/lessons/${lessonToDelete.id}`);
       toast.success('Aula excluída.');
+      setLessonToDelete(null);
       onChanged();
     } catch { toast.error('Erro ao excluir aula.'); }
   };
@@ -76,7 +79,7 @@ export default function LessonsPanel({ courseId, lessons, modules, canDelete, on
                   <PencilIcon className="w-3.5 h-3.5" />
                 </button>
                 {canDelete && (
-                  <button onClick={() => deleteLesson(lesson.id)} className="p-1.5 text-gray-400 hover:text-red-600 rounded transition-colors">
+                  <button onClick={() => setLessonToDelete(lesson)} className="p-1.5 text-gray-400 hover:text-red-600 rounded transition-colors">
                     <TrashIcon className="w-3.5 h-3.5" />
                   </button>
                 )}
@@ -93,6 +96,16 @@ export default function LessonsPanel({ courseId, lessons, modules, canDelete, on
           lesson={lessonModal.lesson}
           onClose={() => setLessonModal({ open: false })}
           onSave={saveLesson}
+        />
+      )}
+      {lessonToDelete && (
+        <ConfirmDialog
+          title="Excluir aula"
+          message={`Deseja excluir "${lessonToDelete.title}"?`}
+          confirmLabel="Excluir"
+          danger
+          onCancel={() => setLessonToDelete(null)}
+          onConfirm={deleteLesson}
         />
       )}
     </div>
