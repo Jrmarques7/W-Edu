@@ -25,6 +25,8 @@ export default function AdminSchedulePage() {
   const [loading, setLoading] = useState(true);
   const [activeSetupTab, setActiveSetupTab] = useState<SetupTab>('classes');
   const [classModalOpen, setClassModalOpen] = useState(false);
+  const [roomModalOpen, setRoomModalOpen] = useState(false);
+  const [locationModalOpen, setLocationModalOpen] = useState(false);
 
   const load = async () => {
     const [courseRes, locationRes, roomRes, classRes] = await Promise.all([
@@ -176,8 +178,114 @@ export default function AdminSchedulePage() {
                 onLoadAttendance={loadAttendance} onLoadSummary={loadSummary} onCloseMeeting={closeMeeting} />
             </div>
           )}
-          {activeSetupTab === 'rooms' && <RoomForm locations={locations} onCreated={load} />}
-          {activeSetupTab === 'locations' && <LocationForm onCreated={load} />}
+          {activeSetupTab === 'rooms' && (
+            <div className="space-y-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Salas cadastradas</h2>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Organize espaços físicos, capacidade e vínculo com unidades.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setRoomModalOpen(true)}
+                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700"
+                >
+                  <PlusIcon className="h-4 w-4" />
+                  <span>Adicionar sala</span>
+                </button>
+              </div>
+
+              <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+                {rooms.length === 0 ? (
+                  <p className="p-5 text-sm text-gray-500 dark:text-gray-400">Nenhuma sala cadastrada.</p>
+                ) : (
+                  <div className="divide-y divide-gray-100 dark:divide-gray-700">
+                    {rooms.map((room) => {
+                      const location = locations.find((item) => item.id === room.location_id);
+                      return (
+                        <div key={room.id} className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-50 dark:bg-indigo-900/20">
+                              <BuildingOffice2Icon className="h-5 w-5 text-indigo-600" />
+                            </div>
+                            <div>
+                              <p className="font-medium text-gray-900 dark:text-white">{room.name}</p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400">
+                                {location?.name ?? `Unidade #${room.location_id}`} · {room.capacity} lugares
+                              </p>
+                            </div>
+                          </div>
+                          <span className={`w-fit rounded-full px-2.5 py-1 text-xs font-medium ${
+                            room.is_active
+                              ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300'
+                              : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
+                          }`}>
+                            {room.is_active ? 'Ativa' : 'Inativa'}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+          {activeSetupTab === 'locations' && (
+            <div className="space-y-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Unidades cadastradas</h2>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Mantenha os polos e unidades disponíveis para aulas presenciais.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setLocationModalOpen(true)}
+                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700"
+                >
+                  <PlusIcon className="h-4 w-4" />
+                  <span>Adicionar unidade</span>
+                </button>
+              </div>
+
+              <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+                {locations.length === 0 ? (
+                  <p className="p-5 text-sm text-gray-500 dark:text-gray-400">Nenhuma unidade cadastrada.</p>
+                ) : (
+                  <div className="divide-y divide-gray-100 dark:divide-gray-700">
+                    {locations.map((location) => {
+                      const roomCount = rooms.filter((room) => room.location_id === location.id).length;
+                      return (
+                        <div key={location.id} className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-50 dark:bg-indigo-900/20">
+                              <MapPinIcon className="h-5 w-5 text-indigo-600" />
+                            </div>
+                            <div>
+                              <p className="font-medium text-gray-900 dark:text-white">{location.name}</p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400">
+                                {location.address || 'Endereço não informado'} · {roomCount} {roomCount === 1 ? 'sala' : 'salas'}
+                              </p>
+                            </div>
+                          </div>
+                          <span className={`w-fit rounded-full px-2.5 py-1 text-xs font-medium ${
+                            location.is_active
+                              ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300'
+                              : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
+                          }`}>
+                            {location.is_active ? 'Ativa' : 'Inativa'}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
       {classModalOpen && (
@@ -204,6 +312,63 @@ export default function AdminSchedulePage() {
               onCancel={() => setClassModalOpen(false)}
               onCreated={() => {
                 setClassModalOpen(false);
+                load();
+              }}
+            />
+          </div>
+        </div>
+      )}
+      {roomModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 py-6">
+          <div className="w-full max-w-lg rounded-xl bg-white p-6 shadow-xl dark:bg-gray-800">
+            <div className="mb-5 flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Adicionar sala</h2>
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Vincule a sala a uma unidade e defina sua capacidade.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setRoomModalOpen(false)}
+                aria-label="Fechar modal"
+                className="rounded-lg p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-700 dark:hover:text-white"
+              >
+                <XMarkIcon className="h-5 w-5" />
+              </button>
+            </div>
+            <RoomForm
+              locations={locations}
+              variant="plain"
+              onCancel={() => setRoomModalOpen(false)}
+              onCreated={() => {
+                setRoomModalOpen(false);
+                load();
+              }}
+            />
+          </div>
+        </div>
+      )}
+      {locationModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 py-6">
+          <div className="w-full max-w-lg rounded-xl bg-white p-6 shadow-xl dark:bg-gray-800">
+            <div className="mb-5 flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Adicionar unidade</h2>
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Crie uma unidade para organizar salas e encontros presenciais.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setLocationModalOpen(false)}
+                aria-label="Fechar modal"
+                className="rounded-lg p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-700 dark:hover:text-white"
+              >
+                <XMarkIcon className="h-5 w-5" />
+              </button>
+            </div>
+            <LocationForm
+              variant="plain"
+              onCancel={() => setLocationModalOpen(false)}
+              onCreated={() => {
+                setLocationModalOpen(false);
                 load();
               }}
             />
