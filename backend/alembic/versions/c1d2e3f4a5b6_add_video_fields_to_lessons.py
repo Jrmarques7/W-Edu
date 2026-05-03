@@ -1,15 +1,15 @@
 """add video fields to lessons
 
-Revision ID: a1b2c3d4e5f6
-Revises: f6a7b8c9d0e1
-Create Date: 2026-05-02 00:00:00.000000
+Revision ID: c1d2e3f4a5b6
+Revises: b8c9d0e1f2a3
+Create Date: 2026-05-03 00:00:00.000000
 """
 
 from alembic import op
 import sqlalchemy as sa
 
-revision = 'a1b2c3d4e5f6'
-down_revision = 'f6a7b8c9d0e1'
+revision = 'c1d2e3f4a5b6'
+down_revision = 'b8c9d0e1f2a3'
 branch_labels = None
 depends_on = None
 
