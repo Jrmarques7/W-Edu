@@ -87,12 +87,13 @@ export default function AdminAnalyticsPage() {
         <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Relatórios detalhados</h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Navegue pelos recortes operacionais sem sair da visão executiva.</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Clique no recorte desejado para carregar o relatório abaixo.</p>
           </div>
         </div>
 
-        <div className="mt-4 rounded-xl bg-gray-50 p-1 dark:bg-gray-900/40">
-          <nav className="flex gap-2 overflow-x-auto" role="tablist" aria-label="Relatórios">
+        <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-5">
+          <div className="rounded-xl bg-gray-50 p-1 dark:bg-gray-900/40 sm:col-span-2 xl:col-span-5">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-5">
             {tabs.map((tab) => {
               const Icon = tab.icon;
               const active = activeTab === tab.id;
@@ -100,18 +101,17 @@ export default function AdminAnalyticsPage() {
                 <button
                   key={tab.id}
                   type="button"
-                  role="tab"
-                  aria-selected={active}
-                  aria-controls={`report-${tab.id}`}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                  className={`flex items-center justify-between gap-3 rounded-lg px-3 py-3 text-left text-sm font-medium transition-colors ${
                     active
                       ? 'bg-white text-blue-600 shadow-sm ring-1 ring-gray-200 dark:bg-gray-800 dark:text-blue-400 dark:ring-gray-700'
                       : 'text-gray-500 hover:bg-white hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200'
                   }`}
                 >
-                  <Icon className="h-4 w-4" />
-                  <span>{tab.label}</span>
+                  <span className="flex min-w-0 items-center gap-2">
+                    <Icon className="h-4 w-4 shrink-0" />
+                    <span>{tab.label}</span>
+                  </span>
                   <span
                     className={`inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-xs font-medium ${
                       active
@@ -124,10 +124,11 @@ export default function AdminAnalyticsPage() {
                 </button>
               );
             })}
-          </nav>
+            </div>
+          </div>
         </div>
 
-        <div className="mt-5" id={`report-${activeTab}`} role="tabpanel">
+        <div className="mt-5" id={`report-${activeTab}`}>
           {activeTab === 'completion' && <CompletionTable rows={completionRows} />}
           {activeTab === 'attendance' && <AttendanceTable rows={attendanceRows} />}
           {activeTab === 'engagement' && <EngagementTable rows={engagementRows} />}
