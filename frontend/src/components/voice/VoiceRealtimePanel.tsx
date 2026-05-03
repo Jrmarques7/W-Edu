@@ -22,14 +22,35 @@ interface VoiceRealtimePanelProps {
   onSessionUpdate: (session: Session) => void;
 }
 
-function getFallbackBevoxWsUrl() {
-  const configured = process.env.NEXT_PUBLIC_BEVOX_URL;
-  if (configured) {
-    return `${configured.replace(/\/$/, '').replace(/^https/, 'wss').replace(/^http/, 'ws')}/ws/voice/stream`;
-  }
+function getSameOriginBevoxWsUrl() {
   if (typeof window === 'undefined') return 'ws://localhost:8001/ws/voice/stream';
+  if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    return `${protocol}//${window.location.host}/ws/voice/stream`;
+  }
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
   return `${protocol}//${window.location.hostname}:8001/ws/voice/stream`;
+}
+
+function resolveBevoxWsUrl(configuredUrl?: string | null) {
+  const sameOriginUrl = getSameOriginBevoxWsUrl();
+  const envUrl = process.env.NEXT_PUBLIC_BEVOX_URL
+    ? `${process.env.NEXT_PUBLIC_BEVOX_URL.replace(/\/$/, '').replace(/^https/, 'wss').replace(/^http/, 'ws')}/ws/voice/stream`
+    : null;
+  const candidate = configuredUrl || envUrl;
+  if (!candidate || typeof window === 'undefined') return candidate || sameOriginUrl;
+
+  try {
+    const url = new URL(candidate);
+    const isSameProductionHost = url.hostname === window.location.hostname && url.port === '8001';
+    if (isSameProductionHost && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+      return sameOriginUrl;
+    }
+  } catch {
+    return sameOriginUrl;
+  }
+
+  return candidate;
 }
 
 function getMicrophoneErrorMessage(error: unknown) {
@@ -151,7 +172,7 @@ export function VoiceRealtimePanel({ lessonId, onSessionUpdate }: VoiceRealtimeP
       return;
     }
 
-    const ws = new WebSocket(startConfig.bevox_ws_url || getFallbackBevoxWsUrl());
+    const ws = new WebSocket(resolveBevoxWsUrl(startConfig.bevox_ws_url));
     ws.binaryType = 'arraybuffer';
     wsRef.current = ws;
 

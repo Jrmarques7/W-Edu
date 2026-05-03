@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react';
 import { BuildingOfficeIcon, PencilIcon, PlusIcon, TrashIcon, UserCircleIcon, UsersIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import api from '@/lib/api/client';
-import type { InstructorProfile, Organization, Student, StudentProfile, UserRole } from '@/types/auth';
+import { useAuthStore } from '@/store/authStore';
+import type { InstructorProfile, Organization, StudentProfile, User, UserRole } from '@/types/auth';
 
 const roleLabel: Record<UserRole, string> = {
   student: 'Aluno',
@@ -13,10 +14,13 @@ const roleLabel: Record<UserRole, string> = {
   company_manager: 'Gestor empresa',
   admin: 'Admin',
 };
+const roleOptions = Object.entries(roleLabel) as Array<[UserRole, string]>;
+const manageableRoleOptions = roleOptions.filter(([role]) => role === 'student' || role === 'instructor');
 
-function NewStudentModal({ organizations, onClose, onSave }: {
+function NewUserModal({ organizations, availableRoles, onClose, onSave }: {
   organizations: Organization[];
   onClose: () => void;
+  availableRoles: Array<[UserRole, string]>;
   onSave: (data: { name: string; email: string; password: string; role: UserRole; organization_id: number | null }) => Promise<void>;
 }) {
   const [name, setName] = useState('');
@@ -58,7 +62,7 @@ function NewStudentModal({ organizations, onClose, onSave }: {
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Perfil</label>
               <select value={role} onChange={(e) => setRole(e.target.value as UserRole)}
                 className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                {Object.entries(roleLabel).map(([value, label]) => (
+                {availableRoles.map(([value, label]) => (
                   <option key={value} value={value}>{label}</option>
                 ))}
               </select>
@@ -89,23 +93,24 @@ function NewStudentModal({ organizations, onClose, onSave }: {
   );
 }
 
-function EditUserModal({ student, organizations, onClose, onSave }: {
-  student: Student;
+function EditUserModal({ user, organizations, availableRoles, onClose, onSave }: {
+  user: User;
   organizations: Organization[];
   onClose: () => void;
+  availableRoles: Array<[UserRole, string]>;
   onSave: (id: number, data: { name: string; email: string; role: UserRole; organization_id: number | null; is_active: boolean }) => Promise<void>;
 }) {
-  const [name, setName] = useState(student.name);
-  const [email, setEmail] = useState(student.email);
-  const [role, setRole] = useState<UserRole>(student.role);
-  const [organizationId, setOrganizationId] = useState(student.organization_id?.toString() ?? '');
-  const [isActive, setIsActive] = useState(student.is_active);
+  const [name, setName] = useState(user.name);
+  const [email, setEmail] = useState(user.email);
+  const [role, setRole] = useState<UserRole>(user.role);
+  const [organizationId, setOrganizationId] = useState(user.organization_id?.toString() ?? '');
+  const [isActive, setIsActive] = useState(user.is_active);
   const [saving, setSaving] = useState(false);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setSaving(true);
-    await onSave(student.id, {
+    await onSave(user.id, {
       name,
       email,
       role,
@@ -135,7 +140,7 @@ function EditUserModal({ student, organizations, onClose, onSave }: {
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Perfil</label>
               <select value={role} onChange={(e) => setRole(e.target.value as UserRole)}
                 className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                {Object.entries(roleLabel).map(([value, label]) => (
+                {availableRoles.map(([value, label]) => (
                   <option key={value} value={value}>{label}</option>
                 ))}
               </select>
@@ -229,8 +234,8 @@ function EditOrganizationModal({ organization, onClose, onSave }: {
   );
 }
 
-function ProfileModal({ student, onClose, onSaved }: {
-  student: Student;
+function ProfileModal({ user, onClose, onSaved }: {
+  user: User;
   onClose: () => void;
   onSaved: () => void;
 }) {
@@ -245,31 +250,31 @@ function ProfileModal({ student, onClose, onSaved }: {
 
   useEffect(() => {
     const requests: Promise<any>[] = [
-      api.get<StudentProfile>(`/admin/students/${student.id}/student-profile`).then((response) => setStudentProfile(response.data)),
+      api.get<StudentProfile>(`/admin/users/${user.id}/student-profile`).then((response) => setStudentProfile(response.data)),
     ];
-    if (student.role === 'instructor') {
+    if (user.role === 'instructor') {
       requests.push(
-        api.get<InstructorProfile>(`/admin/students/${student.id}/instructor-profile`).then((response) => setInstructorProfile(response.data)),
-        api.get(`/admin/students/${student.id}/availability`).then((response) => setAvailability(response.data)),
-        api.get(`/admin/students/${student.id}/ratings`).then((response) => setRatings(response.data))
+        api.get<InstructorProfile>(`/admin/users/${user.id}/instructor-profile`).then((response) => setInstructorProfile(response.data)),
+        api.get(`/admin/users/${user.id}/availability`).then((response) => setAvailability(response.data)),
+        api.get(`/admin/users/${user.id}/ratings`).then((response) => setRatings(response.data))
       );
     }
     Promise.all(requests).finally(() => setLoading(false));
-  }, [student.id, student.role]);
+  }, [user.id, user.role]);
 
   const save = async (event: React.FormEvent) => {
     event.preventDefault();
     setSaving(true);
     try {
-      await api.patch(`/admin/students/${student.id}/student-profile`, {
+      await api.patch(`/admin/users/${user.id}/student-profile`, {
         phone: studentProfile.phone || null,
         document: studentProfile.document || null,
         position: studentProfile.position || null,
         department: studentProfile.department || null,
         bio: studentProfile.bio || null,
       });
-      if (student.role === 'instructor') {
-        await api.patch(`/admin/students/${student.id}/instructor-profile`, {
+      if (user.role === 'instructor') {
+        await api.patch(`/admin/users/${user.id}/instructor-profile`, {
           specialties: instructorProfile.specialties || null,
           bio: instructorProfile.bio || null,
           rating: instructorProfile.rating || null,
@@ -287,8 +292,8 @@ function ProfileModal({ student, onClose, onSaved }: {
 
   const addAvailability = async () => {
     try {
-      await api.post(`/admin/students/${student.id}/availability`, newAvailability);
-      const { data } = await api.get(`/admin/students/${student.id}/availability`);
+      await api.post(`/admin/users/${user.id}/availability`, newAvailability);
+      const { data } = await api.get(`/admin/users/${user.id}/availability`);
       setAvailability(data);
       toast.success('Disponibilidade adicionada.');
     } catch (e: any) {
@@ -298,8 +303,8 @@ function ProfileModal({ student, onClose, onSaved }: {
 
   const addRating = async () => {
     try {
-      await api.post(`/admin/students/${student.id}/ratings`, newRating);
-      const { data } = await api.get(`/admin/students/${student.id}/ratings`);
+      await api.post(`/admin/users/${user.id}/ratings`, newRating);
+      const { data } = await api.get(`/admin/users/${user.id}/ratings`);
       setRatings(data);
       toast.success('Avaliação registrada.');
     } catch (e: any) {
@@ -312,7 +317,7 @@ function ProfileModal({ student, onClose, onSaved }: {
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-2xl p-6 space-y-4">
         <div>
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Editar perfil</h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400">{student.name} · {roleLabel[student.role]}</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">{user.name} · {roleLabel[user.role]}</p>
         </div>
         {loading ? (
           <p className="text-sm text-gray-500 dark:text-gray-400">Carregando...</p>
@@ -331,7 +336,7 @@ function ProfileModal({ student, onClose, onSaved }: {
             <textarea value={studentProfile.bio ?? ''} onChange={(e) => setStudentProfile((prev) => ({ ...prev, bio: e.target.value }))} rows={3} placeholder="Bio do aluno/usuário"
               className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
 
-            {student.role === 'instructor' && (
+            {user.role === 'instructor' && (
               <div className="border-t border-gray-100 dark:border-gray-700 pt-4 space-y-3">
                 <input value={instructorProfile.specialties ?? ''} onChange={(e) => setInstructorProfile((prev) => ({ ...prev, specialties: e.target.value }))} placeholder="Especialidades"
                   className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
@@ -405,11 +410,16 @@ function ProfileModal({ student, onClose, onSaved }: {
 }
 
 export default function AdminStudentsPage() {
-  const [students, setStudents] = useState<Student[]>([]);
+  const { student } = useAuthStore();
+  const isAdmin = student?.role === 'admin';
+  const canDelete = student?.role === 'admin';
+  const availableRoles = isAdmin ? roleOptions : manageableRoleOptions;
+  const canManageUser = (user: User) => user.role !== 'admin' && (isAdmin || user.role === 'student' || user.role === 'instructor');
+  const [users, setUsers] = useState<User[]>([]);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [showModal, setShowModal] = useState(false);
-  const [editingStudent, setEditingStudent] = useState<Student | null>(null);
-  const [profileStudent, setProfileStudent] = useState<Student | null>(null);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [profileUser, setProfileUser] = useState<User | null>(null);
   const [editingOrganization, setEditingOrganization] = useState<Organization | null>(null);
   const [loading, setLoading] = useState(true);
   const [organizationName, setOrganizationName] = useState('');
@@ -419,18 +429,18 @@ export default function AdminStudentsPage() {
 
   const loadData = () =>
     Promise.all([
-      api.get<Student[]>('/admin/students'),
+      api.get<User[]>('/admin/users'),
       api.get<Organization[]>('/admin/organizations'),
-    ]).then(([studentRes, organizationRes]) => {
-      setStudents(studentRes.data);
+    ]).then(([userRes, organizationRes]) => {
+      setUsers(userRes.data);
       setOrganizations(organizationRes.data);
     }).finally(() => setLoading(false));
 
   useEffect(() => { loadData(); }, []);
 
-  const createStudent = async (data: { name: string; email: string; password: string; role: UserRole; organization_id: number | null }) => {
+  const createUser = async (data: { name: string; email: string; password: string; role: UserRole; organization_id: number | null }) => {
     try {
-      await api.post('/admin/students', data);
+      await api.post('/admin/users', data);
       toast.success('Usuário criado!');
       setShowModal(false);
       loadData();
@@ -439,11 +449,11 @@ export default function AdminStudentsPage() {
     }
   };
 
-  const updateStudent = async (id: number, data: { name: string; email: string; role: UserRole; organization_id: number | null; is_active: boolean }) => {
+  const updateUser = async (id: number, data: { name: string; email: string; role: UserRole; organization_id: number | null; is_active: boolean }) => {
     try {
-      await api.patch(`/admin/students/${id}`, data);
+      await api.patch(`/admin/users/${id}`, data);
       toast.success('Usuário atualizado.');
-      setEditingStudent(null);
+      setEditingUser(null);
       loadData();
     } catch (e: any) {
       toast.error(e.response?.data?.detail ?? 'Erro ao atualizar usuário.');
@@ -481,13 +491,13 @@ export default function AdminStudentsPage() {
     }
   };
 
-  const deleteStudent = async (id: number) => {
-    if (!confirm('Excluir este aluno?')) return;
+  const deleteUser = async (id: number) => {
+    if (!confirm('Excluir este usuário?')) return;
     try {
-      await api.delete(`/admin/students/${id}`);
-      toast.success('Aluno excluído.');
+      await api.delete(`/admin/users/${id}`);
+      toast.success('Usuário excluído.');
       loadData();
-    } catch { toast.error('Erro ao excluir aluno.'); }
+    } catch { toast.error('Erro ao excluir usuário.'); }
   };
 
   if (loading) return (
@@ -504,7 +514,7 @@ export default function AdminStudentsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Usuários</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{students.length} usuário{students.length !== 1 ? 's' : ''} cadastrado{students.length !== 1 ? 's' : ''}</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{users.length} usuário{users.length !== 1 ? 's' : ''} cadastrado{users.length !== 1 ? 's' : ''}</p>
         </div>
         <button onClick={() => setShowModal(true)}
           className="flex items-center space-x-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors">
@@ -513,25 +523,27 @@ export default function AdminStudentsPage() {
         </button>
       </div>
 
-      <form onSubmit={createOrganization} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 space-y-3">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nova empresa B2B</label>
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-3">
-          <input value={organizationName} onChange={(e) => setOrganizationName(e.target.value)} required placeholder="Nome da empresa"
-            className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-          <input value={organizationLegalName} onChange={(e) => setOrganizationLegalName(e.target.value)} placeholder="Razão social"
-            className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-          <input value={organizationDocument} onChange={(e) => setOrganizationDocument(e.target.value)} placeholder="Documento"
-            className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-          <input type="email" value={organizationContactEmail} onChange={(e) => setOrganizationContactEmail(e.target.value)} placeholder="E-mail de contato"
-            className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+      {isAdmin && (
+        <form onSubmit={createOrganization} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 space-y-3">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nova empresa B2B</label>
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-3">
+            <input value={organizationName} onChange={(e) => setOrganizationName(e.target.value)} required placeholder="Nome da empresa"
+              className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            <input value={organizationLegalName} onChange={(e) => setOrganizationLegalName(e.target.value)} placeholder="Razão social"
+              className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            <input value={organizationDocument} onChange={(e) => setOrganizationDocument(e.target.value)} placeholder="Documento"
+              className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            <input type="email" value={organizationContactEmail} onChange={(e) => setOrganizationContactEmail(e.target.value)} placeholder="E-mail de contato"
+              className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            </div>
           </div>
-        </div>
-        <button className="inline-flex items-center space-x-2 px-4 py-2 bg-gray-900 hover:bg-gray-800 dark:bg-gray-700 dark:hover:bg-gray-600 text-white text-sm font-medium rounded-lg transition-colors">
-          <PlusIcon className="w-4 h-4" />
-          <span>Criar empresa</span>
-        </button>
-      </form>
+          <button className="inline-flex items-center space-x-2 px-4 py-2 bg-gray-900 hover:bg-gray-800 dark:bg-gray-700 dark:hover:bg-gray-600 text-white text-sm font-medium rounded-lg transition-colors">
+            <PlusIcon className="w-4 h-4" />
+            <span>Criar empresa</span>
+          </button>
+        </form>
+      )}
 
       {organizations.length > 0 && (
         <section className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 divide-y divide-gray-100 dark:divide-gray-700">
@@ -556,71 +568,75 @@ export default function AdminStudentsPage() {
                 }`}>
                   {organization.is_active ? 'Ativa' : 'Inativa'}
                 </span>
-                <button type="button" onClick={() => setEditingOrganization(organization)}
-                  className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-colors">
-                  <PencilIcon className="w-4 h-4" />
-                </button>
+                {isAdmin && (
+                  <button type="button" onClick={() => setEditingOrganization(organization)}
+                    className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-colors">
+                    <PencilIcon className="w-4 h-4" />
+                  </button>
+                )}
               </div>
             </div>
           ))}
         </section>
       )}
 
-      {students.length === 0 ? (
+      {users.length === 0 ? (
         <div className="bg-white dark:bg-gray-800 rounded-xl border border-dashed border-gray-300 dark:border-gray-600 p-10 text-center">
           <UsersIcon className="w-12 h-12 text-gray-400 mx-auto mb-3" />
           <p className="text-gray-500 dark:text-gray-400">Nenhum usuário cadastrado.</p>
         </div>
       ) : (
         <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 divide-y divide-gray-100 dark:divide-gray-700">
-          {students.map((student) => (
-            <div key={student.id} className="flex items-center justify-between px-5 py-4">
+          {users.map((user) => (
+            <div key={user.id} className="flex items-center justify-between px-5 py-4">
               <div className="flex items-center space-x-4">
                 <div className="w-9 h-9 bg-indigo-600 rounded-full flex items-center justify-center">
-                  <span className="text-white text-sm font-medium">{student.name.charAt(0).toUpperCase()}</span>
+                  <span className="text-white text-sm font-medium">{user.name.charAt(0).toUpperCase()}</span>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-900 dark:text-white">{student.name}</p>
+                  <p className="text-sm font-medium text-gray-900 dark:text-white">{user.name}</p>
                   <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {student.email}
-                    {student.organization_id ? ` · ${organizations.find((organization) => organization.id === student.organization_id)?.name ?? 'Empresa'}` : ''}
+                    {user.email}
+                    {user.organization_id ? ` · ${organizations.find((organization) => organization.id === user.organization_id)?.name ?? 'Empresa'}` : ''}
                   </p>
                 </div>
               </div>
               <div className="flex items-center space-x-3">
                 <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-                  student.role === 'admin'
+                  user.role === 'admin'
                     ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'
-                    : student.role === 'instructor'
+                    : user.role === 'instructor'
                       ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
                     : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
                 }`}>
-                  {roleLabel[student.role]}
+                  {roleLabel[user.role]}
                 </span>
                 <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-                  student.is_active
+                  user.is_active
                     ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
                     : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
                 }`}>
-                  {student.is_active ? 'Ativo' : 'Inativo'}
+                  {user.is_active ? 'Ativo' : 'Inativo'}
                 </span>
                 <p className="text-xs text-gray-400 hidden sm:block">
-                  {new Date(student.created_at).toLocaleDateString('pt-BR')}
+                  {new Date(user.created_at).toLocaleDateString('pt-BR')}
                 </p>
-                {student.role !== 'admin' && (
+                {canManageUser(user) && (
                   <>
-                  <button onClick={() => setEditingStudent(student)}
+                  <button onClick={() => setEditingUser(user)}
                     className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-colors">
                     <PencilIcon className="w-4 h-4" />
                   </button>
-                  <button onClick={() => setProfileStudent(student)}
+                  <button onClick={() => setProfileUser(user)}
                     className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-colors">
                     <UserCircleIcon className="w-4 h-4" />
                   </button>
-                  <button onClick={() => deleteStudent(student.id)}
-                    className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">
-                    <TrashIcon className="w-4 h-4" />
-                  </button>
+                  {canDelete && (
+                    <button onClick={() => deleteUser(user.id)}
+                      className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">
+                      <TrashIcon className="w-4 h-4" />
+                    </button>
+                  )}
                   </>
                 )}
               </div>
@@ -629,9 +645,9 @@ export default function AdminStudentsPage() {
         </div>
       )}
 
-      {showModal && <NewStudentModal organizations={organizations} onClose={() => setShowModal(false)} onSave={createStudent} />}
-      {editingStudent && <EditUserModal student={editingStudent} organizations={organizations} onClose={() => setEditingStudent(null)} onSave={updateStudent} />}
-      {profileStudent && <ProfileModal student={profileStudent} onClose={() => setProfileStudent(null)} onSaved={loadData} />}
+      {showModal && <NewUserModal organizations={organizations} availableRoles={availableRoles} onClose={() => setShowModal(false)} onSave={createUser} />}
+      {editingUser && <EditUserModal user={editingUser} organizations={organizations} availableRoles={availableRoles} onClose={() => setEditingUser(null)} onSave={updateUser} />}
+      {profileUser && <ProfileModal user={profileUser} onClose={() => setProfileUser(null)} onSaved={loadData} />}
       {editingOrganization && <EditOrganizationModal organization={editingOrganization} onClose={() => setEditingOrganization(null)} onSave={updateOrganization} />}
     </div>
   );

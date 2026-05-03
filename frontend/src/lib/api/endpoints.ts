@@ -1,7 +1,7 @@
 export const endpoints = {
   auth: {
     login: '/auth/login',
-    me: '/students/me',
+    me: '/users/me',
   },
   courses: {
     list: '/courses',

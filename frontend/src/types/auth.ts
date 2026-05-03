@@ -10,6 +10,8 @@ export interface Student {
   created_at: string;
 }
 
+export type User = Student;
+
 export interface Organization {
   id: number;
   name: string;

@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.dependencies import get_current_student, get_current_admin
+from app.dependencies import get_current_admin, get_current_admin_or_coordinator, get_current_student
 from app.models.student import Student
 from app.schemas.course import (
     CourseCreate,
@@ -20,7 +20,7 @@ router = APIRouter()
 
 
 @router.post("", response_model=CourseOut, status_code=201)
-def create_course(data: CourseCreate, db: Session = Depends(get_db), _: Student = Depends(get_current_admin)):
+def create_course(data: CourseCreate, db: Session = Depends(get_db), _: Student = Depends(get_current_admin_or_coordinator)):
     return CourseService(db).create(data)
 
 
@@ -36,7 +36,7 @@ def get_course(course_id: int, db: Session = Depends(get_db), _: Student = Depen
 
 @router.patch("/{course_id}", response_model=CourseOut)
 def update_course(
-    course_id: int, data: CourseUpdate, db: Session = Depends(get_db), _: Student = Depends(get_current_admin)
+    course_id: int, data: CourseUpdate, db: Session = Depends(get_db), _: Student = Depends(get_current_admin_or_coordinator)
 ):
     return CourseService(db).update(course_id, data)
 
@@ -51,7 +51,7 @@ def create_module(
     course_id: int,
     data: CourseModuleCreate,
     db: Session = Depends(get_db),
-    _: Student = Depends(get_current_admin),
+    _: Student = Depends(get_current_admin_or_coordinator),
 ):
     payload = data.model_copy(update={"course_id": course_id})
     return CourseModuleService(db).create(payload)
@@ -71,7 +71,7 @@ def update_module(
     module_id: int,
     data: CourseModuleUpdate,
     db: Session = Depends(get_db),
-    _: Student = Depends(get_current_admin),
+    _: Student = Depends(get_current_admin_or_coordinator),
 ):
     return CourseModuleService(db).update(module_id, data)
 
@@ -86,7 +86,7 @@ def create_prerequisite(
     course_id: int,
     data: CoursePrerequisiteCreate,
     db: Session = Depends(get_db),
-    _: Student = Depends(get_current_admin),
+    _: Student = Depends(get_current_admin_or_coordinator),
 ):
     return CoursePrerequisiteService(db).create(course_id, data)
 

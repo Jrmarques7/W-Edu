@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.dependencies import get_current_admin, get_current_student
+from app.dependencies import get_current_admin, get_current_admin_or_coordinator, get_current_student
 from app.models.student import Student
 from app.schemas.certificate import (
     CertificateEligibilityOut,
@@ -19,7 +19,7 @@ router = APIRouter()
 
 
 @router.get("/rules/{course_id}", response_model=CertificateRuleOut)
-def get_rule(course_id: int, db: Session = Depends(get_db), _: Student = Depends(get_current_admin)):
+def get_rule(course_id: int, db: Session = Depends(get_db), _: Student = Depends(get_current_admin_or_coordinator)):
     return CertificateService(db).get_rule(course_id)
 
 
@@ -28,7 +28,7 @@ def update_rule(
     course_id: int,
     data: CertificateRuleUpdate,
     db: Session = Depends(get_db),
-    _: Student = Depends(get_current_admin),
+    _: Student = Depends(get_current_admin_or_coordinator),
 ):
     return CertificateService(db).update_rule(course_id, data)
 
@@ -38,7 +38,7 @@ def check_eligibility(
     course_id: int,
     student_id: int,
     db: Session = Depends(get_db),
-    _: Student = Depends(get_current_admin),
+    _: Student = Depends(get_current_admin_or_coordinator),
 ):
     return CertificateService(db).evaluate(course_id, student_id)
 
@@ -48,14 +48,14 @@ def issue_certificate(
     course_id: int,
     student_id: int,
     db: Session = Depends(get_db),
-    current: Student = Depends(get_current_admin),
+    current: Student = Depends(get_current_admin_or_coordinator),
 ):
     certificate = CertificateService(db).issue(course_id, student_id, issued_by_id=current.id)
     return CertificateIssueOut(issued=True, certificate_id=certificate.id, validation_code=certificate.validation_code)
 
 
 @router.get("/courses/{course_id}/certificates", response_model=list[CertificateOut])
-def list_course_certificates(course_id: int, db: Session = Depends(get_db), _: Student = Depends(get_current_admin)):
+def list_course_certificates(course_id: int, db: Session = Depends(get_db), _: Student = Depends(get_current_admin_or_coordinator)):
     return CertificateService(db).list_by_course(course_id)
 
 
@@ -75,11 +75,19 @@ def my_certificates(db: Session = Depends(get_db), current: Student = Depends(ge
 
 
 @router.get("/students/{student_id}", response_model=list[CertificateOut])
-def list_student_certificates(student_id: int, db: Session = Depends(get_db), _: Student = Depends(get_current_admin)):
+def list_student_certificates(student_id: int, db: Session = Depends(get_db), _: Student = Depends(get_current_admin_or_coordinator)):
     return CertificateService(db).list_by_student(student_id)
 
 
 @router.get("/validate/{code}", response_model=CertificateValidationOut)
 def validate_certificate(code: str, db: Session = Depends(get_db)):
     valid, certificate, message = CertificateService(db).validate_code(code)
-    return CertificateValidationOut(valid=valid, certificate=certificate, message=message)
+    course_name = certificate.course.name if certificate and certificate.course else None
+    student_name = certificate.student.name if certificate and certificate.student else None
+    return CertificateValidationOut(
+        valid=valid,
+        certificate=certificate,
+        message=message,
+        course_name=course_name,
+        student_name=student_name,
+    )

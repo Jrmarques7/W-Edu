@@ -17,6 +17,7 @@ import {
   ChatBubbleLeftRightIcon,
   BanknotesIcon,
   Squares2X2Icon,
+  MapIcon,
   ShieldCheckIcon,
   DocumentTextIcon,
 } from '@heroicons/react/24/outline';
@@ -33,6 +34,7 @@ const studentMenu = [
   { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
   { name: 'Meus Cursos', href: '/courses', icon: BookOpenIcon },
   { name: 'Progresso', href: '/progress', icon: ChartBarIcon },
+  { name: 'Certificados', href: '/certificates', icon: ShieldCheckIcon },
   { name: 'Sessões de Voz', href: '/sessions', icon: MicrophoneIcon },
   { name: 'Configurações', href: '/settings', icon: Cog6ToothIcon },
 ];
@@ -40,22 +42,55 @@ const studentMenu = [
 const adminMenu = [
   { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
   { name: 'Cursos', href: '/admin/courses', icon: AcademicCapIcon },
+  { name: 'Trilhas', href: '/admin/learning-paths', icon: MapIcon },
   { name: 'Agenda', href: '/admin/schedule', icon: CalendarDaysIcon },
   { name: 'Certificados', href: '/admin/certificates', icon: ShieldCheckIcon },
   { name: 'Comunicação', href: '/admin/notifications', icon: ChatBubbleLeftRightIcon },
   { name: 'Financeiro', href: '/admin/finance', icon: BanknotesIcon },
   { name: 'Documentos', href: '/admin/documents', icon: DocumentTextIcon },
   { name: 'Relatórios', href: '/admin/analytics', icon: ChartBarIcon },
-  { name: 'Alunos', href: '/admin/students', icon: UsersIcon },
+  { name: 'Usuários', href: '/admin/users', icon: UsersIcon },
   { name: 'Catálogo', href: '/courses', icon: Squares2X2Icon },
+  { name: 'Meus certificados', href: '/certificates', icon: ShieldCheckIcon },
+  { name: 'Configurações', href: '/settings', icon: Cog6ToothIcon },
+];
+
+const coordinatorMenu = [
+  { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
+  { name: 'Cursos', href: '/admin/courses', icon: AcademicCapIcon },
+  { name: 'Trilhas', href: '/admin/learning-paths', icon: MapIcon },
+  { name: 'Agenda', href: '/admin/schedule', icon: CalendarDaysIcon },
+  { name: 'Certificados', href: '/admin/certificates', icon: ShieldCheckIcon },
+  { name: 'Comunicação', href: '/admin/notifications', icon: ChatBubbleLeftRightIcon },
+  { name: 'Usuários', href: '/admin/users', icon: UsersIcon },
+  { name: 'Catálogo', href: '/courses', icon: Squares2X2Icon },
+  { name: 'Meus certificados', href: '/certificates', icon: ShieldCheckIcon },
+  { name: 'Configurações', href: '/settings', icon: Cog6ToothIcon },
+];
+
+const companyManagerMenu = [
+  { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
+  { name: 'Financeiro', href: '/admin/finance', icon: BanknotesIcon },
+  { name: 'Documentos', href: '/admin/documents', icon: DocumentTextIcon },
+  { name: 'Relatórios', href: '/admin/analytics', icon: ChartBarIcon },
+  { name: 'Usuários', href: '/admin/users', icon: UsersIcon },
+  { name: 'Catálogo', href: '/courses', icon: Squares2X2Icon },
+  { name: 'Meus certificados', href: '/certificates', icon: ShieldCheckIcon },
   { name: 'Configurações', href: '/settings', icon: Cog6ToothIcon },
 ];
 
 export function Sidebar({ open, collapsed, onClose, onToggleCollapse }: SidebarProps) {
   const pathname = usePathname();
   const { student } = useAuthStore();
-  const isAdminArea = student?.role === 'admin' || student?.role === 'company_manager';
-  const menuItems = isAdminArea ? adminMenu : studentMenu;
+  const isAdminArea = student?.role === 'admin' || student?.role === 'coordinator' || student?.role === 'company_manager';
+  const menuItems =
+    student?.role === 'admin'
+      ? adminMenu
+      : student?.role === 'coordinator'
+        ? coordinatorMenu
+        : student?.role === 'company_manager'
+          ? companyManagerMenu
+          : studentMenu;
 
   useEffect(() => {
     if (open) {

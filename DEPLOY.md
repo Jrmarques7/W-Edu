@@ -105,7 +105,17 @@ https://172.16.102.76:3000
 ```
 
 Na primeira execução, o Next pode pedir a senha do sistema para instalar uma CA local via `mkcert`.
-Aceite o certificado local no navegador. Se o BeVox estiver em outro serviço/domínio, configure `BEVOX_PUBLIC_URL` com uma URL pública HTTPS para que o frontend receba um WebSocket `wss://`.
+Aceite o certificado local no navegador.
+
+Em produção, não exponha o BeVox diretamente como `https://dominio:8001`. A porta `8001` normalmente fala HTTP/WebSocket puro, então o navegador falha ao abrir `wss://dominio:8001/...` se não houver TLS nessa porta.
+
+O `npm start` do frontend sobe `server.mjs`, que roda o Next e faz proxy WebSocket em `/bevox/` para o BeVox local. Deixe `BEVOX_PUBLIC_URL` vazio quando o BeVox estiver no mesmo servidor. O frontend usará:
+
+```text
+wss://seu-dominio/bevox/ws/voice/stream
+```
+
+Se o BeVox estiver em outro serviço/domínio com TLS próprio, configure `BEVOX_PUBLIC_URL` com a URL pública HTTPS desse serviço, sem o caminho `/ws/voice/stream`.
 
 Um `404` em `/api/quizzes/lesson/<id>/attempts` significa que a aula não tem quiz cadastrado para esse aluno; essa chamada é opcional e não bloqueia o microfone.
 

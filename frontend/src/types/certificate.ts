@@ -38,6 +38,8 @@ export interface CertificateValidation {
   valid: boolean;
   certificate: Certificate | null;
   message: string | null;
+  course_name: string | null;
+  student_name: string | null;
 }
 
 export interface CertificateIssueResult {

@@ -6,15 +6,22 @@
 
 Objetivo: deixar a base pronta para curso, trilha, turma e presencial.
 
-- Criar modelo `User` ou planejar migracao segura do `Student` atual.
-- Expandir papeis para aluno, instrutor, coordenador, gestor empresa e admin.
-- Criar `Organization` para B2B.
-- Criar `CourseModule`.
-- Adicionar modalidade em `Course`: online, presencial, hibrido.
-- Expandir `LessonType`: texto, video, PDF, live, presencial, voz e avaliacao.
-- Criar `LearningPath` e relacao com cursos.
-- Criar pre-requisitos entre cursos.
-- Criar regras de conclusao.
+- [x] Criar camada semantica `User` mantendo compatibilidade com `Student` atual.
+- [x] Expandir papeis para aluno, instrutor, coordenador, gestor empresa e admin.
+- [x] Criar `Organization` para B2B.
+- [x] Criar `CourseModule`.
+- [x] Adicionar modalidade em `Course`: online, presencial, hibrido.
+- [x] Expandir `LessonType`: texto, video, PDF, live, presencial, voz e avaliacao.
+- [x] Criar `LearningPath` e relacao com cursos.
+- [x] Expor trilhas na area admin com vinculo de cursos.
+- [x] Criar pre-requisitos entre cursos.
+- [x] Expor pre-requisitos na tela admin de cursos.
+- [x] Criar regras de conclusao.
+- [x] Criar matriz de permissoes por papel.
+- [x] Adicionar verificador leve de permissoes criticas em `backend/scripts/check_permissions.py`.
+- [x] Adicionar verificador dos guards de papel em `backend/scripts/check_role_guards.py`.
+- [x] Adicionar verificador HTTP de permissoes criticas com SQLite temporario em `backend/scripts/check_api_permissions.py`.
+- [x] Bloquear no frontend o acesso direto a rotas admin fora do escopo do papel.
 
 Aceite:
 
@@ -34,7 +41,7 @@ Objetivo: separar curso de oferta/turma.
 - [x] Criar `ClassEnrollment`.
 - [x] Criar `WaitlistEntry`.
 - [x] Criar `ScheduledMeeting`.
-- Criar disponibilidade de instrutor.
+- [x] Criar disponibilidade de instrutor.
 
 Aceite:
 

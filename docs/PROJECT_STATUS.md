@@ -1,6 +1,6 @@
 # W-Edu — Controle de Implementacao
 
-Ultima atualizacao: 2026-04-30
+Ultima atualizacao: 2026-05-02
 
 ## Resumo Executivo
 
@@ -58,12 +58,27 @@ O projeto ja possui uma base LMS/EAD com autenticacao, cursos, aulas, matriculas
 
 ### Usuarios, perfis e empresas
 
+- Camada semantica `User` criada sobre a tabela legada `students`, com endpoint publico `/users` e aliases internos para migracao gradual.
+- Endpoints admin tambem aceitam `/admin/users`, mantendo `/admin/students` por compatibilidade.
+- Frontend admin passou a consumir `/admin/users` e ganhou rota `/admin/users`, preservando `/admin/students` como rota legada.
+- Frontend passou a bloquear acesso direto a paginas `/admin/*` fora do escopo do papel, alem de filtrar o menu lateral.
 - Papeis expandidos: aluno, instrutor, coordenador, gestor empresa e admin.
 - Empresas B2B.
 - Vinculo de usuario com empresa.
 - Perfil detalhado de aluno.
 - Perfil de instrutor.
 - Admin de usuarios com selecao de papel e empresa.
+- Coordenador passou a ter acesso a gestao academica de usuarios, cursos, aulas, agenda, certificados e comunicacao sem abrir rotas financeiras.
+- Acoes destrutivas sensiveis ficaram restritas a admin: exclusao de usuarios, cursos, modulos, pre-requisitos, aulas e quizzes; revogacao de certificado tambem permanece admin-only.
+- Tela admin de cursos permite criar, editar e excluir modulos conforme permissao do papel.
+- Tela admin de cursos permite listar, adicionar e remover pre-requisitos conforme permissao do papel.
+- Tela admin de trilhas permite criar/editar trilhas e vincular cursos; exclusao de trilhas e remocao de cursos da trilha permanecem admin-only.
+- Catalogo de cursos exibe trilhas de aprendizagem e permite matricula/continuidade pelos cursos vinculados.
+- Aluno ganhou tela `Meus certificados` para consultar certificados emitidos e codigos de validacao.
+- Validacao publica de certificado disponivel em `/validate-certificate`.
+- Matriz de permissoes criada em `docs/PERMISSIONS.md`.
+- Verificador leve de rotas criticas criado em `backend/scripts/check_permissions.py`.
+- Verificador dos guards de papel criado em `backend/scripts/check_role_guards.py`.
 
 ### Instrutores
 
@@ -110,6 +125,9 @@ O projeto ja possui uma base LMS/EAD com autenticacao, cursos, aulas, matriculas
 - Import da API FastAPI com `from main import app`: OK.
 - Alembic SQL offline com `alembic upgrade head --sql`: OK.
 - Frontend build com `npm run build`: OK.
+- Verificacao de permissoes com `backend/.venv/bin/python scripts/check_permissions.py`: OK.
+- Verificacao de guards com `backend/.venv/bin/python scripts/check_role_guards.py`: OK.
+- Verificacao HTTP de permissoes criticas com SQLite temporario em `backend/.venv/bin/python scripts/check_api_permissions.py`: OK.
 
 Observacao: `alembic upgrade head` online nao foi aplicado porque o PostgreSQL configurado nao respondeu no ambiente local durante a validacao.
 
@@ -117,9 +135,9 @@ Observacao: `alembic upgrade head` online nao foi aplicado porque o PostgreSQL c
 
 ### Usuarios e perfis
 
-- Separar `Student` de `User` ou migrar o modelo atual para usuario com nome semantico correto.
+- Concluir migracao fisica futura da tabela/foreign keys `students` para `users`, se o custo operacional justificar.
 - Telas completas para editar perfis detalhados de aluno e instrutor.
-- Permissoes refinadas por coordenador e gestor empresa.
+- Expandir a verificacao HTTP de permissoes para cobrir todos os recursos administrativos e escopos por organizacao.
 
 ### Instrutores
 
@@ -211,10 +229,7 @@ Observacao: `alembic upgrade head` online nao foi aplicado porque o PostgreSQL c
 
 Implementar usuarios e perfis:
 
-- Criar base de usuarios mais generica.
-- Expandir roles.
-- Criar perfis de aluno e instrutor.
-- Criar empresas B2B.
-- Migrar referencias atuais sem quebrar login.
+- Concluir refinamento de permissoes por recurso.
+- Planejar migracao fisica de nomes legados `students` para `users` sem quebrar FKs.
 
 Esse marco destrava instrutores reais, empresas, agenda de professor, relatorios corporativos e permissoes mais corretas.

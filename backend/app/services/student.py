@@ -53,7 +53,7 @@ class StudentService:
     def get_or_404(self, student_id: int) -> Student:
         student = self.repo.get_by_id(student_id)
         if not student:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Aluno não encontrado")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuário não encontrado")
         return student
 
     def list_all(self) -> list[Student]:
@@ -181,7 +181,7 @@ class OrganizationService:
         return self.repo.list_all()
 
     def list_for_user(self, current: Student) -> list[Organization]:
-        if current.role == UserRole.admin:
+        if current.role in {UserRole.admin, UserRole.coordinator}:
             return self.repo.list_all()
         if current.organization_id is None:
             return []
@@ -192,3 +192,6 @@ class OrganizationService:
         for field, value in data.model_dump(exclude_none=True).items():
             setattr(organization, field, value)
         return self.repo.update(organization)
+
+
+UserService = StudentService

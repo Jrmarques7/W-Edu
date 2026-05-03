@@ -3,7 +3,7 @@
 ## Status Atual
 
 **Fase:** 2 — Voz com Professor IA (em andamento)  
-**Ultima atualizacao:** 2026-04-30
+**Ultima atualizacao:** 2026-05-02
 
 ## Visao Alvo
 
@@ -99,16 +99,19 @@ Integracao W-Matrix:
 
 Objetivo: preparar a base correta antes de crescer funcionalidades.
 
-- [ ] Separar `User` de `Student` ou renomear o modelo atual para usuario com perfis.
+- [x] Criar camada semantica `User` sobre o modelo legado `Student`, com rotas `/users` e compatibilidade com `/students`.
 - [x] Adicionar papeis: aluno, instrutor, coordenador, gestor empresa e admin.
+- [x] Refinar acesso do coordenador para operacoes academicas sem liberar financeiro/analytics.
+- [x] Restringir acoes destrutivas sensiveis ao papel admin.
+- [x] Criar matriz de permissoes, verificador de dependencias criticas por rota, verificador dos guards por papel e verificador HTTP de permissoes criticas.
 - [x] Criar empresas B2B.
 - [x] Expandir curso com modalidade: online, presencial e hibrido.
 - [x] Criar modulos de curso.
 - [x] Expandir aulas com tipos: texto, video, PDF, live, presencial, voz e avaliacao.
 - [x] Criar trilhas de aprendizagem.
 - [x] Criar pre-requisitos entre cursos.
-- [ ] Criar regras de conclusao por curso.
-- [ ] Ajustar frontend/admin para novo modelo.
+- [x] Criar regras de conclusao por curso.
+- [x] Evoluir frontend/admin para usar a nomenclatura `/admin/users` em todas as chamadas de gestao de usuarios.
 
 Entidades esperadas:
 
@@ -184,12 +187,12 @@ checkin_tokens
 
 ### Fase 7 — Financeiro
 
-- [ ] Criar planos de curso.
-- [ ] Criar assinatura.
-- [ ] Criar pagamento por turma.
-- [ ] Integrar PIX.
-- [ ] Integrar cartao.
-- [ ] Integrar boleto.
+- [x] Criar planos de curso.
+- [x] Criar assinatura.
+- [x] Criar pagamento por turma.
+- [x] Criar estrutura base para PIX.
+- [x] Criar estrutura base para cartao.
+- [x] Criar estrutura base para boleto.
 - [ ] Preparar gateway Asaas/PagSeguro.
 
 ### Fase 8 — Documentos e GED/ECM

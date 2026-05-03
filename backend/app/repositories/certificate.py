@@ -1,4 +1,5 @@
 from sqlalchemy.orm import Session
+from sqlalchemy.orm import selectinload
 
 from app.models.certificate import Certificate
 from app.models.course import CourseCompletionRule
@@ -12,7 +13,12 @@ class CertificateRepository:
         return self.db.get(Certificate, certificate_id)
 
     def get_by_code(self, code: str) -> Certificate | None:
-        return self.db.query(Certificate).filter(Certificate.validation_code == code).first()
+        return (
+            self.db.query(Certificate)
+            .options(selectinload(Certificate.course), selectinload(Certificate.student))
+            .filter(Certificate.validation_code == code)
+            .first()
+        )
 
     def get_by_student_and_course(self, student_id: int, course_id: int) -> Certificate | None:
         return (

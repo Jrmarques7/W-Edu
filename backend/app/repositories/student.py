@@ -46,6 +46,9 @@ class StudentRepository:
         self.db.commit()
 
 
+UserRepository = StudentRepository
+
+
 class OrganizationRepository:
     def __init__(self, db: Session):
         self.db = db

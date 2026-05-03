@@ -135,3 +135,8 @@ class StudentOut(BaseModel):
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+UserCreate = StudentCreate
+UserUpdate = StudentUpdate
+UserOut = StudentOut

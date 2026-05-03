@@ -5,6 +5,7 @@ import { CheckBadgeIcon, AcademicCapIcon, QrCodeIcon, ShieldCheckIcon } from '@h
 import toast from 'react-hot-toast';
 import api from '@/lib/api/client';
 import { endpoints } from '@/lib/api/endpoints';
+import { useAuthStore } from '@/store/authStore';
 import type { Course } from '@/types/course';
 import type { Enrollment } from '@/types/course';
 import type { Student } from '@/types/auth';
@@ -21,6 +22,8 @@ const emptyRule = {
 };
 
 export default function AdminCertificatesPage() {
+  const { student } = useAuthStore();
+  const canRevoke = student?.role === 'admin';
   const [courses, setCourses] = useState<Course[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
@@ -43,7 +46,7 @@ export default function AdminCertificatesPage() {
   const loadCourses = async () => {
     const [courseRes, studentRes] = await Promise.all([
       api.get<Course[]>(endpoints.courses.list),
-      api.get<Student[]>('/admin/students'),
+      api.get<Student[]>('/admin/users'),
     ]);
     setCourses(courseRes.data);
     setStudents(studentRes.data);
@@ -308,7 +311,7 @@ export default function AdminCertificatesPage() {
                   }`}>
                     {certificate.revoked_at ? 'Revogado' : 'Válido'}
                   </span>
-                  {!certificate.revoked_at && (
+                  {canRevoke && !certificate.revoked_at && (
                     <button onClick={() => revokeCertificate(certificate)}
                       className="px-3 py-1.5 text-xs font-medium rounded-lg border border-red-200 text-red-700 hover:bg-red-50 dark:border-red-900/40 dark:text-red-400 dark:hover:bg-red-900/20">
                       Revogar

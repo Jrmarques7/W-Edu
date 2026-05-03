@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.dependencies import get_current_admin, get_current_student
+from app.dependencies import get_current_admin_or_coordinator, get_current_student
 from app.models.student import Student
 from app.schemas.schedule import (
     ClassEnrollmentOut,
@@ -32,7 +32,7 @@ router = APIRouter()
 
 
 @router.post("/locations", response_model=LocationOut, status_code=201)
-def create_location(data: LocationCreate, db: Session = Depends(get_db), _: Student = Depends(get_current_admin)):
+def create_location(data: LocationCreate, db: Session = Depends(get_db), _: Student = Depends(get_current_admin_or_coordinator)):
     return LocationService(db).create(data)
 
 
@@ -46,13 +46,13 @@ def update_location(
     location_id: int,
     data: LocationUpdate,
     db: Session = Depends(get_db),
-    _: Student = Depends(get_current_admin),
+    _: Student = Depends(get_current_admin_or_coordinator),
 ):
     return LocationService(db).update(location_id, data)
 
 
 @router.post("/rooms", response_model=RoomOut, status_code=201)
-def create_room(data: RoomCreate, db: Session = Depends(get_db), _: Student = Depends(get_current_admin)):
+def create_room(data: RoomCreate, db: Session = Depends(get_db), _: Student = Depends(get_current_admin_or_coordinator)):
     return RoomService(db).create(data)
 
 
@@ -69,7 +69,7 @@ def update_room(
     room_id: int,
     data: RoomUpdate,
     db: Session = Depends(get_db),
-    _: Student = Depends(get_current_admin),
+    _: Student = Depends(get_current_admin_or_coordinator),
 ):
     return RoomService(db).update(room_id, data)
 
@@ -78,7 +78,7 @@ def update_room(
 def create_class(
     data: ClassOfferingCreate,
     db: Session = Depends(get_db),
-    _: Student = Depends(get_current_admin),
+    _: Student = Depends(get_current_admin_or_coordinator),
 ):
     return ClassOfferingService(db).create(data)
 
@@ -105,7 +105,7 @@ def update_class(
     class_id: int,
     data: ClassOfferingUpdate,
     db: Session = Depends(get_db),
-    _: Student = Depends(get_current_admin),
+    _: Student = Depends(get_current_admin_or_coordinator),
 ):
     return ClassOfferingService(db).update(class_id, data)
 
@@ -119,7 +119,7 @@ def join_class(class_id: int, db: Session = Depends(get_db), current: Student = 
 def list_class_enrollments(
     class_id: int,
     db: Session = Depends(get_db),
-    _: Student = Depends(get_current_admin),
+    _: Student = Depends(get_current_admin_or_coordinator),
 ):
     return ClassOfferingService(db).list_enrollments(class_id)
 
@@ -128,7 +128,7 @@ def list_class_enrollments(
 def list_class_waitlist(
     class_id: int,
     db: Session = Depends(get_db),
-    _: Student = Depends(get_current_admin),
+    _: Student = Depends(get_current_admin_or_coordinator),
 ):
     return ClassOfferingService(db).list_waitlist(class_id)
 
@@ -137,7 +137,7 @@ def list_class_waitlist(
 def create_meeting(
     data: ScheduledMeetingCreate,
     db: Session = Depends(get_db),
-    _: Student = Depends(get_current_admin),
+    _: Student = Depends(get_current_admin_or_coordinator),
 ):
     return ScheduledMeetingService(db).create(data)
 
@@ -156,7 +156,7 @@ def update_meeting(
     meeting_id: int,
     data: ScheduledMeetingUpdate,
     db: Session = Depends(get_db),
-    _: Student = Depends(get_current_admin),
+    _: Student = Depends(get_current_admin_or_coordinator),
 ):
     return ScheduledMeetingService(db).update(meeting_id, data)
 
@@ -165,7 +165,7 @@ def update_meeting(
 def close_meeting(
     meeting_id: int,
     db: Session = Depends(get_db),
-    _: Student = Depends(get_current_admin),
+    _: Student = Depends(get_current_admin_or_coordinator),
 ):
     return ScheduledMeetingService(db).close_meeting(meeting_id)
 
@@ -174,7 +174,7 @@ def close_meeting(
 def meeting_summary(
     meeting_id: int,
     db: Session = Depends(get_db),
-    _: Student = Depends(get_current_admin),
+    _: Student = Depends(get_current_admin_or_coordinator),
 ):
     return ScheduledMeetingService(db).attendance_summary(meeting_id)
 
@@ -184,7 +184,7 @@ def create_checkin_token(
     meeting_id: int,
     data: CheckinTokenCreate,
     db: Session = Depends(get_db),
-    _: Student = Depends(get_current_admin),
+    _: Student = Depends(get_current_admin_or_coordinator),
 ):
     return AttendanceRecordService(db).generate_checkin_token(meeting_id, data.valid_minutes)
 
@@ -193,7 +193,7 @@ def create_checkin_token(
 def list_checkin_tokens(
     meeting_id: int,
     db: Session = Depends(get_db),
-    _: Student = Depends(get_current_admin),
+    _: Student = Depends(get_current_admin_or_coordinator),
 ):
     return AttendanceRecordService(db).list_tokens(meeting_id)
 
@@ -208,7 +208,7 @@ def create_attendance_record(
     meeting_id: int,
     data: AttendanceRecordCreate,
     db: Session = Depends(get_db),
-    _: Student = Depends(get_current_admin),
+    _: Student = Depends(get_current_admin_or_coordinator),
 ):
     return AttendanceRecordService(db).create_manual_record(
         meeting_id,
@@ -223,6 +223,6 @@ def create_attendance_record(
 def list_attendance_records(
     meeting_id: int,
     db: Session = Depends(get_db),
-    _: Student = Depends(get_current_admin),
+    _: Student = Depends(get_current_admin_or_coordinator),
 ):
     return AttendanceRecordService(db).list_by_meeting(meeting_id)

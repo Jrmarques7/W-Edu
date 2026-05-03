@@ -7,11 +7,13 @@ import toast from 'react-hot-toast';
 import api from '@/lib/api/client';
 import { endpoints } from '@/lib/api/endpoints';
 import { useAuthStore } from '@/store/authStore';
-import type { Course, Enrollment } from '@/types/course';
+import type { Course, Enrollment, LearningPath, LearningPathCourse } from '@/types/course';
 
 export default function CoursesPage() {
   const { student } = useAuthStore();
   const [courses, setCourses] = useState<Course[]>([]);
+  const [learningPaths, setLearningPaths] = useState<LearningPath[]>([]);
+  const [pathCourses, setPathCourses] = useState<Record<number, LearningPathCourse[]>>({});
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -19,14 +21,28 @@ export default function CoursesPage() {
     if (!student) return;
     Promise.all([
       api.get<Course[]>(endpoints.courses.list),
+      api.get<LearningPath[]>(endpoints.learningPaths.list),
       api.get<Enrollment[]>(endpoints.enrollments.byStudent(student.id)),
-    ]).then(([c, e]) => {
+    ]).then(async ([c, p, e]) => {
       setCourses(c.data);
+      setLearningPaths(p.data);
       setEnrollments(e.data);
+      const entries = await Promise.all(
+        p.data.map(async (path) => {
+          try {
+            const { data } = await api.get<LearningPathCourse[]>(endpoints.learningPaths.courses(path.id));
+            return [path.id, data.sort((a, b) => a.order - b.order)] as const;
+          } catch {
+            return [path.id, []] as const;
+          }
+        })
+      );
+      setPathCourses(Object.fromEntries(entries));
     }).finally(() => setLoading(false));
   }, [student]);
 
   const isEnrolled = (courseId: number) => enrollments.some((e) => e.course_id === courseId);
+  const courseName = (courseId: number) => courses.find((course) => course.id === courseId)?.name ?? `Curso #${courseId}`;
 
   const enroll = async (courseId: number) => {
     if (!student) return;
@@ -56,6 +72,50 @@ export default function CoursesPage() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Catálogo de Cursos</h1>
+
+      {learningPaths.length > 0 && (
+        <section className="space-y-3">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Trilhas de aprendizagem</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Jornadas organizadas por sequência de cursos.</p>
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {learningPaths.map((path) => (
+              <div key={path.id} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
+                <h3 className="font-semibold text-gray-900 dark:text-white">{path.name}</h3>
+                {path.description && <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{path.description}</p>}
+                {(pathCourses[path.id] ?? []).length === 0 ? (
+                  <p className="mt-3 text-sm text-gray-400">Nenhum curso vinculado.</p>
+                ) : (
+                  <div className="mt-4 space-y-2">
+                    {(pathCourses[path.id] ?? []).map((item) => {
+                      const enrolled = isEnrolled(item.course_id);
+                      return (
+                        <div key={item.id} className="flex items-center justify-between rounded-lg bg-gray-50 px-3 py-2 dark:bg-gray-900">
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-medium text-gray-900 dark:text-white">{item.order}. {courseName(item.course_id)}</p>
+                            {enrolled && <p className="text-xs text-green-600 dark:text-green-400">Matriculado</p>}
+                          </div>
+                          {enrolled ? (
+                            <Link href={`/courses/${item.course_id}`} className="text-xs font-medium text-indigo-600 hover:text-indigo-700 dark:text-indigo-400">
+                              Continuar
+                            </Link>
+                          ) : (
+                            <button onClick={() => enroll(item.course_id)}
+                              className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-700">
+                              Matricular
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {courses.length === 0 ? (
         <div className="bg-white dark:bg-gray-800 rounded-xl border border-dashed border-gray-300 dark:border-gray-600 p-10 text-center">

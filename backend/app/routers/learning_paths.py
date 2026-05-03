@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.dependencies import get_current_admin, get_current_student
+from app.dependencies import get_current_admin, get_current_admin_or_coordinator, get_current_student
 from app.models.student import Student
 from app.schemas.course import (
     LearningPathCourseCreate,
@@ -20,7 +20,7 @@ router = APIRouter()
 def create_learning_path(
     data: LearningPathCreate,
     db: Session = Depends(get_db),
-    _: Student = Depends(get_current_admin),
+    _: Student = Depends(get_current_admin_or_coordinator),
 ):
     return LearningPathService(db).create(data)
 
@@ -40,7 +40,7 @@ def update_learning_path(
     path_id: int,
     data: LearningPathUpdate,
     db: Session = Depends(get_db),
-    _: Student = Depends(get_current_admin),
+    _: Student = Depends(get_current_admin_or_coordinator),
 ):
     return LearningPathService(db).update(path_id, data)
 
@@ -55,7 +55,7 @@ def add_course_to_learning_path(
     path_id: int,
     data: LearningPathCourseCreate,
     db: Session = Depends(get_db),
-    _: Student = Depends(get_current_admin),
+    _: Student = Depends(get_current_admin_or_coordinator),
 ):
     return LearningPathService(db).add_course(path_id, data)
 

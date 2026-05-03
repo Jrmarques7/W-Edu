@@ -5,6 +5,7 @@ import { PlusIcon, CheckIcon, XMarkIcon, DocumentTextIcon } from '@heroicons/rea
 import toast from 'react-hot-toast';
 import api from '@/lib/api/client';
 import { endpoints } from '@/lib/api/endpoints';
+import { useAuthStore } from '@/store/authStore';
 import type { BillingPlan, Charge, Subscription, BillingPeriod, PaymentMethod } from '@/types/finance';
 import type { Student, Organization } from '@/types/auth';
 import type { Course } from '@/types/course';
@@ -18,6 +19,8 @@ const periodLabels: Record<BillingPeriod, string> = {
 };
 
 export default function AdminFinancePage() {
+  const { student } = useAuthStore();
+  const isAdmin = student?.role === 'admin';
   const [plans, setPlans] = useState<BillingPlan[]>([]);
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [charges, setCharges] = useState<Charge[]>([]);
@@ -48,7 +51,7 @@ export default function AdminFinancePage() {
       api.get<BillingPlan[]>(endpoints.finance.plans),
       api.get<Subscription[]>(endpoints.finance.subscriptions),
       api.get<Charge[]>(endpoints.finance.charges),
-      api.get<Student[]>('/admin/students'),
+      api.get<Student[]>('/admin/users'),
       api.get<Organization[]>('/admin/organizations'),
       api.get<Course[]>(endpoints.courses.list),
       api.get<ClassOffering[]>(endpoints.schedule.classes),
@@ -157,117 +160,119 @@ export default function AdminFinancePage() {
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Planos, assinaturas e cobranças.</p>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-        <form onSubmit={createPlan} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 space-y-3">
-          <div className="flex items-center gap-2">
-            <DocumentTextIcon className="w-5 h-5 text-indigo-600" />
-            <h2 className="font-semibold text-gray-900 dark:text-white">Plano</h2>
-          </div>
-          <input value={planForm.name} onChange={(e) => setPlanForm((prev) => ({ ...prev, name: e.target.value }))}
-            placeholder="Nome"
-            className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white" />
-          <textarea value={planForm.description} onChange={(e) => setPlanForm((prev) => ({ ...prev, description: e.target.value }))}
-            placeholder="Descrição"
-            className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white" />
-          <div className="grid grid-cols-2 gap-2">
-            <input type="number" value={planForm.price_cents} onChange={(e) => setPlanForm((prev) => ({ ...prev, price_cents: Number(e.target.value) }))}
-              placeholder="Preço em centavos"
+      {isAdmin && (
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+          <form onSubmit={createPlan} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 space-y-3">
+            <div className="flex items-center gap-2">
+              <DocumentTextIcon className="w-5 h-5 text-indigo-600" />
+              <h2 className="font-semibold text-gray-900 dark:text-white">Plano</h2>
+            </div>
+            <input value={planForm.name} onChange={(e) => setPlanForm((prev) => ({ ...prev, name: e.target.value }))}
+              placeholder="Nome"
               className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white" />
-            <select value={planForm.billing_period} onChange={(e) => setPlanForm((prev) => ({ ...prev, billing_period: e.target.value as BillingPeriod }))}
-              className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white">
-              {Object.entries(periodLabels).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
-            </select>
-          </div>
-          <button className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg">
-            <PlusIcon className="w-4 h-4" />
-            <span>Criar plano</span>
-          </button>
-        </form>
+            <textarea value={planForm.description} onChange={(e) => setPlanForm((prev) => ({ ...prev, description: e.target.value }))}
+              placeholder="Descrição"
+              className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white" />
+            <div className="grid grid-cols-2 gap-2">
+              <input type="number" value={planForm.price_cents} onChange={(e) => setPlanForm((prev) => ({ ...prev, price_cents: Number(e.target.value) }))}
+                placeholder="Preço em centavos"
+                className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white" />
+              <select value={planForm.billing_period} onChange={(e) => setPlanForm((prev) => ({ ...prev, billing_period: e.target.value as BillingPeriod }))}
+                className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white">
+                {Object.entries(periodLabels).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
+              </select>
+            </div>
+            <button className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg">
+              <PlusIcon className="w-4 h-4" />
+              <span>Criar plano</span>
+            </button>
+          </form>
 
-        <form onSubmit={createSubscription} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 space-y-3">
-          <h2 className="font-semibold text-gray-900 dark:text-white">Assinatura</h2>
-          <select value={subscriptionForm.billing_plan_id} onChange={(e) => setSubscriptionForm((prev) => ({ ...prev, billing_plan_id: e.target.value }))}
-            className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white">
-            <option value="">Plano</option>
-            {plans.map((plan) => <option key={plan.id} value={plan.id}>{plan.name}</option>)}
-          </select>
-          <div className="grid grid-cols-2 gap-2">
-            <select value={subscriptionForm.student_id} onChange={(e) => setSubscriptionForm((prev) => ({ ...prev, student_id: e.target.value, organization_id: '' }))}
+          <form onSubmit={createSubscription} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 space-y-3">
+            <h2 className="font-semibold text-gray-900 dark:text-white">Assinatura</h2>
+            <select value={subscriptionForm.billing_plan_id} onChange={(e) => setSubscriptionForm((prev) => ({ ...prev, billing_plan_id: e.target.value }))}
               className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white">
-              <option value="">Aluno</option>
-              {students.map((student) => <option key={student.id} value={student.id}>{student.name}</option>)}
+              <option value="">Plano</option>
+              {plans.map((plan) => <option key={plan.id} value={plan.id}>{plan.name}</option>)}
             </select>
-            <select value={subscriptionForm.organization_id} onChange={(e) => setSubscriptionForm((prev) => ({ ...prev, organization_id: e.target.value, student_id: '' }))}
-              className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white">
-              <option value="">Empresa</option>
-              {organizations.map((org) => <option key={org.id} value={org.id}>{org.name}</option>)}
-            </select>
-          </div>
-          <input value={subscriptionForm.gateway_name} onChange={(e) => setSubscriptionForm((prev) => ({ ...prev, gateway_name: e.target.value }))}
-            placeholder="Gateway"
-            className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white" />
-          <input value={subscriptionForm.gateway_customer_id} onChange={(e) => setSubscriptionForm((prev) => ({ ...prev, gateway_customer_id: e.target.value }))}
-            placeholder="Customer ID"
-            className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white" />
-          <button className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg">
-            <PlusIcon className="w-4 h-4" />
-            <span>Criar assinatura</span>
-          </button>
-        </form>
+            <div className="grid grid-cols-2 gap-2">
+              <select value={subscriptionForm.student_id} onChange={(e) => setSubscriptionForm((prev) => ({ ...prev, student_id: e.target.value, organization_id: '' }))}
+                className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white">
+                <option value="">Aluno</option>
+                {students.map((student) => <option key={student.id} value={student.id}>{student.name}</option>)}
+              </select>
+              <select value={subscriptionForm.organization_id} onChange={(e) => setSubscriptionForm((prev) => ({ ...prev, organization_id: e.target.value, student_id: '' }))}
+                className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white">
+                <option value="">Empresa</option>
+                {organizations.map((org) => <option key={org.id} value={org.id}>{org.name}</option>)}
+              </select>
+            </div>
+            <input value={subscriptionForm.gateway_name} onChange={(e) => setSubscriptionForm((prev) => ({ ...prev, gateway_name: e.target.value }))}
+              placeholder="Gateway"
+              className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white" />
+            <input value={subscriptionForm.gateway_customer_id} onChange={(e) => setSubscriptionForm((prev) => ({ ...prev, gateway_customer_id: e.target.value }))}
+              placeholder="Customer ID"
+              className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white" />
+            <button className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg">
+              <PlusIcon className="w-4 h-4" />
+              <span>Criar assinatura</span>
+            </button>
+          </form>
 
-        <form onSubmit={createCharge} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 space-y-3">
-          <h2 className="font-semibold text-gray-900 dark:text-white">Cobrança</h2>
-          <select value={chargeForm.subscription_id} onChange={(e) => setChargeForm((prev) => ({ ...prev, subscription_id: e.target.value }))}
-            className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white">
-            <option value="">Assinatura opcional</option>
-            {subscriptions.map((subscription) => <option key={subscription.id} value={subscription.id}>#{subscription.id}</option>)}
-          </select>
-          <div className="grid grid-cols-2 gap-2">
-            <select value={chargeForm.student_id} onChange={(e) => setChargeForm((prev) => ({ ...prev, student_id: e.target.value, organization_id: '' }))}
+          <form onSubmit={createCharge} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 space-y-3">
+            <h2 className="font-semibold text-gray-900 dark:text-white">Cobrança</h2>
+            <select value={chargeForm.subscription_id} onChange={(e) => setChargeForm((prev) => ({ ...prev, subscription_id: e.target.value }))}
               className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white">
-              <option value="">Aluno</option>
-              {students.map((student) => <option key={student.id} value={student.id}>{student.name}</option>)}
+              <option value="">Assinatura opcional</option>
+              {subscriptions.map((subscription) => <option key={subscription.id} value={subscription.id}>#{subscription.id}</option>)}
             </select>
-            <select value={chargeForm.organization_id} onChange={(e) => setChargeForm((prev) => ({ ...prev, organization_id: e.target.value, student_id: '' }))}
+            <div className="grid grid-cols-2 gap-2">
+              <select value={chargeForm.student_id} onChange={(e) => setChargeForm((prev) => ({ ...prev, student_id: e.target.value, organization_id: '' }))}
+                className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white">
+                <option value="">Aluno</option>
+                {students.map((student) => <option key={student.id} value={student.id}>{student.name}</option>)}
+              </select>
+              <select value={chargeForm.organization_id} onChange={(e) => setChargeForm((prev) => ({ ...prev, organization_id: e.target.value, student_id: '' }))}
+                className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white">
+                <option value="">Empresa</option>
+                {organizations.map((org) => <option key={org.id} value={org.id}>{org.name}</option>)}
+              </select>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <select value={chargeForm.course_id} onChange={(e) => setChargeForm((prev) => ({ ...prev, course_id: e.target.value }))}
+                className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white">
+                <option value="">Curso opcional</option>
+                {courses.map((course) => <option key={course.id} value={course.id}>{course.name}</option>)}
+              </select>
+              <select value={chargeForm.class_offering_id} onChange={(e) => setChargeForm((prev) => ({ ...prev, class_offering_id: e.target.value }))}
+                className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white">
+                <option value="">Turma opcional</option>
+                {classes.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+              </select>
+            </div>
+            <input type="number" value={chargeForm.amount_cents} onChange={(e) => setChargeForm((prev) => ({ ...prev, amount_cents: Number(e.target.value) }))}
+              placeholder="Valor em centavos"
+              className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white" />
+            <select value={chargeForm.payment_method} onChange={(e) => setChargeForm((prev) => ({ ...prev, payment_method: e.target.value as PaymentMethod }))}
               className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white">
-              <option value="">Empresa</option>
-              {organizations.map((org) => <option key={org.id} value={org.id}>{org.name}</option>)}
+              <option value="manual">Manual</option>
+              <option value="pix">PIX</option>
+              <option value="card">Cartão</option>
+              <option value="boleto">Boleto</option>
             </select>
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <select value={chargeForm.course_id} onChange={(e) => setChargeForm((prev) => ({ ...prev, course_id: e.target.value }))}
-              className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white">
-              <option value="">Curso opcional</option>
-              {courses.map((course) => <option key={course.id} value={course.id}>{course.name}</option>)}
-            </select>
-            <select value={chargeForm.class_offering_id} onChange={(e) => setChargeForm((prev) => ({ ...prev, class_offering_id: e.target.value }))}
-              className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white">
-              <option value="">Turma opcional</option>
-              {classes.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
-            </select>
-          </div>
-          <input type="number" value={chargeForm.amount_cents} onChange={(e) => setChargeForm((prev) => ({ ...prev, amount_cents: Number(e.target.value) }))}
-            placeholder="Valor em centavos"
-            className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white" />
-          <select value={chargeForm.payment_method} onChange={(e) => setChargeForm((prev) => ({ ...prev, payment_method: e.target.value as PaymentMethod }))}
-            className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white">
-            <option value="manual">Manual</option>
-            <option value="pix">PIX</option>
-            <option value="card">Cartão</option>
-            <option value="boleto">Boleto</option>
-          </select>
-          <input value={chargeForm.gateway_name} onChange={(e) => setChargeForm((prev) => ({ ...prev, gateway_name: e.target.value }))}
-            placeholder="Gateway"
-            className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white" />
-          <textarea value={chargeForm.description} onChange={(e) => setChargeForm((prev) => ({ ...prev, description: e.target.value }))}
-            placeholder="Descrição"
-            className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white" />
-          <button className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg">
-            <PlusIcon className="w-4 h-4" />
-            <span>Criar cobrança</span>
-          </button>
-        </form>
-      </div>
+            <input value={chargeForm.gateway_name} onChange={(e) => setChargeForm((prev) => ({ ...prev, gateway_name: e.target.value }))}
+              placeholder="Gateway"
+              className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white" />
+            <textarea value={chargeForm.description} onChange={(e) => setChargeForm((prev) => ({ ...prev, description: e.target.value }))}
+              placeholder="Descrição"
+              className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white" />
+            <button className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg">
+              <PlusIcon className="w-4 h-4" />
+              <span>Criar cobrança</span>
+            </button>
+          </form>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
         <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
@@ -300,14 +305,16 @@ export default function AdminFinancePage() {
                   <p className="font-medium text-gray-900 dark:text-white">R$ {(charge.amount_cents / 100).toFixed(2)}</p>
                   <p className="text-xs text-gray-500 dark:text-gray-400">{charge.payment_method} • #{charge.id}</p>
                 </div>
-                <div className="flex items-center gap-2">
-                  <button onClick={() => markPaid(charge.id)} className="p-2 rounded-lg border border-gray-300 dark:border-gray-600 text-green-600">
-                    <CheckIcon className="w-4 h-4" />
-                  </button>
-                  <button onClick={() => markFailed(charge.id)} className="p-2 rounded-lg border border-gray-300 dark:border-gray-600 text-red-600">
-                    <XMarkIcon className="w-4 h-4" />
-                  </button>
-                </div>
+                {isAdmin && (
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => markPaid(charge.id)} className="p-2 rounded-lg border border-gray-300 dark:border-gray-600 text-green-600">
+                      <CheckIcon className="w-4 h-4" />
+                    </button>
+                    <button onClick={() => markFailed(charge.id)} className="p-2 rounded-lg border border-gray-300 dark:border-gray-600 text-red-600">
+                      <XMarkIcon className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
               </div>
             ))}
           </div>

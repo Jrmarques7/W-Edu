@@ -63,6 +63,9 @@ class Student(Base):
     charges: Mapped[list["Charge"]] = relationship(back_populates="student")
 
 
+User = Student
+
+
 class StudentProfile(Base):
     __tablename__ = "student_profiles"
 

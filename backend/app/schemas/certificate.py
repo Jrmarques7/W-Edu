@@ -56,6 +56,8 @@ class CertificateValidationOut(BaseModel):
     valid: bool
     certificate: CertificateOut | None = None
     message: str | None = None
+    course_name: str | None = None
+    student_name: str | None = None
 
 
 class CertificateEligibilityOut(BaseModel):

@@ -62,7 +62,7 @@ export default function AdminDocumentsPage() {
         api.get<Course[]>(endpoints.courses.list),
         api.get<ClassOffering[]>(endpoints.schedule.classes),
         api.get<Organization[]>('/admin/organizations'),
-        api.get<Student[]>('/admin/students'),
+        api.get<Student[]>('/admin/users'),
       ]);
       setDocuments(docRes.data);
       setCourses(courseRes.data);

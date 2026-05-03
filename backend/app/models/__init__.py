@@ -5,6 +5,7 @@ from app.models.student import (
     Organization,
     Student,
     StudentProfile,
+    User,
 )
 from app.models.course import Course, CourseModule, LearningPath, LearningPathCourse, CoursePrerequisite
 from app.models.course import CourseCompletionRule
@@ -32,7 +33,7 @@ from app.models.schedule import (
 )
 
 __all__ = [
-    "Student", "Organization", "StudentProfile", "InstructorProfile", "InstructorAvailability", "InstructorRating",
+    "User", "Student", "Organization", "StudentProfile", "InstructorProfile", "InstructorAvailability", "InstructorRating",
     "Course", "CourseModule", "LearningPath", "LearningPathCourse", "CoursePrerequisite", "CourseCompletionRule", "Lesson", "Enrollment",
     "Progress", "Session", "Attendance",
     "Quiz", "QuizQuestion", "QuizAttempt", "Certificate", "ChatConversation", "ChatMessage", "NotificationTemplate", "NotificationEvent", "BillingPlan", "Subscription", "Charge",

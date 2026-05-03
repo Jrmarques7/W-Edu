@@ -19,6 +19,26 @@ export interface CourseModule {
   created_at: string;
 }
 
+export interface CoursePrerequisite {
+  id: number;
+  course_id: number;
+  prerequisite_course_id: number;
+}
+
+export interface LearningPath {
+  id: number;
+  name: string;
+  description: string | null;
+  created_at: string;
+}
+
+export interface LearningPathCourse {
+  id: number;
+  learning_path_id: number;
+  course_id: number;
+  order: number;
+}
+
 export interface Lesson {
   id: number;
   course_id: number;

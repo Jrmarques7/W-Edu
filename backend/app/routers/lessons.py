@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.dependencies import get_current_student, get_current_admin
+from app.dependencies import get_current_admin, get_current_admin_or_coordinator, get_current_student
 from app.models.student import Student
 from app.schemas.lesson import LessonCreate, LessonUpdate, LessonOut
 from app.services.lesson import LessonService
@@ -11,7 +11,7 @@ router = APIRouter()
 
 
 @router.post("", response_model=LessonOut, status_code=201)
-def create_lesson(data: LessonCreate, db: Session = Depends(get_db), _: Student = Depends(get_current_admin)):
+def create_lesson(data: LessonCreate, db: Session = Depends(get_db), _: Student = Depends(get_current_admin_or_coordinator)):
     return LessonService(db).create(data)
 
 
@@ -29,7 +29,7 @@ def get_lesson(lesson_id: int, db: Session = Depends(get_db), _: Student = Depen
 
 @router.patch("/{lesson_id}", response_model=LessonOut)
 def update_lesson(
-    lesson_id: int, data: LessonUpdate, db: Session = Depends(get_db), _: Student = Depends(get_current_admin)
+    lesson_id: int, data: LessonUpdate, db: Session = Depends(get_db), _: Student = Depends(get_current_admin_or_coordinator)
 ):
     return LessonService(db).update(lesson_id, data)
 
