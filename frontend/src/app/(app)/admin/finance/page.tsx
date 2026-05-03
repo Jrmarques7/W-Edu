@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { CheckIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { BanknotesIcon, CheckIcon, CreditCardIcon, DocumentTextIcon, PlusIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import api from '@/lib/api/client';
 import { endpoints } from '@/lib/api/endpoints';
@@ -15,6 +15,9 @@ import ChargeForm from '@/components/admin/ChargeForm';
 import SubscriptionForm from '@/components/admin/SubscriptionForm';
 
 const periodLabels: Record<string, string> = { one_time: 'Avulso', monthly: 'Mensal', quarterly: 'Trimestral', yearly: 'Anual' };
+const subscriptionStatusLabels: Record<string, string> = { active: 'Ativa', paused: 'Pausada', cancelled: 'Cancelada', overdue: 'Em atraso', completed: 'Concluída' };
+const chargeStatusLabels: Record<string, string> = { pending: 'Pendente', paid: 'Paga', failed: 'Falhou', cancelled: 'Cancelada', refunded: 'Estornada' };
+type FinanceTab = 'plans' | 'subscriptions' | 'charges';
 
 export default function AdminFinancePage() {
   const { student } = useAuthStore();
@@ -27,6 +30,10 @@ export default function AdminFinancePage() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [classes, setClasses] = useState<ClassOffering[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<FinanceTab>('plans');
+  const [planModalOpen, setPlanModalOpen] = useState(false);
+  const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
+  const [chargeModalOpen, setChargeModalOpen] = useState(false);
 
   const load = async () => {
     const [planRes, subRes, chargeRes, studentRes, orgRes, courseRes, classRes] = await Promise.all([
@@ -52,6 +59,15 @@ export default function AdminFinancePage() {
     try { await api.post(endpoints.finance.chargeFailed(id)); await load(); } catch { toast.error('Erro ao marcar como falha.'); }
   };
 
+  const tabs = [
+    { id: 'plans' as FinanceTab, label: 'Planos', icon: DocumentTextIcon, badge: plans.length },
+    { id: 'subscriptions' as FinanceTab, label: 'Assinaturas', icon: CreditCardIcon, badge: subscriptions.length },
+    { id: 'charges' as FinanceTab, label: 'Cobranças', icon: BanknotesIcon, badge: charges.length },
+  ];
+  const studentName = (id: number | null) => id ? students.find((s) => s.id === id)?.name ?? `Aluno #${id}` : null;
+  const organizationName = (id: number | null) => id ? organizations.find((o) => o.id === id)?.name ?? `Empresa #${id}` : null;
+  const planName = (id: number | null) => id ? plans.find((p) => p.id === id)?.name ?? `Plano #${id}` : null;
+
   if (loading) return (
     <div className="flex items-center justify-center py-20">
       <svg className="animate-spin h-8 w-8 text-indigo-600" fill="none" viewBox="0 0 24 24">
@@ -68,56 +84,215 @@ export default function AdminFinancePage() {
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Planos, assinaturas e cobranças.</p>
       </div>
 
-      {isAdmin && (
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-          <BillingPlanForm onCreated={load} />
-          <SubscriptionForm plans={plans} students={students} organizations={organizations} onCreated={load} />
-          <ChargeForm subscriptions={subscriptions} students={students} organizations={organizations} courses={courses} classes={classes} onCreated={load} />
+      <div className="space-y-5">
+        <div className="border-b border-gray-200 dark:border-gray-700">
+          <nav className="-mb-px flex gap-6 overflow-x-auto" role="tablist" aria-label="Gestão financeira">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              const active = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  aria-controls={`finance-${tab.id}`}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex shrink-0 items-center gap-2 border-b-2 px-1 py-4 text-sm font-medium transition-colors ${
+                    active
+                      ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                      : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+                  }`}
+                >
+                  <Icon className="h-5 w-5" />
+                  <span>{tab.label}</span>
+                  <span className={`inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-xs font-medium ${
+                    active
+                      ? 'bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300'
+                      : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
+                  }`}>
+                    {tab.badge}
+                  </span>
+                </button>
+              );
+            })}
+          </nav>
         </div>
-      )}
 
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-          <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-700">
-            <h2 className="font-semibold text-gray-900 dark:text-white">Planos</h2>
-          </div>
-          <div className="divide-y divide-gray-100 dark:divide-gray-700">
-            {plans.map((plan) => (
-              <div key={plan.id} className="px-5 py-4 flex items-center justify-between">
+        <div id={`finance-${activeTab}`} role="tabpanel">
+          {activeTab === 'plans' && (
+            <div className="space-y-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <p className="font-medium text-gray-900 dark:text-white">{plan.name}</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">{periodLabels[plan.billing_period]} • R$ {(plan.price_cents / 100).toFixed(2)}</p>
-                </div>
-                <span className={`text-xs px-2 py-1 rounded-full font-medium ${plan.is_active ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'}`}>
-                  {plan.is_active ? 'Ativo' : 'Inativo'}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-          <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-700">
-            <h2 className="font-semibold text-gray-900 dark:text-white">Cobranças</h2>
-          </div>
-          <div className="divide-y divide-gray-100 dark:divide-gray-700">
-            {charges.map((charge) => (
-              <div key={charge.id} className="px-5 py-4 flex items-start justify-between gap-3">
-                <div>
-                  <p className="font-medium text-gray-900 dark:text-white">R$ {(charge.amount_cents / 100).toFixed(2)}</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">{charge.payment_method} • #{charge.id}</p>
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Planos cadastrados</h2>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Gerencie preços, periodicidade e disponibilidade.</p>
                 </div>
                 {isAdmin && (
-                  <div className="flex items-center gap-2">
-                    <button onClick={() => markPaid(charge.id)} className="p-2 rounded-lg border border-gray-300 dark:border-gray-600 text-green-600"><CheckIcon className="w-4 h-4" /></button>
-                    <button onClick={() => markFailed(charge.id)} className="p-2 rounded-lg border border-gray-300 dark:border-gray-600 text-red-600"><XMarkIcon className="w-4 h-4" /></button>
+                  <button type="button" onClick={() => setPlanModalOpen(true)} className="inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700">
+                    <PlusIcon className="h-4 w-4" />
+                    <span>Adicionar plano</span>
+                  </button>
+                )}
+              </div>
+              <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+                {plans.length === 0 ? (
+                  <p className="p-5 text-sm text-gray-500 dark:text-gray-400">Nenhum plano cadastrado.</p>
+                ) : (
+                  <div className="divide-y divide-gray-100 dark:divide-gray-700">
+                    {plans.map((plan) => (
+                      <div key={plan.id} className="px-5 py-4 flex items-center justify-between">
+                        <div>
+                          <p className="font-medium text-gray-900 dark:text-white">{plan.name}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">{periodLabels[plan.billing_period]} • R$ {(plan.price_cents / 100).toFixed(2)}</p>
+                        </div>
+                        <span className={`text-xs px-2 py-1 rounded-full font-medium ${plan.is_active ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'}`}>
+                          {plan.is_active ? 'Ativo' : 'Inativo'}
+                        </span>
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
-            ))}
-          </div>
+            </div>
+          )}
+
+          {activeTab === 'subscriptions' && (
+            <div className="space-y-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Assinaturas cadastradas</h2>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Acompanhe vínculos recorrentes por aluno ou empresa.</p>
+                </div>
+                {isAdmin && (
+                  <button type="button" onClick={() => setSubscriptionModalOpen(true)} className="inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700">
+                    <PlusIcon className="h-4 w-4" />
+                    <span>Adicionar assinatura</span>
+                  </button>
+                )}
+              </div>
+              <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+                {subscriptions.length === 0 ? (
+                  <p className="p-5 text-sm text-gray-500 dark:text-gray-400">Nenhuma assinatura cadastrada.</p>
+                ) : (
+                  <div className="divide-y divide-gray-100 dark:divide-gray-700">
+                    {subscriptions.map((subscription) => (
+                      <div key={subscription.id} className="px-5 py-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                          <p className="font-medium text-gray-900 dark:text-white">{planName(subscription.billing_plan_id)}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            {studentName(subscription.student_id) || organizationName(subscription.organization_id) || 'Sem titular'} • vence {new Date(subscription.current_period_end).toLocaleDateString('pt-BR')}
+                          </p>
+                        </div>
+                        <span className={`w-fit text-xs px-2 py-1 rounded-full font-medium ${subscription.status === 'active' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'}`}>
+                          {subscriptionStatusLabels[subscription.status]}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'charges' && (
+            <div className="space-y-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Cobranças cadastradas</h2>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Controle cobranças avulsas e recorrentes.</p>
+                </div>
+                {isAdmin && (
+                  <button type="button" onClick={() => setChargeModalOpen(true)} className="inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700">
+                    <PlusIcon className="h-4 w-4" />
+                    <span>Adicionar cobrança</span>
+                  </button>
+                )}
+              </div>
+              <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+                {charges.length === 0 ? (
+                  <p className="p-5 text-sm text-gray-500 dark:text-gray-400">Nenhuma cobrança cadastrada.</p>
+                ) : (
+                  <div className="divide-y divide-gray-100 dark:divide-gray-700">
+                    {charges.map((charge) => (
+                      <div key={charge.id} className="px-5 py-4 flex items-start justify-between gap-3">
+                        <div>
+                          <p className="font-medium text-gray-900 dark:text-white">R$ {(charge.amount_cents / 100).toFixed(2)}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            {charge.payment_method} • #{charge.id} • {studentName(charge.student_id) || organizationName(charge.organization_id) || planName(charge.billing_plan_id) || 'Sem vínculo'}
+                          </p>
+                          {charge.description && <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{charge.description}</p>}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className={`text-xs px-2 py-1 rounded-full font-medium ${charge.status === 'paid' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : charge.status === 'failed' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'}`}>
+                            {chargeStatusLabels[charge.status]}
+                          </span>
+                          {isAdmin && (
+                            <>
+                              <button onClick={() => markPaid(charge.id)} title="Marcar como paga" className="p-2 rounded-lg border border-gray-300 dark:border-gray-600 text-green-600"><CheckIcon className="w-4 h-4" /></button>
+                              <button onClick={() => markFailed(charge.id)} title="Marcar como falha" className="p-2 rounded-lg border border-gray-300 dark:border-gray-600 text-red-600"><XMarkIcon className="w-4 h-4" /></button>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
+
+      {planModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 py-6">
+          <div className="w-full max-w-lg rounded-xl bg-white p-6 shadow-xl dark:bg-gray-800">
+            <div className="mb-5 flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Adicionar plano</h2>
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Defina nome, preço e recorrência.</p>
+              </div>
+              <button type="button" onClick={() => setPlanModalOpen(false)} aria-label="Fechar modal" className="rounded-lg p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-700 dark:hover:text-white">
+                <XMarkIcon className="h-5 w-5" />
+              </button>
+            </div>
+            <BillingPlanForm variant="plain" onCancel={() => setPlanModalOpen(false)} onCreated={() => { setPlanModalOpen(false); load(); }} />
+          </div>
+        </div>
+      )}
+
+      {subscriptionModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 py-6">
+          <div className="w-full max-w-xl rounded-xl bg-white p-6 shadow-xl dark:bg-gray-800">
+            <div className="mb-5 flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Adicionar assinatura</h2>
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Vincule um plano a aluno ou empresa.</p>
+              </div>
+              <button type="button" onClick={() => setSubscriptionModalOpen(false)} aria-label="Fechar modal" className="rounded-lg p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-700 dark:hover:text-white">
+                <XMarkIcon className="h-5 w-5" />
+              </button>
+            </div>
+            <SubscriptionForm plans={plans} students={students} organizations={organizations} variant="plain" onCancel={() => setSubscriptionModalOpen(false)} onCreated={() => { setSubscriptionModalOpen(false); load(); }} />
+          </div>
+        </div>
+      )}
+
+      {chargeModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 py-6">
+          <div className="max-h-full w-full max-w-2xl overflow-y-auto rounded-xl bg-white p-6 shadow-xl dark:bg-gray-800">
+            <div className="mb-5 flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Adicionar cobrança</h2>
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Crie uma cobrança avulsa ou vinculada a uma assinatura.</p>
+              </div>
+              <button type="button" onClick={() => setChargeModalOpen(false)} aria-label="Fechar modal" className="rounded-lg p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-700 dark:hover:text-white">
+                <XMarkIcon className="h-5 w-5" />
+              </button>
+            </div>
+            <ChargeForm subscriptions={subscriptions} students={students} organizations={organizations} courses={courses} classes={classes} variant="plain" onCancel={() => setChargeModalOpen(false)} onCreated={() => { setChargeModalOpen(false); load(); }} />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -9,18 +9,23 @@ import type { PaymentMethod, Subscription } from '@/types/finance';
 
 const inputCls = 'block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white';
 
-export default function ChargeForm({ subscriptions, students, organizations, courses, classes, onCreated }: {
+export default function ChargeForm({ subscriptions, students, organizations, courses, classes, onCreated, onCancel, variant = 'card' }: {
   subscriptions: Subscription[];
   students: Student[];
   organizations: Organization[];
   courses: Course[];
   classes: ClassOffering[];
   onCreated: () => void;
+  onCancel?: () => void;
+  variant?: 'card' | 'plain';
 }) {
   const [form, setForm] = useState({
     subscription_id: '', student_id: '', organization_id: '', course_id: '', class_offering_id: '',
     amount_cents: 0, currency: 'BRL', payment_method: 'manual' as PaymentMethod, gateway_name: '', description: '',
   });
+  const formCls = variant === 'card'
+    ? 'bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 space-y-3'
+    : 'space-y-4';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,8 +48,8 @@ export default function ChargeForm({ subscriptions, students, organizations, cou
   };
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 space-y-3">
-      <h2 className="font-semibold text-gray-900 dark:text-white">Cobrança</h2>
+    <form onSubmit={handleSubmit} className={formCls}>
+      {variant === 'card' && <h2 className="font-semibold text-gray-900 dark:text-white">Cobrança</h2>}
       <select value={form.subscription_id} onChange={(e) => setForm((p) => ({ ...p, subscription_id: e.target.value }))} className={inputCls}>
         <option value="">Assinatura opcional</option>
         {subscriptions.map((s) => <option key={s.id} value={s.id}>#{s.id}</option>)}
@@ -78,9 +83,16 @@ export default function ChargeForm({ subscriptions, students, organizations, cou
       </select>
       <input value={form.gateway_name} onChange={(e) => setForm((p) => ({ ...p, gateway_name: e.target.value }))} placeholder="Gateway" className={inputCls} />
       <textarea value={form.description} onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))} placeholder="Descrição" className={inputCls} />
-      <button className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg">
-        <PlusIcon className="w-4 h-4" /><span>Criar cobrança</span>
-      </button>
+      <div className={variant === 'plain' ? 'flex justify-end gap-3 pt-2' : ''}>
+        {onCancel && (
+          <button type="button" onClick={onCancel} className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-white">
+            Cancelar
+          </button>
+        )}
+        <button className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg">
+          <PlusIcon className="w-4 h-4" /><span>Criar cobrança</span>
+        </button>
+      </div>
     </form>
   );
 }
