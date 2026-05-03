@@ -18,20 +18,25 @@ export default function AnalyticsOverviewSection({ overview, courses }: { overvi
 
   return (
     <>
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-        {cards.map(({ label, value, icon: Icon }) => (
-          <div key={label} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">{label}</p>
-                <p className="mt-2 text-2xl font-bold text-gray-900 dark:text-white">{value}</p>
-              </div>
-              <div className="w-10 h-10 rounded-lg bg-indigo-50 dark:bg-indigo-900/20 flex items-center justify-center">
-                <Icon className="w-5 h-5 text-indigo-600" />
+      <div className="overflow-x-auto pb-2">
+        <div className="flex min-w-max gap-4 snap-x snap-mandatory">
+          {cards.map(({ label, value, icon: Icon }) => (
+            <div
+              key={label}
+              className="min-w-[220px] snap-start rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-800 sm:min-w-[240px]"
+            >
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">{label}</p>
+                  <p className="mt-2 text-2xl font-bold text-gray-900 dark:text-white">{value}</p>
+                </div>
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-50 dark:bg-indigo-900/20">
+                  <Icon className="h-5 w-5 text-indigo-600" />
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
 
       <AnalyticsChartsSection overview={overview} courses={courses} />
