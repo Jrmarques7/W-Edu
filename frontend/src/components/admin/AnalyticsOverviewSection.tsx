@@ -2,6 +2,7 @@
 
 import { BanknotesIcon, BookOpenIcon, ChartBarIcon, DocumentTextIcon, ShieldCheckIcon, UsersIcon } from '@heroicons/react/24/outline';
 import type { AnalyticsOverview, CourseAnalytics } from '@/types/analytics';
+import AnalyticsChartsSection from './AnalyticsChartsSection';
 
 const money = (v: number) => `R$ ${(v / 100).toFixed(2)}`;
 
@@ -33,38 +34,25 @@ export default function AnalyticsOverviewSection({ overview, courses }: { overvi
         ))}
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 space-y-3">
-          <h2 className="font-semibold text-gray-900 dark:text-white">Indicadores gerais</h2>
-          <div className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
-            <p>Frequência: {overview.attendance_rate}%</p>
-            <p>Conclusão: {overview.completion_rate}%</p>
-            <p>Engajamento: {overview.engagement_rate}%</p>
-            <p>Turmas ativas: {overview.total_classes}</p>
-            <p>Encontros encerrados: {overview.closed_meetings}</p>
-            <p>Assinaturas ativas: {overview.active_subscriptions}</p>
-            <p>Receita pendente: {money(overview.pending_charges_cents)}</p>
-          </div>
-        </div>
+      <AnalyticsChartsSection overview={overview} courses={courses} />
 
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 space-y-3 xl:col-span-2">
-          <h2 className="font-semibold text-gray-900 dark:text-white">Cursos</h2>
-          <div className="divide-y divide-gray-100 dark:divide-gray-700">
-            {courses.map((c) => (
-              <div key={c.course_id} className="py-3 flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
-                <div>
-                  <p className="font-medium text-gray-900 dark:text-white">{c.course_name}</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">{c.modality}</p>
-                </div>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs text-gray-600 dark:text-gray-300">
-                  <span>{c.enrollments} matrículas</span>
-                  <span>{c.attendance_rate}% presença</span>
-                  <span>{c.completion_rate}% conclusão</span>
-                  <span>{c.average_best_quiz_score}% prova</span>
-                </div>
+      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 space-y-3">
+        <h2 className="font-semibold text-gray-900 dark:text-white">Cursos</h2>
+        <div className="divide-y divide-gray-100 dark:divide-gray-700">
+          {courses.map((c) => (
+            <div key={c.course_id} className="py-3 flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <p className="font-medium text-gray-900 dark:text-white">{c.course_name}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">{c.modality}</p>
               </div>
-            ))}
-          </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs text-gray-600 dark:text-gray-300">
+                <span>{c.enrollments} matrículas</span>
+                <span>{c.attendance_rate}% presença</span>
+                <span>{c.completion_rate}% conclusão</span>
+                <span>{c.average_best_quiz_score}% prova</span>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </>
