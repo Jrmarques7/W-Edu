@@ -71,7 +71,7 @@ export default function ClassOfferingForm({ courses, rooms, onCreated, onCancel,
       </div>
       <div className={variant === 'plain' ? 'flex justify-end gap-3 pt-2' : ''}>
         {onCancel && (
-          <button type="button" onClick={onCancel} className="px-4 py-2 text-sm text-gray-600 transition-colors hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
+          <button type="button" onClick={onCancel} className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-white">
             Cancelar
           </button>
         )}
