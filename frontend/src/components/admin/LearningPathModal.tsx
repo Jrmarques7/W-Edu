@@ -29,7 +29,7 @@ export default function LearningPathModal({ path, onClose, onSave }: {
           <input value={name} onChange={(e) => setName(e.target.value)} required placeholder="Nome" className={inputCls} />
           <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} placeholder="Descrição" className={inputCls} />
           <div className="flex justify-end gap-3">
-            <button type="button" onClick={onClose} className="px-4 py-2 text-sm text-gray-600 dark:text-gray-300">Cancelar</button>
+            <button type="button" onClick={onClose} className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-white">Cancelar</button>
             <button disabled={saving} className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50">
               {saving ? 'Salvando...' : 'Salvar'}
             </button>

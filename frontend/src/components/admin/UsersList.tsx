@@ -18,9 +18,12 @@ export default function UsersList({ users, organizations, canDelete, canManageUs
 }) {
   if (users.length === 0) {
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-xl border border-dashed border-gray-300 dark:border-gray-600 p-10 text-center">
-        <UsersIcon className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-        <p className="text-gray-500 dark:text-gray-400">Nenhum usuário cadastrado.</p>
+      <div className="rounded-xl border border-dashed border-gray-300 bg-white p-10 text-center dark:border-gray-600 dark:bg-gray-800">
+        <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-700">
+          <UsersIcon className="h-6 w-6 text-gray-400" />
+        </div>
+        <p className="text-gray-900 dark:text-white">Nenhum usuário cadastrado.</p>
+        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Crie o primeiro usuário para começar a gestão.</p>
       </div>
     );
   }

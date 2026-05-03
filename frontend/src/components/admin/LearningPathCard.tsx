@@ -39,7 +39,9 @@ export default function LearningPathCard({ path, courses, pathCourses, canDelete
           </button>
         </div>
         {pathCourses.length === 0 ? (
-          <p className="mt-2 text-sm text-gray-400">Nenhum curso vinculado.</p>
+          <div className="mt-2 rounded-lg border border-dashed border-gray-200 bg-white p-3 text-sm text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400">
+            Nenhum curso vinculado.
+          </div>
         ) : (
           <div className="mt-2 flex flex-wrap gap-2">
             {pathCourses.map((item) => {
