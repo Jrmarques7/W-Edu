@@ -26,7 +26,13 @@ class Lesson(Base):
     content: Mapped[str | None] = mapped_column(Text)
     order: Mapped[int] = mapped_column(Integer, default=0)
     type: Mapped[LessonType] = mapped_column(SAEnum(LessonType), default=LessonType.text)
+    video_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    video_path: Mapped[str | None] = mapped_column(String(500), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
+    @property
+    def has_video_file(self) -> bool:
+        return self.video_path is not None
 
     course: Mapped["Course"] = relationship(back_populates="lessons")
     module: Mapped["CourseModule | None"] = relationship(back_populates="lessons")

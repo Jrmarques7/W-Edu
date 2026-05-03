@@ -26,6 +26,7 @@ class Settings(BaseSettings):
     SMTP_FROM_EMAIL: str | None = None
     SMTP_USE_TLS: bool = True
     DOCUMENTS_STORAGE_DIR: str = str(Path(__file__).resolve().parents[2] / "storage" / "documents")
+    VIDEOS_STORAGE_DIR: str = str(Path(__file__).resolve().parents[2] / "storage" / "videos")
 
     ALLOWED_ORIGINS: list[str] = ["http://localhost:3002"]
 

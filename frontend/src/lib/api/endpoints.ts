@@ -69,6 +69,10 @@ export const endpoints = {
     eventSent: (id: number) => `/notifications/events/${id}/mark-sent`,
     eventFailed: (id: number) => `/notifications/events/${id}/mark-failed`,
   },
+  lessons: {
+    videoStream: (id: number) => `/lessons/${id}/video/stream`,
+    videoUpload: (id: number) => `/lessons/${id}/video`,
+  },
   quizzes: {
     lesson: (lessonId: number) => `/quizzes/lesson/${lessonId}`,
     lessonOptional: (lessonId: number) => `/quizzes/lesson/${lessonId}/optional`,

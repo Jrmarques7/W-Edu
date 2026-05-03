@@ -26,7 +26,7 @@ from app.schemas.schedule import (
     ScheduledMeetingUpdate,
     WaitlistEntryOut,
 )
-from app.services.schedule import AttendanceRecordService, ClassOfferingService, LocationService, RoomService, ScheduledMeetingService
+from app.services.schedule_pkg import AttendanceRecordService, ClassOfferingService, LocationService, RoomService, ScheduledMeetingService
 
 router = APIRouter()
 

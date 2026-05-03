@@ -10,6 +10,7 @@ class LessonCreate(BaseModel):
     content: str | None = None
     order: int = 0
     type: LessonType = LessonType.text
+    video_url: str | None = None
 
 
 class LessonUpdate(BaseModel):
@@ -18,6 +19,7 @@ class LessonUpdate(BaseModel):
     content: str | None = None
     order: int | None = None
     type: LessonType | None = None
+    video_url: str | None = None
 
 
 class LessonOut(BaseModel):
@@ -28,6 +30,8 @@ class LessonOut(BaseModel):
     content: str | None
     order: int
     type: LessonType
+    video_url: str | None
+    has_video_file: bool
     created_at: datetime
 
     model_config = {"from_attributes": True}

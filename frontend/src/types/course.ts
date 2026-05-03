@@ -47,6 +47,8 @@ export interface Lesson {
   content: string | null;
   order: number;
   type: LessonType;
+  video_url: string | null;
+  has_video_file: boolean;
   created_at: string;
 }
 

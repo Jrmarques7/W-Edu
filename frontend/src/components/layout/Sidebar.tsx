@@ -3,25 +3,9 @@
 import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import {
-  HomeIcon,
-  BookOpenIcon,
-  ChartBarIcon,
-  MicrophoneIcon,
-  Cog6ToothIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  UsersIcon,
-  AcademicCapIcon,
-  CalendarDaysIcon,
-  ChatBubbleLeftRightIcon,
-  BanknotesIcon,
-  Squares2X2Icon,
-  MapIcon,
-  ShieldCheckIcon,
-  DocumentTextIcon,
-} from '@heroicons/react/24/outline';
+import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import { useAuthStore } from '@/store/authStore';
+import { studentMenu, adminMenu, coordinatorMenu, companyManagerMenu } from '@/lib/config/sidebarMenus';
 
 interface SidebarProps {
   open: boolean;
@@ -29,55 +13,6 @@ interface SidebarProps {
   onClose: () => void;
   onToggleCollapse: () => void;
 }
-
-const studentMenu = [
-  { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
-  { name: 'Meus Cursos', href: '/courses', icon: BookOpenIcon },
-  { name: 'Progresso', href: '/progress', icon: ChartBarIcon },
-  { name: 'Certificados', href: '/certificates', icon: ShieldCheckIcon },
-  { name: 'Sessões de Voz', href: '/sessions', icon: MicrophoneIcon },
-  { name: 'Configurações', href: '/settings', icon: Cog6ToothIcon },
-];
-
-const adminMenu = [
-  { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
-  { name: 'Cursos', href: '/admin/courses', icon: AcademicCapIcon },
-  { name: 'Trilhas', href: '/admin/learning-paths', icon: MapIcon },
-  { name: 'Agenda', href: '/admin/schedule', icon: CalendarDaysIcon },
-  { name: 'Certificados', href: '/admin/certificates', icon: ShieldCheckIcon },
-  { name: 'Comunicação', href: '/admin/notifications', icon: ChatBubbleLeftRightIcon },
-  { name: 'Financeiro', href: '/admin/finance', icon: BanknotesIcon },
-  { name: 'Documentos', href: '/admin/documents', icon: DocumentTextIcon },
-  { name: 'Relatórios', href: '/admin/analytics', icon: ChartBarIcon },
-  { name: 'Usuários', href: '/admin/users', icon: UsersIcon },
-  { name: 'Catálogo', href: '/courses', icon: Squares2X2Icon },
-  { name: 'Meus certificados', href: '/certificates', icon: ShieldCheckIcon },
-  { name: 'Configurações', href: '/settings', icon: Cog6ToothIcon },
-];
-
-const coordinatorMenu = [
-  { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
-  { name: 'Cursos', href: '/admin/courses', icon: AcademicCapIcon },
-  { name: 'Trilhas', href: '/admin/learning-paths', icon: MapIcon },
-  { name: 'Agenda', href: '/admin/schedule', icon: CalendarDaysIcon },
-  { name: 'Certificados', href: '/admin/certificates', icon: ShieldCheckIcon },
-  { name: 'Comunicação', href: '/admin/notifications', icon: ChatBubbleLeftRightIcon },
-  { name: 'Usuários', href: '/admin/users', icon: UsersIcon },
-  { name: 'Catálogo', href: '/courses', icon: Squares2X2Icon },
-  { name: 'Meus certificados', href: '/certificates', icon: ShieldCheckIcon },
-  { name: 'Configurações', href: '/settings', icon: Cog6ToothIcon },
-];
-
-const companyManagerMenu = [
-  { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
-  { name: 'Financeiro', href: '/admin/finance', icon: BanknotesIcon },
-  { name: 'Documentos', href: '/admin/documents', icon: DocumentTextIcon },
-  { name: 'Relatórios', href: '/admin/analytics', icon: ChartBarIcon },
-  { name: 'Usuários', href: '/admin/users', icon: UsersIcon },
-  { name: 'Catálogo', href: '/courses', icon: Squares2X2Icon },
-  { name: 'Meus certificados', href: '/certificates', icon: ShieldCheckIcon },
-  { name: 'Configurações', href: '/settings', icon: Cog6ToothIcon },
-];
 
 export function Sidebar({ open, collapsed, onClose, onToggleCollapse }: SidebarProps) {
   const pathname = usePathname();
