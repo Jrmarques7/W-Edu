@@ -22,6 +22,9 @@ from app.schemas.schedule import (
     RoomUpdate,
     ScheduledMeetingCreate,
     MeetingAttendanceSummary,
+    MeetingAttendanceReportRow,
+    PracticalAssessmentRecordCreate,
+    PracticalAssessmentRecordOut,
     ScheduledMeetingOut,
     ScheduledMeetingUpdate,
     WaitlistEntryOut,
@@ -226,3 +229,22 @@ def list_attendance_records(
     _: Student = Depends(get_current_admin_or_coordinator),
 ):
     return AttendanceRecordService(db).list_by_meeting(meeting_id)
+
+
+@router.get("/meetings/{meeting_id}/attendance-report", response_model=list[MeetingAttendanceReportRow])
+def meeting_attendance_report(
+    meeting_id: int,
+    db: Session = Depends(get_db),
+    _: Student = Depends(get_current_admin_or_coordinator),
+):
+    return AttendanceRecordService(db).attendance_report(meeting_id)
+
+
+@router.post("/meetings/{meeting_id}/practical-assessments", response_model=PracticalAssessmentRecordOut, status_code=201)
+def upsert_practical_assessment(
+    meeting_id: int,
+    data: PracticalAssessmentRecordCreate,
+    db: Session = Depends(get_db),
+    current: Student = Depends(get_current_admin_or_coordinator),
+):
+    return AttendanceRecordService(db).upsert_practical_assessment(meeting_id, data, current.id)

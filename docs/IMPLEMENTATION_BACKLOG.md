@@ -7,6 +7,7 @@
 Objetivo: deixar a base pronta para curso, trilha, turma e presencial.
 
 - [x] Criar camada semantica `User` mantendo compatibilidade com `Student` atual.
+- [x] Migrar tabela fisica `students` para `users`, mantendo campos `student_id` por compatibilidade academica.
 - [x] Expandir papeis para aluno, instrutor, coordenador, gestor empresa e admin.
 - [x] Criar `Organization` para B2B.
 - [x] Criar `CourseModule`.
@@ -42,6 +43,7 @@ Objetivo: separar curso de oferta/turma.
 - [x] Criar `WaitlistEntry`.
 - [x] Criar `ScheduledMeeting`.
 - [x] Criar disponibilidade de instrutor.
+- [x] Bloquear conflitos de sala e instrutor ao agendar encontros.
 
 Aceite:
 
@@ -57,7 +59,8 @@ Objetivo: controlar presenca real em aulas presenciais e hibridas.
 - [x] Criar `AttendanceRecord` por encontro agendado.
 - [x] Criar token de check-in por QR Code.
 - [x] Registrar entrada do aluno com janela de validade.
-- Registrar falta automaticamente apos encerramento do encontro.
+- [x] Renderizar QR Code visual na interface administrativa.
+- [x] Registrar falta automaticamente apos encerramento do encontro.
 - [x] Preparar campos para origem da presenca: manual, QR Code, webhook, biometria, facial.
 
 Aceite:
@@ -66,18 +69,22 @@ Aceite:
 - Aluno faz check-in.
 - Presenca fica vinculada a turma, encontro, aluno e metodo de validacao.
 - Relatorio mostra presentes, ausentes e atrasados.
+- Coordenador visualiza a lista detalhada de presenca por aluno.
+- Coordenador corrige manualmente presenca, atraso ou falta por aluno.
 
 ### Marco 4 — Avaliacao e Certificacao
 
 Objetivo: concluir o ciclo academico.
 
-- Regras de aprovacao por progresso, nota e frequencia.
-- Dashboard de progresso por curso.
-- Avaliacao hibrida: quiz online e validacao presencial.
-- Entregas de trabalho.
-- Certificado PDF.
-- Validacao publica por codigo.
-- Validacao publica por QR Code.
+- [x] Regras de aprovacao por progresso, nota e frequencia.
+- [x] Dashboard de progresso por curso.
+- [x] Avaliacao hibrida: quiz online e entrega avaliativa corrigida.
+- [x] Entregas de trabalho.
+- [x] Avaliacao pratica presencial.
+- [x] Certificado PDF.
+- [x] Validacao publica por codigo.
+- [x] Validacao publica por QR Code.
+- [x] Assinatura digital interna de integridade.
 
 Aceite:
 
@@ -113,7 +120,7 @@ Objetivo: monetizar cursos, turmas e assinaturas.
 - [x] Assinaturas por aluno ou empresa.
 - [x] Cobranças por turma, curso ou assinatura.
 - [x] Estrutura base para PIX, cartao e boleto.
-- [ ] Integrar gateway real (Asaas/PagSeguro).
+- [x] Integrar gateway real Asaas para geracao de cobranca, checkout, boleto e Pix.
 
 Aceite:
 
@@ -173,7 +180,7 @@ O primeiro pacote deve ser pequeno e migravel:
 
 ## Riscos
 
-- Renomear `Student` para `User` cedo demais pode quebrar toda a autenticacao; fazer migracao planejada.
+- Renomear simbolos internos `Student*` para `User*` sem compatibilidade pode quebrar fluxos academicos; manter migracao gradual.
 - Criar microservicos antes de estabilizar entidades vai aumentar retrabalho.
 - Implementar check-in facial antes do QR Code atrasa a entrega presencial basica.
 - Certificado sem regras auditaveis perde validade operacional.

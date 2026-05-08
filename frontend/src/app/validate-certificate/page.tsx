@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ShieldCheckIcon } from '@heroicons/react/24/outline';
 import api from '@/lib/api/client';
@@ -13,9 +13,8 @@ export default function ValidateCertificatePage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const validate = async (event: React.FormEvent) => {
-    event.preventDefault();
-    const normalizedCode = code.trim();
+  const validateCode = async (value: string) => {
+    const normalizedCode = value.trim();
     if (!normalizedCode) return;
     setLoading(true);
     setError(null);
@@ -28,6 +27,19 @@ export default function ValidateCertificatePage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const codeParam = params.get('code');
+    if (!codeParam) return;
+    setCode(codeParam);
+    validateCode(codeParam);
+  }, []);
+
+  const validate = (event: React.FormEvent) => {
+    event.preventDefault();
+    validateCode(code);
   };
 
   return (
@@ -78,6 +90,10 @@ export default function ValidateCertificatePage() {
                   <p>Curso: {validation.course_name ?? `#${validation.certificate.course_id}`}</p>
                   <p>Aluno: {validation.student_name ?? `#${validation.certificate.student_id}`}</p>
                   <p>Emitido em {new Date(validation.certificate.issued_at).toLocaleDateString('pt-BR')}</p>
+                  <p>Assinatura: {validation.signature_valid ? 'válida' : 'inválida'}</p>
+                  {validation.certificate.signed_at && (
+                    <p>Assinado em {new Date(validation.certificate.signed_at).toLocaleDateString('pt-BR')}</p>
+                  )}
                 </div>
               )}
             </div>

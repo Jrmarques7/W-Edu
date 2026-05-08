@@ -14,6 +14,7 @@ from app.models.enrollment import Enrollment
 from app.models.progress import Progress
 from app.models.session import Session
 from app.models.attendance import Attendance
+from app.models.assignment import AssignmentSubmission
 from app.models.quiz import Quiz, QuizQuestion, QuizAttempt
 from app.models.certificate import Certificate
 from app.models.chat import ChatConversation, ChatMessage
@@ -27,6 +28,7 @@ from app.models.schedule import (
     ClassEnrollment,
     ClassOffering,
     Location,
+    PracticalAssessmentRecord,
     Room,
     ScheduledMeeting,
     WaitlistEntry,
@@ -35,8 +37,8 @@ from app.models.schedule import (
 __all__ = [
     "User", "Student", "Organization", "StudentProfile", "InstructorProfile", "InstructorAvailability", "InstructorRating",
     "Course", "CourseModule", "LearningPath", "LearningPathCourse", "CoursePrerequisite", "CourseCompletionRule", "Lesson", "Enrollment",
-    "Progress", "Session", "Attendance",
+    "Progress", "Session", "Attendance", "AssignmentSubmission",
     "Quiz", "QuizQuestion", "QuizAttempt", "Certificate", "ChatConversation", "ChatMessage", "NotificationTemplate", "NotificationEvent", "BillingPlan", "Subscription", "Charge",
     "Location", "Room", "ClassOffering", "ClassEnrollment", "WaitlistEntry", "ScheduledMeeting",
-    "AttendanceRecord", "CheckinToken", "Document", "DocumentVersion", "ForumThread", "ForumPost",
+    "AttendanceRecord", "CheckinToken", "PracticalAssessmentRecord", "Document", "DocumentVersion", "ForumThread", "ForumPost",
 ]

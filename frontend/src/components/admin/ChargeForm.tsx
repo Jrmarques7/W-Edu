@@ -21,7 +21,7 @@ export default function ChargeForm({ subscriptions, students, organizations, cou
 }) {
   const [form, setForm] = useState({
     subscription_id: '', student_id: '', organization_id: '', course_id: '', class_offering_id: '',
-    amount_cents: 0, currency: 'BRL', payment_method: 'manual' as PaymentMethod, gateway_name: '', description: '',
+    amount_cents: 0, currency: 'BRL', payment_method: 'manual' as PaymentMethod, gateway_name: '', gateway_customer_id: '', due_at: '', description: '',
   });
   const formCls = variant === 'card'
     ? 'bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 space-y-3'
@@ -40,7 +40,11 @@ export default function ChargeForm({ subscriptions, students, organizations, cou
         course_id: form.course_id ? Number(form.course_id) : null,
         class_offering_id: form.class_offering_id ? Number(form.class_offering_id) : null,
         amount_cents: Number(form.amount_cents), currency: form.currency,
-        payment_method: form.payment_method, gateway_name: form.gateway_name || null, description: form.description || null,
+        payment_method: form.payment_method,
+        gateway_name: form.gateway_name || null,
+        gateway_customer_id: form.gateway_customer_id || null,
+        due_at: form.due_at ? new Date(form.due_at).toISOString() : null,
+        description: form.description || null,
       });
       toast.success('Cobrança criada.');
       onCreated();
@@ -81,7 +85,11 @@ export default function ChargeForm({ subscriptions, students, organizations, cou
         <option value="card">Cartão</option>
         <option value="boleto">Boleto</option>
       </select>
-      <input value={form.gateway_name} onChange={(e) => setForm((p) => ({ ...p, gateway_name: e.target.value }))} placeholder="Gateway" className={inputCls} />
+      <div className="grid grid-cols-2 gap-2">
+        <input value={form.gateway_name} onChange={(e) => setForm((p) => ({ ...p, gateway_name: e.target.value }))} placeholder="Gateway ex.: asaas" className={inputCls} />
+        <input value={form.gateway_customer_id} onChange={(e) => setForm((p) => ({ ...p, gateway_customer_id: e.target.value }))} placeholder="Cliente no gateway" className={inputCls} />
+      </div>
+      <input type="date" value={form.due_at} onChange={(e) => setForm((p) => ({ ...p, due_at: e.target.value }))} className={inputCls} />
       <textarea value={form.description} onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))} placeholder="Descrição" className={inputCls} />
       <div className={variant === 'plain' ? 'flex justify-end gap-3 pt-2' : ''}>
         {onCancel && (

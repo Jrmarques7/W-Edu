@@ -41,6 +41,11 @@ class AttendanceMethod(str, enum.Enum):
     facial = "facial"
 
 
+class PracticalAssessmentStatus(str, enum.Enum):
+    reviewed = "reviewed"
+    returned = "returned"
+
+
 class Location(Base):
     __tablename__ = "locations"
 
@@ -82,7 +87,7 @@ class ClassOffering(Base):
     status: Mapped[ClassStatus] = mapped_column(SAEnum(ClassStatus), default=ClassStatus.draft)
     location_id: Mapped[int | None] = mapped_column(ForeignKey("locations.id"), nullable=True, index=True)
     room_id: Mapped[int | None] = mapped_column(ForeignKey("rooms.id"), nullable=True, index=True)
-    instructor_id: Mapped[int | None] = mapped_column(ForeignKey("students.id"), nullable=True, index=True)
+    instructor_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True, index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
     course: Mapped["Course"] = relationship()
@@ -101,7 +106,7 @@ class ClassEnrollment(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     class_offering_id: Mapped[int] = mapped_column(ForeignKey("class_offerings.id"), index=True)
-    student_id: Mapped[int] = mapped_column(ForeignKey("students.id"), index=True)
+    student_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
     status: Mapped[ClassEnrollmentStatus] = mapped_column(
         SAEnum(ClassEnrollmentStatus),
         default=ClassEnrollmentStatus.active,
@@ -118,7 +123,7 @@ class WaitlistEntry(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     class_offering_id: Mapped[int] = mapped_column(ForeignKey("class_offerings.id"), index=True)
-    student_id: Mapped[int] = mapped_column(ForeignKey("students.id"), index=True)
+    student_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
     position: Mapped[int] = mapped_column(Integer)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
@@ -147,6 +152,7 @@ class ScheduledMeeting(Base):
     room: Mapped["Room | None"] = relationship(back_populates="scheduled_meetings")
     attendance_records: Mapped[list["AttendanceRecord"]] = relationship(back_populates="meeting", cascade="all, delete-orphan")
     checkin_tokens: Mapped[list["CheckinToken"]] = relationship(back_populates="meeting", cascade="all, delete-orphan")
+    practical_assessments: Mapped[list["PracticalAssessmentRecord"]] = relationship(back_populates="meeting", cascade="all, delete-orphan")
 
 
 class AttendanceRecord(Base):
@@ -156,7 +162,7 @@ class AttendanceRecord(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     scheduled_meeting_id: Mapped[int] = mapped_column(ForeignKey("scheduled_meetings.id"), index=True)
     class_offering_id: Mapped[int] = mapped_column(ForeignKey("class_offerings.id"), index=True)
-    student_id: Mapped[int] = mapped_column(ForeignKey("students.id"), index=True)
+    student_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
     status: Mapped[AttendanceStatus] = mapped_column(SAEnum(AttendanceStatus), default=AttendanceStatus.present)
     method: Mapped[AttendanceMethod] = mapped_column(SAEnum(AttendanceMethod), default=AttendanceMethod.manual)
     recorded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
@@ -178,3 +184,26 @@ class CheckinToken(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
     meeting: Mapped["ScheduledMeeting"] = relationship(back_populates="checkin_tokens")
+
+
+class PracticalAssessmentRecord(Base):
+    __tablename__ = "practical_assessment_records"
+    __table_args__ = (UniqueConstraint("scheduled_meeting_id", "student_id"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    scheduled_meeting_id: Mapped[int] = mapped_column(ForeignKey("scheduled_meetings.id"), index=True)
+    class_offering_id: Mapped[int] = mapped_column(ForeignKey("class_offerings.id"), index=True)
+    student_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    score: Mapped[int] = mapped_column(Integer)
+    status: Mapped[PracticalAssessmentStatus] = mapped_column(
+        SAEnum(PracticalAssessmentStatus),
+        default=PracticalAssessmentStatus.reviewed,
+    )
+    feedback: Mapped[str | None] = mapped_column(Text)
+    recorded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    recorded_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True, index=True)
+
+    meeting: Mapped["ScheduledMeeting"] = relationship(back_populates="practical_assessments")
+    class_offering: Mapped["ClassOffering"] = relationship()
+    student: Mapped["Student"] = relationship(foreign_keys=[student_id])
+    recorded_by: Mapped["Student | None"] = relationship(foreign_keys=[recorded_by_id])

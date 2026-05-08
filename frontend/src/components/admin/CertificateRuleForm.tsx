@@ -20,7 +20,7 @@ export default function CertificateRuleForm({ rule, onChange, onSave }: {
         <h2 className="font-semibold text-gray-900 dark:text-white">Regra de certificação</h2>
       </div>
       <div className="grid grid-cols-2 gap-3">
-        {([['require_lessons_complete', 'Concluir aulas'], ['require_quiz', 'Exigir quiz'], ['require_attendance', 'Exigir frequência'], ['auto_issue', 'Emissão automática']] as const).map(([key, label]) => (
+        {([['require_lessons_complete', 'Concluir aulas'], ['require_quiz', 'Exigir avaliações'], ['require_attendance', 'Exigir frequência'], ['auto_issue', 'Emissão automática']] as const).map(([key, label]) => (
           <label key={key} className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
             <input type="checkbox" checked={rule[key] as boolean} onChange={set(key)} />
             {label}
@@ -28,7 +28,7 @@ export default function CertificateRuleForm({ rule, onChange, onSave }: {
         ))}
       </div>
       <div className="grid grid-cols-2 gap-3">
-        {([['minimum_progress_percent', 'Progresso mínimo (%)'], ['minimum_quiz_score', 'Nota mínima do quiz (%)'], ['minimum_attendance_percent', 'Frequência mínima (%)']] as const).map(([key, label]) => (
+        {([['minimum_progress_percent', 'Progresso mínimo (%)'], ['minimum_quiz_score', 'Nota mínima das avaliações (%)'], ['minimum_attendance_percent', 'Frequência mínima (%)']] as const).map(([key, label]) => (
           <div key={key}>
             <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">{label}</label>
             <input type="number" min={0} max={100} value={rule[key] as number} onChange={set(key)} className={inputCls} />

@@ -142,6 +142,8 @@ Objetivo: transformar presencial em capacidade nativa da plataforma.
 - [x] Criar encontros presenciais e lives agendadas.
 - [x] Criar presenca presencial por encontro.
 - [x] Implementar check-in por QR Code.
+- [x] Exibir QR Code visual para check-in no admin.
+- [x] Bloquear conflitos de sala e instrutor ao agendar encontros.
 - [x] Preparar interface para biometria/facial futura.
 
 Entidades esperadas:
@@ -166,13 +168,13 @@ checkin_tokens
 - [x] Dashboard de progresso por curso.
 - [x] Historico de sessoes com transcricoes.
 - [ ] Relatorio do professor com visao geral da turma.
-- [ ] Avaliacao hibrida: prova online e validacao presencial.
-- [ ] Trabalhos/atividades com entrega.
-- [ ] Avaliacao pratica presencial.
+- [x] Avaliacao hibrida: prova online e entrega avaliativa corrigida.
+- [x] Trabalhos/atividades com entrega.
+- [x] Avaliacao pratica presencial.
 - [x] Regras de aprovacao por nota, presenca e progresso.
 - [x] Geracao automatica de certificado PDF.
 - [x] Validacao publica de certificado por codigo.
-- [ ] Assinatura digital como integracao posterior.
+- [x] Assinatura digital interna de integridade.
 
 ### Fase 6 — Comunicacao com W-Omni
 
@@ -193,7 +195,7 @@ checkin_tokens
 - [x] Criar estrutura base para PIX.
 - [x] Criar estrutura base para cartao.
 - [x] Criar estrutura base para boleto.
-- [ ] Preparar gateway Asaas/PagSeguro.
+- [x] Preparar gateway Asaas para checkout, boleto e Pix.
 
 ### Fase 8 — Documentos e GED/ECM
 
@@ -257,7 +259,7 @@ checkin_tokens
 Estado atual:
 
 ```text
-students        id, name, email, password_hash, role, is_active, created_at
+users           id, name, email, password_hash, role, organization_id, is_active, created_at
 courses         id, name, description, agent_id, created_at
 lessons         id, course_id, title, content, order, type, created_at
 enrollments     id, student_id, course_id, enrolled_at

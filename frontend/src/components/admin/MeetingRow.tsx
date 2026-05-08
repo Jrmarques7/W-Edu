@@ -1,13 +1,18 @@
 'use client';
 
-import type { AttendanceRecord, MeetingAttendanceSummary, ScheduledMeeting } from '@/types/schedule';
+import MeetingAttendanceReport from './MeetingAttendanceReport';
+import type { AttendanceRecord, AttendanceStatus, MeetingAttendanceReportRow, MeetingAttendanceSummary, ScheduledMeeting } from '@/types/schedule';
 
-export default function MeetingRow({ meeting, attendanceRecords, summary, onGenerateCheckin, onLoadAttendance, onLoadSummary, onClose }: {
+export default function MeetingRow({ meeting, attendanceRecords, attendanceReport, summary, onGenerateCheckin, onLoadAttendance, onLoadAttendanceReport, onMarkAttendance, onSavePracticalAssessment, onLoadSummary, onClose }: {
   meeting: ScheduledMeeting;
   attendanceRecords: AttendanceRecord[] | undefined;
+  attendanceReport: MeetingAttendanceReportRow[] | undefined;
   summary: MeetingAttendanceSummary | undefined;
   onGenerateCheckin: (meeting: ScheduledMeeting) => void;
   onLoadAttendance: (meetingId: number) => void;
+  onLoadAttendanceReport: (meetingId: number) => void;
+  onMarkAttendance: (meeting: ScheduledMeeting, studentId: number, status: AttendanceStatus) => void;
+  onSavePracticalAssessment: (meeting: ScheduledMeeting, studentId: number, score: number, feedback: string | null) => void;
   onLoadSummary: (meetingId: number) => void;
   onClose: (meeting: ScheduledMeeting) => void;
 }) {
@@ -24,6 +29,9 @@ export default function MeetingRow({ meeting, attendanceRecords, summary, onGene
           </button>
           <button onClick={() => onLoadAttendance(meeting.id)} className="text-xs px-2 py-1 rounded border border-gray-300 text-gray-700 dark:text-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700">
             Presenças
+          </button>
+          <button onClick={() => onLoadAttendanceReport(meeting.id)} className="text-xs px-2 py-1 rounded border border-sky-300 text-sky-700 dark:text-sky-300 dark:border-sky-800 hover:bg-sky-50 dark:hover:bg-sky-900/20">
+            Relatório
           </button>
           <button onClick={() => onLoadSummary(meeting.id)} className="text-xs px-2 py-1 rounded border border-emerald-300 text-emerald-700 dark:text-emerald-300 dark:border-emerald-800 hover:bg-emerald-50 dark:hover:bg-emerald-900/20">
             Resumo
@@ -42,6 +50,13 @@ export default function MeetingRow({ meeting, attendanceRecords, summary, onGene
         <p className="text-xs text-gray-500 dark:text-gray-400">
           {attendanceRecords.length} presença{attendanceRecords.length !== 1 ? 's' : ''} registrada{attendanceRecords.length !== 1 ? 's' : ''}
         </p>
+      )}
+      {attendanceReport && (
+        <MeetingAttendanceReport
+          rows={attendanceReport}
+          onMarkAttendance={(studentId, status) => onMarkAttendance(meeting, studentId, status)}
+          onSavePractical={(studentId, score, feedback) => onSavePracticalAssessment(meeting, studentId, score, feedback)}
+        />
       )}
     </div>
   );

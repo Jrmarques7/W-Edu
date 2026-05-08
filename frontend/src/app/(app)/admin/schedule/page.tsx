@@ -6,7 +6,8 @@ import { AcademicCapIcon, BuildingOffice2Icon, MapPinIcon, PlusIcon, XMarkIcon }
 import api from '@/lib/api/client';
 import { endpoints } from '@/lib/api/endpoints';
 import type { Course } from '@/types/course';
-import type { AttendanceRecord, ClassOffering, Location, MeetingAttendanceSummary, MeetingType, Room, ScheduledMeeting } from '@/types/schedule';
+import type { AttendanceRecord, AttendanceStatus, CheckinToken, ClassOffering, Location, MeetingAttendanceReportRow, MeetingAttendanceSummary, MeetingType, Room, ScheduledMeeting } from '@/types/schedule';
+import CheckinQrModal from '@/components/admin/CheckinQrModal';
 import ClassOfferingForm from '@/components/admin/ClassOfferingForm';
 import ClassOfferingsList from '@/components/admin/ClassOfferingsList';
 import LocationForm from '@/components/admin/LocationForm';
@@ -22,6 +23,7 @@ export default function AdminSchedulePage() {
   const [classes, setClasses] = useState<ClassOffering[]>([]);
   const [meetings, setMeetings] = useState<Record<number, ScheduledMeeting[]>>({});
   const [attendance, setAttendance] = useState<Record<number, AttendanceRecord[]>>({});
+  const [attendanceReports, setAttendanceReports] = useState<Record<number, MeetingAttendanceReportRow[]>>({});
   const [summaries, setSummaries] = useState<Record<number, MeetingAttendanceSummary>>({});
   const [loading, setLoading] = useState(true);
   const [activeSetupTab, setActiveSetupTab] = useState<SetupTab>('classes');
@@ -29,6 +31,8 @@ export default function AdminSchedulePage() {
   const [roomModalOpen, setRoomModalOpen] = useState(false);
   const [locationModalOpen, setLocationModalOpen] = useState(false);
   const [meetingClass, setMeetingClass] = useState<ClassOffering | null>(null);
+  const [checkinToken, setCheckinToken] = useState<CheckinToken | null>(null);
+  const [checkinMeeting, setCheckinMeeting] = useState<ScheduledMeeting | null>(null);
   const [meetingForm, setMeetingForm] = useState({
     title: '',
     room_id: '',
@@ -79,7 +83,9 @@ export default function AdminSchedulePage() {
       toast.success('Encontro criado.');
       setMeetings((prev) => ({ ...prev, [meetingClass.id]: [...(prev[meetingClass.id] ?? []), data] }));
       setMeetingClass(null);
-    } catch { toast.error('Erro ao criar encontro.'); }
+    } catch (error: any) {
+      toast.error(error.response?.data?.detail || 'Erro ao criar encontro.');
+    }
   };
 
   const loadMeetings = async (classId: number) => {
@@ -89,9 +95,24 @@ export default function AdminSchedulePage() {
 
   const generateCheckinToken = async (meeting: ScheduledMeeting) => {
     try {
-      const { data } = await api.post(endpoints.schedule.checkinTokens(meeting.id), { valid_minutes: 60 });
-      window.alert(`Token de check-in:\n${data.token}\n\nEndpoint:\n/schedule/check-in/${data.token}`);
+      const { data } = await api.post<CheckinToken>(endpoints.schedule.checkinTokens(meeting.id), { valid_minutes: 60 });
+      setCheckinToken(data);
+      setCheckinMeeting(meeting);
     } catch { toast.error('Erro ao gerar token de check-in.'); }
+  };
+
+  const checkinUrl = checkinToken && typeof window !== 'undefined'
+    ? `${window.location.origin}/check-in/${checkinToken.token}`
+    : '';
+
+  const copyCheckinUrl = async () => {
+    if (!checkinUrl) return;
+    try {
+      await navigator.clipboard.writeText(checkinUrl);
+      toast.success('Link de check-in copiado.');
+    } catch {
+      toast.error('Não foi possível copiar o link.');
+    }
   };
 
   const loadAttendance = async (meetingId: number) => {
@@ -100,6 +121,47 @@ export default function AdminSchedulePage() {
       setAttendance((prev) => ({ ...prev, [meetingId]: data }));
     } catch { toast.error('Erro ao carregar presença.'); }
   };
+
+  const loadAttendanceReport = async (meetingId: number) => {
+    try {
+      const { data } = await api.get<MeetingAttendanceReportRow[]>(endpoints.schedule.attendanceReport(meetingId));
+      setAttendanceReports((prev) => ({ ...prev, [meetingId]: data }));
+    } catch { toast.error('Erro ao carregar relatório de presença.'); }
+  };
+
+  const markManualAttendance = async (meeting: ScheduledMeeting, studentId: number, statusValue: AttendanceStatus) => {
+    try {
+      await api.post<AttendanceRecord>(endpoints.schedule.attendance(meeting.id), {
+        student_id: studentId,
+        status: statusValue,
+        method: 'manual',
+      });
+      await Promise.all([
+        loadAttendanceReport(meeting.id),
+        loadAttendance(meeting.id),
+        loadSummary(meeting.id),
+      ]);
+      toast.success('Presença atualizada.');
+    } catch (error: any) {
+      toast.error(error.response?.data?.detail || 'Erro ao atualizar presença.');
+    }
+  };
+
+  const savePracticalAssessment = async (meeting: ScheduledMeeting, studentId: number, score: number, feedback: string | null) => {
+    try {
+      await api.post(endpoints.schedule.practicalAssessments(meeting.id), {
+        student_id: studentId,
+        score,
+        status: 'reviewed',
+        feedback,
+      });
+      await loadAttendanceReport(meeting.id);
+      toast.success('Avaliação prática salva.');
+    } catch (error: any) {
+      toast.error(error.response?.data?.detail || 'Erro ao salvar avaliação prática.');
+    }
+  };
+
 
   const closeMeeting = async (meeting: ScheduledMeeting) => {
     try {
@@ -196,10 +258,10 @@ export default function AdminSchedulePage() {
                   <span>Adicionar turma</span>
                 </button>
               </div>
-              <ClassOfferingsList classes={classes} courses={courses} rooms={rooms} meetings={meetings} attendance={attendance} summaries={summaries}
+              <ClassOfferingsList classes={classes} courses={courses} rooms={rooms} meetings={meetings} attendance={attendance} attendanceReports={attendanceReports} summaries={summaries}
                 showHeader={false}
                 onCreateMeeting={openMeetingModal} onLoadMeetings={loadMeetings} onGenerateCheckin={generateCheckinToken}
-                onLoadAttendance={loadAttendance} onLoadSummary={loadSummary} onCloseMeeting={closeMeeting} />
+                onLoadAttendance={loadAttendance} onLoadAttendanceReport={loadAttendanceReport} onMarkAttendance={markManualAttendance} onSavePracticalAssessment={savePracticalAssessment} onLoadSummary={loadSummary} onCloseMeeting={closeMeeting} />
             </div>
           )}
           {activeSetupTab === 'rooms' && (
@@ -470,6 +532,15 @@ export default function AdminSchedulePage() {
             </form>
           </div>
         </div>
+      )}
+      {checkinToken && (
+        <CheckinQrModal
+          token={checkinToken}
+          meeting={checkinMeeting}
+          checkinUrl={checkinUrl}
+          onCopy={copyCheckinUrl}
+          onClose={() => { setCheckinToken(null); setCheckinMeeting(null); }}
+        />
       )}
     </div>
   );

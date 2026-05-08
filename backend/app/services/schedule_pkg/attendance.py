@@ -4,18 +4,20 @@ import secrets
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.models.schedule import AttendanceMethod, AttendanceRecord, AttendanceStatus, CheckinToken, ClassEnrollmentStatus
-from app.repositories.schedule import AttendanceRecordRepository, CheckinTokenRepository, ClassOfferingRepository
+from app.models.schedule import AttendanceMethod, AttendanceRecord, AttendanceStatus, CheckinToken, ClassEnrollmentStatus, PracticalAssessmentRecord
+from app.repositories.schedule import AttendanceRecordRepository, CheckinTokenRepository, ClassOfferingRepository, PracticalAssessmentRepository
 from app.repositories.student import StudentRepository
 from app.services.certificate import CertificateService
 from app.services.notification import NotificationService
 from app.models.notification import NotificationEventType
+from app.schemas.schedule import MeetingAttendanceReportRow, PracticalAssessmentRecordCreate
 from .meeting import ScheduledMeetingService
 
 
 class AttendanceRecordService:
     def __init__(self, db: Session):
         self.record_repo = AttendanceRecordRepository(db)
+        self.practical_repo = PracticalAssessmentRepository(db)
         self.token_repo = CheckinTokenRepository(db)
         self.class_repo = ClassOfferingRepository(db)
         self.meeting_service = ScheduledMeetingService(db)
@@ -56,6 +58,70 @@ class AttendanceRecordService:
     def list_by_meeting(self, meeting_id: int) -> list[AttendanceRecord]:
         self.meeting_service.get_or_404(meeting_id)
         return self.record_repo.list_by_meeting(meeting_id)
+
+    def attendance_report(self, meeting_id: int) -> list[MeetingAttendanceReportRow]:
+        meeting = self.meeting_service.get_or_404(meeting_id)
+        enrollments = self.meeting_service.repo.list_active_enrollments(meeting.class_offering_id)
+        records = {
+            record.student_id: record
+            for record in self.record_repo.list_by_meeting(meeting_id)
+        }
+        practical_records = {
+            record.student_id: record
+            for record in self.practical_repo.list_by_meeting(meeting_id)
+        }
+        rows: list[MeetingAttendanceReportRow] = []
+        for enrollment in enrollments:
+            student = enrollment.student
+            record = records.get(enrollment.student_id)
+            practical_record = practical_records.get(enrollment.student_id)
+            rows.append(
+                MeetingAttendanceReportRow(
+                    student_id=enrollment.student_id,
+                    student_name=student.name if student else f"Aluno #{enrollment.student_id}",
+                    student_email=student.email if student else "",
+                    status=record.status if record else AttendanceStatus.absent,
+                    method=record.method if record else None,
+                    recorded_at=record.recorded_at if record else None,
+                    notes=record.notes if record else None,
+                    practical_score=practical_record.score if practical_record else None,
+                    practical_status=practical_record.status if practical_record else None,
+                    practical_feedback=practical_record.feedback if practical_record else None,
+                    practical_recorded_at=practical_record.recorded_at if practical_record else None,
+                )
+            )
+        return rows
+
+    def upsert_practical_assessment(self, meeting_id: int, data: PracticalAssessmentRecordCreate, recorded_by_id: int | None) -> PracticalAssessmentRecord:
+        meeting = self.meeting_service.get_or_404(meeting_id)
+        if not self.student_repo.get_by_id(data.student_id):
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Aluno não encontrado")
+        enrollment = self.class_repo.get_enrollment(meeting.class_offering_id, data.student_id)
+        if not enrollment or enrollment.status != ClassEnrollmentStatus.active:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Aluno não inscrito nesta turma")
+        existing = self.practical_repo.get_by_meeting_and_student(meeting_id, data.student_id)
+        if existing:
+            existing.score = data.score
+            existing.status = data.status
+            existing.feedback = data.feedback
+            existing.recorded_at = datetime.now(timezone.utc)
+            existing.recorded_by_id = recorded_by_id
+            record = self.practical_repo.update(existing)
+        else:
+            record = self.practical_repo.create(
+                PracticalAssessmentRecord(
+                    scheduled_meeting_id=meeting.id,
+                    class_offering_id=meeting.class_offering_id,
+                    student_id=data.student_id,
+                    score=data.score,
+                    status=data.status,
+                    feedback=data.feedback,
+                    recorded_by_id=recorded_by_id,
+                )
+            )
+        course_id = self.meeting_service.class_service.get_or_404(meeting.class_offering_id).course_id
+        self.certificate_service.auto_issue(course_id, data.student_id)
+        return record
 
     def _upsert_record(self, meeting, student_id: int, status_value: AttendanceStatus, method: AttendanceMethod, notes: str | None) -> AttendanceRecord:
         existing = self.record_repo.get_by_meeting_and_student(meeting.id, student_id)

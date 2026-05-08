@@ -25,7 +25,11 @@ class Settings(BaseSettings):
     SMTP_PASSWORD: str | None = None
     SMTP_FROM_EMAIL: str | None = None
     SMTP_USE_TLS: bool = True
+    ASAAS_API_URL: str = "https://api-sandbox.asaas.com/v3"
+    ASAAS_API_TOKEN: str | None = None
     DOCUMENTS_STORAGE_DIR: str = str(Path(__file__).resolve().parents[2] / "storage" / "documents")
+    CERTIFICATES_STORAGE_DIR: str = str(Path(__file__).resolve().parents[2] / "storage" / "certificates")
+    ASSIGNMENTS_STORAGE_DIR: str = str(Path(__file__).resolve().parents[2] / "storage" / "assignments")
     VIDEOS_STORAGE_DIR: str = str(Path(__file__).resolve().parents[2] / "storage" / "videos")
 
     ALLOWED_ORIGINS: list[str] = ["http://localhost:3002"]

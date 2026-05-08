@@ -11,6 +11,7 @@ import { useLessonPage } from '@/lib/hooks/useLessonPage';
 import VideoPlayer from '@/components/video/VideoPlayer';
 import LessonVoiceSection from '@/components/lesson/LessonVoiceSection';
 import LessonQuizSection from '@/components/lesson/LessonQuizSection';
+import LessonAssignmentSection from '@/components/lesson/LessonAssignmentSection';
 
 export default function LessonPage() {
   const { id } = useParams<{ id: string }>();
@@ -77,6 +78,10 @@ export default function LessonPage() {
           showQuiz={showQuiz} setShowQuiz={setShowQuiz} lessonId={lessonId}
           refreshProgress={refreshProgress} onAttempt={setLastAttempt} onPass={handleQuizPass}
         />
+      )}
+
+      {lesson.type === 'assessment' && (
+        <LessonAssignmentSection lessonId={lessonId} />
       )}
 
       {!isDone && canFinish && (

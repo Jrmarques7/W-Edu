@@ -4,7 +4,7 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.models.notification import NotificationEventType
-from app.models.schedule import AttendanceMethod, AttendanceRecord, AttendanceStatus, ScheduledMeeting
+from app.models.schedule import AttendanceMethod, AttendanceRecord, AttendanceStatus, ClassOffering, ScheduledMeeting
 from app.repositories.lesson import LessonRepository
 from app.repositories.schedule import RoomRepository, ScheduledMeetingRepository
 from app.schemas.schedule import MeetingAttendanceSummary, ScheduledMeetingCreate, ScheduledMeetingUpdate
@@ -26,6 +26,12 @@ class ScheduledMeetingService:
         class_offering = self.class_service.get_or_404(data.class_offering_id)
         self._validate_refs(class_offering.id, data.lesson_id, data.room_id)
         self.class_service._validate_dates(data.starts_at, data.ends_at)
+        self._validate_schedule_conflicts(
+            class_offering=class_offering,
+            room_id=data.room_id,
+            starts_at=data.starts_at,
+            ends_at=data.ends_at,
+        )
         meeting = self.repo.create(ScheduledMeeting(**data.model_dump()))
         course = self.class_service.course_repo.get_by_id(class_offering.course_id)
         if course:
@@ -57,7 +63,17 @@ class ScheduledMeetingService:
             payload.get("lesson_id", meeting.lesson_id),
             payload.get("room_id", meeting.room_id),
         )
-        self.class_service._validate_dates(payload.get("starts_at", meeting.starts_at), payload.get("ends_at", meeting.ends_at))
+        starts_at = payload.get("starts_at", meeting.starts_at)
+        ends_at = payload.get("ends_at", meeting.ends_at)
+        room_id = payload.get("room_id", meeting.room_id)
+        self.class_service._validate_dates(starts_at, ends_at)
+        self._validate_schedule_conflicts(
+            class_offering=self.class_service.get_or_404(meeting.class_offering_id),
+            room_id=room_id,
+            starts_at=starts_at,
+            ends_at=ends_at,
+            exclude_meeting_id=meeting.id,
+        )
         for field, value in payload.items():
             setattr(meeting, field, value)
         return self.repo.update(meeting)
@@ -95,6 +111,47 @@ class ScheduledMeetingService:
                 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Aula não pertence ao curso da turma")
         if room_id and not self.room_repo.get_by_id(room_id):
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Sala não encontrada")
+
+    def _validate_schedule_conflicts(
+        self,
+        *,
+        class_offering: ClassOffering,
+        room_id: int | None,
+        starts_at: datetime,
+        ends_at: datetime,
+        exclude_meeting_id: int | None = None,
+    ) -> None:
+        if room_id:
+            room_query = self.repo.db.query(ScheduledMeeting).filter(
+                ScheduledMeeting.room_id == room_id,
+                ScheduledMeeting.starts_at < ends_at,
+                ScheduledMeeting.ends_at > starts_at,
+            )
+            if exclude_meeting_id:
+                room_query = room_query.filter(ScheduledMeeting.id != exclude_meeting_id)
+            if room_query.first():
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="Sala já possui encontro agendado neste horário",
+                )
+
+        if class_offering.instructor_id:
+            instructor_query = (
+                self.repo.db.query(ScheduledMeeting)
+                .join(ClassOffering, ClassOffering.id == ScheduledMeeting.class_offering_id)
+                .filter(
+                    ClassOffering.instructor_id == class_offering.instructor_id,
+                    ScheduledMeeting.starts_at < ends_at,
+                    ScheduledMeeting.ends_at > starts_at,
+                )
+            )
+            if exclude_meeting_id:
+                instructor_query = instructor_query.filter(ScheduledMeeting.id != exclude_meeting_id)
+            if instructor_query.first():
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="Instrutor já possui encontro agendado neste horário",
+                )
 
     def _schedule_reminder(self, meeting: ScheduledMeeting, class_name: str, course_name: str, course_id: int) -> None:
         reminder_at = meeting.starts_at - timedelta(hours=24)

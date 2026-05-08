@@ -1,5 +1,5 @@
 from datetime import datetime
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 from app.models.student import UserRole
 
 
@@ -85,15 +85,15 @@ class InstructorProfileOut(BaseModel):
 
 
 class InstructorAvailabilityCreate(BaseModel):
-    day_of_week: int
-    start_time: str
-    end_time: str
+    day_of_week: int = Field(ge=0, le=6)
+    start_time: str = Field(pattern=r"^\d{2}:\d{2}$")
+    end_time: str = Field(pattern=r"^\d{2}:\d{2}$")
 
 
 class InstructorAvailabilityUpdate(BaseModel):
-    day_of_week: int | None = None
-    start_time: str | None = None
-    end_time: str | None = None
+    day_of_week: int | None = Field(default=None, ge=0, le=6)
+    start_time: str | None = Field(default=None, pattern=r"^\d{2}:\d{2}$")
+    end_time: str | None = Field(default=None, pattern=r"^\d{2}:\d{2}$")
     is_active: bool | None = None
 
 

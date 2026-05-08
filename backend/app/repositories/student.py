@@ -128,6 +128,10 @@ class InstructorAvailabilityRepository:
     def get_by_id(self, availability_id: int) -> InstructorAvailability | None:
         return self.db.get(InstructorAvailability, availability_id)
 
+    def delete(self, availability: InstructorAvailability) -> None:
+        self.db.delete(availability)
+        self.db.commit()
+
 
 class InstructorRatingRepository:
     def __init__(self, db: Session):

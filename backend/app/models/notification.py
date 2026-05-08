@@ -55,7 +55,7 @@ class NotificationEvent(Base):
     event_type: Mapped[NotificationEventType] = mapped_column(SAEnum(NotificationEventType), index=True)
     channel: Mapped[NotificationChannel] = mapped_column(SAEnum(NotificationChannel), default=NotificationChannel.internal)
     template_key: Mapped[str | None] = mapped_column(String(120), index=True)
-    recipient_student_id: Mapped[int | None] = mapped_column(ForeignKey("students.id"), nullable=True, index=True)
+    recipient_student_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True, index=True)
     course_id: Mapped[int | None] = mapped_column(ForeignKey("courses.id"), nullable=True, index=True)
     class_offering_id: Mapped[int | None] = mapped_column(ForeignKey("class_offerings.id"), nullable=True, index=True)
     scheduled_meeting_id: Mapped[int | None] = mapped_column(ForeignKey("scheduled_meetings.id"), nullable=True, index=True)

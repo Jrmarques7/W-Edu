@@ -42,6 +42,15 @@ def ensure_academic_user_scope(current: Student, target: Student) -> None:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Perfil fora do escopo")
 
 
+def ensure_availability_scope(current: Student, service: StudentService, availability_id: int):
+    availability = service.availability_repo.get_by_id(availability_id)
+    if not availability:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Disponibilidade não encontrada")
+    instructor = service.get_or_404(availability.instructor_profile.student_id)
+    ensure_academic_user_scope(current, instructor)
+    return availability
+
+
 @router.get("/students", response_model=list[StudentOut])
 @router.get("/users", response_model=list[StudentOut])
 def list_all_students(db: Session = Depends(get_db), current: Student = Depends(get_current_academic_staff)):
@@ -167,9 +176,23 @@ def update_instructor_availability(
     availability_id: int,
     data: InstructorAvailabilityUpdate,
     db: Session = Depends(get_db),
-    _: Student = Depends(get_current_admin_or_coordinator),
+    current: Student = Depends(get_current_academic_staff),
 ):
-    return StudentService(db).update_instructor_availability(availability_id, data)
+    service = StudentService(db)
+    ensure_availability_scope(current, service, availability_id)
+    return service.update_instructor_availability(availability_id, data)
+
+
+@router.delete("/students/availability/{availability_id}", status_code=204)
+@router.delete("/users/availability/{availability_id}", status_code=204)
+def delete_instructor_availability(
+    availability_id: int,
+    db: Session = Depends(get_db),
+    current: Student = Depends(get_current_academic_staff),
+):
+    service = StudentService(db)
+    ensure_availability_scope(current, service, availability_id)
+    service.delete_instructor_availability(availability_id)
 
 
 @router.get("/students/{student_id}/ratings", response_model=list[InstructorRatingOut])

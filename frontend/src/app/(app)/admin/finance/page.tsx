@@ -58,6 +58,15 @@ export default function AdminFinancePage() {
   const markFailed = async (id: number) => {
     try { await api.post(endpoints.finance.chargeFailed(id)); await load(); } catch { toast.error('Erro ao marcar como falha.'); }
   };
+  const createAsaasCharge = async (id: number) => {
+    try {
+      await api.post(endpoints.finance.chargeAsaas(id));
+      await load();
+      toast.success('Cobrança enviada ao Asaas.');
+    } catch (error: any) {
+      toast.error(error.response?.data?.detail || 'Erro ao enviar cobrança ao Asaas.');
+    }
+  };
 
   const tabs = [
     { id: 'plans' as FinanceTab, label: 'Planos', icon: DocumentTextIcon, badge: plans.length },
@@ -221,6 +230,14 @@ export default function AdminFinancePage() {
                             {charge.payment_method} • #{charge.id} • {studentName(charge.student_id) || organizationName(charge.organization_id) || planName(charge.billing_plan_id) || 'Sem vínculo'}
                           </p>
                           {charge.description && <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{charge.description}</p>}
+                          {(charge.checkout_url || charge.bank_slip_url || charge.pix_qr_code_payload) && (
+                            <div className="mt-2 flex flex-wrap gap-2 text-xs">
+                              {charge.checkout_url && <a href={charge.checkout_url} target="_blank" rel="noreferrer" className="font-medium text-indigo-600 dark:text-indigo-400">Checkout</a>}
+                              {charge.bank_slip_url && <a href={charge.bank_slip_url} target="_blank" rel="noreferrer" className="font-medium text-indigo-600 dark:text-indigo-400">Boleto</a>}
+                              {charge.pix_qr_code_payload && <button type="button" onClick={() => navigator.clipboard.writeText(charge.pix_qr_code_payload ?? '')} className="font-medium text-indigo-600 dark:text-indigo-400">Copiar Pix</button>}
+                            </div>
+                          )}
+                          {charge.gateway_reference && <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Gateway: {charge.gateway_name} • {charge.gateway_reference} • {charge.gateway_status ?? 'sem status'}</p>}
                         </div>
                         <div className="flex items-center gap-2">
                           <span className={`text-xs px-2 py-1 rounded-full font-medium ${charge.status === 'paid' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : charge.status === 'failed' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'}`}>
@@ -228,6 +245,11 @@ export default function AdminFinancePage() {
                           </span>
                           {isAdmin && (
                             <>
+                              {charge.gateway_name === 'asaas' && (
+                                <button onClick={() => createAsaasCharge(charge.id)} title="Enviar ao Asaas" className="rounded-lg border border-gray-300 px-2 py-2 text-xs font-medium text-gray-700 dark:border-gray-600 dark:text-gray-300">
+                                  Asaas
+                                </button>
+                              )}
                               <button onClick={() => markPaid(charge.id)} title="Marcar como paga" className="p-2 rounded-lg border border-gray-300 dark:border-gray-600 text-green-600"><CheckIcon className="w-4 h-4" /></button>
                               <button onClick={() => markFailed(charge.id)} title="Marcar como falha" className="p-2 rounded-lg border border-gray-300 dark:border-gray-600 text-red-600"><XMarkIcon className="w-4 h-4" /></button>
                             </>

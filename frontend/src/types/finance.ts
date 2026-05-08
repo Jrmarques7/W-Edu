@@ -43,7 +43,13 @@ export interface Charge {
   payment_method: PaymentMethod;
   status: ChargeStatus;
   gateway_name: string | null;
+  gateway_customer_id: string | null;
   gateway_reference: string | null;
+  gateway_status: string | null;
+  checkout_url: string | null;
+  bank_slip_url: string | null;
+  pix_qr_code_payload: string | null;
+  pix_qr_code_image: string | null;
   due_at: string | null;
   paid_at: string | null;
   description: string | null;

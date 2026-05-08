@@ -127,6 +127,7 @@ class StudentService:
 
     def add_instructor_availability(self, student_id: int, data: InstructorAvailabilityCreate):
         profile = self.get_instructor_profile(student_id)
+        self._validate_availability_window(data.start_time, data.end_time)
         return self.availability_repo.create(
             InstructorAvailability(
                 instructor_profile_id=profile.id,
@@ -140,9 +141,19 @@ class StudentService:
         availability = self.availability_repo.get_by_id(availability_id)
         if not availability:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Disponibilidade não encontrada")
-        for field, value in data.model_dump(exclude_none=True).items():
+        payload = data.model_dump(exclude_none=True)
+        start_time = payload.get("start_time", availability.start_time)
+        end_time = payload.get("end_time", availability.end_time)
+        self._validate_availability_window(start_time, end_time)
+        for field, value in payload.items():
             setattr(availability, field, value)
         return self.availability_repo.update(availability)
+
+    def delete_instructor_availability(self, availability_id: int) -> None:
+        availability = self.availability_repo.get_by_id(availability_id)
+        if not availability:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Disponibilidade não encontrada")
+        self.availability_repo.delete(availability)
 
     def add_instructor_rating(self, student_id: int, instructor_student_id: int, data: InstructorRatingCreate):
         if data.score < 1 or data.score > 5:
@@ -160,6 +171,10 @@ class StudentService:
     def list_instructor_ratings(self, instructor_student_id: int):
         instructor_profile = self.get_instructor_profile(instructor_student_id)
         return self.rating_repo.list_by_instructor_profile(instructor_profile.id)
+
+    def _validate_availability_window(self, start_time: str, end_time: str) -> None:
+        if start_time >= end_time:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Horário final deve ser maior que o inicial")
 
 
 class OrganizationService:

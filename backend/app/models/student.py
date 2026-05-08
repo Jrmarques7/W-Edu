@@ -31,7 +31,7 @@ class Organization(Base):
 
 
 class Student(Base):
-    __tablename__ = "students"
+    __tablename__ = "users"
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(200))
@@ -70,7 +70,7 @@ class StudentProfile(Base):
     __tablename__ = "student_profiles"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    student_id: Mapped[int] = mapped_column(ForeignKey("students.id"), unique=True, index=True)
+    student_id: Mapped[int] = mapped_column(ForeignKey("users.id"), unique=True, index=True)
     phone: Mapped[str | None] = mapped_column(String(50))
     document: Mapped[str | None] = mapped_column(String(50), index=True)
     position: Mapped[str | None] = mapped_column(String(120))
@@ -85,7 +85,7 @@ class InstructorProfile(Base):
     __tablename__ = "instructor_profiles"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    student_id: Mapped[int] = mapped_column(ForeignKey("students.id"), unique=True, index=True)
+    student_id: Mapped[int] = mapped_column(ForeignKey("users.id"), unique=True, index=True)
     specialties: Mapped[str | None] = mapped_column(Text)
     bio: Mapped[str | None] = mapped_column(Text)
     rating: Mapped[str | None] = mapped_column(String(20))
@@ -116,7 +116,7 @@ class InstructorRating(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     instructor_profile_id: Mapped[int] = mapped_column(ForeignKey("instructor_profiles.id"), index=True)
-    student_id: Mapped[int] = mapped_column(ForeignKey("students.id"), index=True)
+    student_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
     score: Mapped[int] = mapped_column()
     comment: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))

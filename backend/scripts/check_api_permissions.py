@@ -203,6 +203,40 @@ class PermissionCheck:
                 response = await client.patch(f"/admin/users/{ids['student_org1']}", json={"name": "Renamed Student"})
                 self.expect(response.status_code == 200, f"coordinator edit student: got {response.status_code}", failures)
 
+                log("coordinator edit student profile")
+                response = await client.patch(
+                    f"/admin/users/{ids['student_org1']}/student-profile",
+                    json={"phone": "11999990000", "position": "Analista", "department": "Treinamento"},
+                )
+                self.expect(response.status_code == 200, f"coordinator edit student profile: got {response.status_code}", failures)
+
+                log("coordinator add instructor availability")
+                response = await client.post(
+                    f"/admin/users/{ids['instructor_org1']}/availability",
+                    json={"day_of_week": 1, "start_time": "09:00", "end_time": "12:00"},
+                )
+                self.expect(response.status_code == 201, f"coordinator add instructor availability: got {response.status_code}", failures)
+                availability_id = response.json().get("id") if response.status_code == 201 else None
+
+                if availability_id is not None:
+                    log("coordinator update instructor availability")
+                    response = await client.patch(
+                        f"/admin/users/availability/{availability_id}",
+                        json={"end_time": "13:00", "is_active": False},
+                    )
+                    self.expect(response.status_code == 200, f"coordinator update instructor availability: got {response.status_code}", failures)
+
+                    log("coordinator delete instructor availability")
+                    response = await client.delete(f"/admin/users/availability/{availability_id}")
+                    self.expect(response.status_code == 204, f"coordinator delete instructor availability: got {response.status_code}", failures)
+
+                log("coordinator reject invalid availability window")
+                response = await client.post(
+                    f"/admin/users/{ids['instructor_org1']}/availability",
+                    json={"day_of_week": 1, "start_time": "15:00", "end_time": "12:00"},
+                )
+                self.expect(response.status_code == 400, f"coordinator reject invalid availability window: got {response.status_code}", failures)
+
                 log("coordinator delete user")
                 response = await client.delete(f"/admin/users/{ids['student_org1']}")
                 self.expect(response.status_code == 403, f"coordinator delete user: got {response.status_code}", failures)
@@ -257,6 +291,33 @@ class PermissionCheck:
                 self.as_role(ids["manager"], UserRole.company_manager, organization_id=ids["org1"])
                 response = await client.patch(f"/admin/users/{ids['instructor_org1']}", json={"name": "Manager Renamed Instructor"})
                 self.expect(response.status_code == 200, f"manager edit own instructor: got {response.status_code}", failures)
+
+                log("manager edit own org instructor profile")
+                response = await client.patch(
+                    f"/admin/users/{ids['instructor_org1']}/instructor-profile",
+                    json={"specialties": "Compliance, Operações", "bio": "Instrutor corporativo"},
+                )
+                self.expect(response.status_code == 200, f"manager edit own org instructor profile: got {response.status_code}", failures)
+
+                log("manager add own org instructor availability")
+                response = await client.post(
+                    f"/admin/users/{ids['instructor_org1']}/availability",
+                    json={"day_of_week": 2, "start_time": "10:00", "end_time": "11:00"},
+                )
+                self.expect(response.status_code == 201, f"manager add own org instructor availability: got {response.status_code}", failures)
+                manager_availability_id = response.json().get("id") if response.status_code == 201 else None
+
+                if manager_availability_id is not None:
+                    log("manager update own org instructor availability")
+                    response = await client.patch(
+                        f"/admin/users/availability/{manager_availability_id}",
+                        json={"is_active": False},
+                    )
+                    self.expect(response.status_code == 200, f"manager update own org instructor availability: got {response.status_code}", failures)
+
+                    log("manager delete own org instructor availability")
+                    response = await client.delete(f"/admin/users/availability/{manager_availability_id}")
+                    self.expect(response.status_code == 204, f"manager delete own org instructor availability: got {response.status_code}", failures)
 
                 log("manager edit other org")
                 response = await client.patch(f"/admin/users/{ids['student_org2']}", json={"name": "Cross Org Edit"})

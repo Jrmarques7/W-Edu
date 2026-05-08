@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { AcademicCapIcon, ArrowLeftIcon, CheckBadgeIcon, ListBulletIcon, QrCodeIcon, ShieldCheckIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { QRCodeSVG } from 'qrcode.react';
 import toast from 'react-hot-toast';
 import api from '@/lib/api/client';
 import { endpoints } from '@/lib/api/endpoints';
@@ -31,6 +32,7 @@ export default function AdminCertificatesPage() {
   const [courseLoading, setCourseLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<CertificateTab>('rules');
   const [certificateToRevoke, setCertificateToRevoke] = useState<Certificate | null>(null);
+  const [certificateQr, setCertificateQr] = useState<Certificate | null>(null);
   const [revokeReason, setRevokeReason] = useState('');
 
   const enrolledStudents = enrollments.map((e) => students.find((s) => s.id === e.student_id)).filter((s): s is Student => Boolean(s));
@@ -125,6 +127,31 @@ export default function AdminCertificatesPage() {
       const { data } = await api.get<CertificateEligibility>(endpoints.certificates.eligibility(Number(selectedCourseId), Number(studentId)));
       setEligibility(data);
     } catch { toast.error('Erro ao verificar elegibilidade.'); }
+  };
+
+  const validationUrl = (code: string) => typeof window === 'undefined' ? '' : `${window.location.origin}/validate-certificate?code=${encodeURIComponent(code)}`;
+
+  const copyValidationUrl = async (certificate: Certificate) => {
+    try {
+      await navigator.clipboard.writeText(validationUrl(certificate.validation_code));
+      toast.success('Link de validação copiado.');
+    } catch {
+      toast.error('Não foi possível copiar o link.');
+    }
+  };
+
+  const downloadCertificate = async (certificate: Certificate) => {
+    try {
+      const { data } = await api.get(endpoints.certificates.download(certificate.id), { responseType: 'blob' });
+      const url = URL.createObjectURL(data);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = `certificado-${certificate.validation_code}.pdf`;
+      anchor.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      toast.error('Erro ao baixar certificado.');
+    }
   };
 
   const tabs = [
@@ -269,8 +296,39 @@ export default function AdminCertificatesPage() {
             )}
             {activeTab === 'validation' && <CertificateValidationPanel />}
             {activeTab === 'issued' && (
-              <CertificatesList certificates={certificates} students={students} canRevoke={canRevoke ?? false} onRevoke={setCertificateToRevoke} />
+              <CertificatesList certificates={certificates} students={students} canRevoke={canRevoke ?? false} onRevoke={setCertificateToRevoke} onDownload={downloadCertificate} onShowQr={setCertificateQr} />
             )}
+          </div>
+        </div>
+      )}
+      {certificateQr && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 py-6">
+          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl dark:bg-gray-800">
+            <div className="mb-5 flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">QR Code de validação</h2>
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{certificateQr.validation_code}</p>
+              </div>
+              <button type="button" onClick={() => setCertificateQr(null)} aria-label="Fechar modal" className="rounded-lg p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-700 dark:hover:text-white">
+                <XMarkIcon className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="flex flex-col items-center gap-4">
+              <div className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700">
+                <QRCodeSVG value={validationUrl(certificateQr.validation_code)} size={220} level="M" includeMargin />
+              </div>
+              <p className="w-full break-all rounded-lg bg-gray-50 p-3 text-xs text-gray-600 dark:bg-gray-900 dark:text-gray-300">
+                {validationUrl(certificateQr.validation_code)}
+              </p>
+              <div className="flex w-full justify-end gap-3">
+                <button type="button" onClick={() => setCertificateQr(null)} className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700">
+                  Fechar
+                </button>
+                <button type="button" onClick={() => copyValidationUrl(certificateQr)} className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">
+                  Copiar link
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

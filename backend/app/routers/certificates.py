@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -79,9 +80,24 @@ def list_student_certificates(student_id: int, db: Session = Depends(get_db), _:
     return CertificateService(db).list_by_student(student_id)
 
 
+@router.get("/{certificate_id}/download")
+def download_certificate(
+    certificate_id: int,
+    db: Session = Depends(get_db),
+    current: Student = Depends(get_current_student),
+):
+    certificate = CertificateService(db).get_for_download(certificate_id, current)
+    return FileResponse(
+        certificate.pdf_url,
+        media_type="application/pdf",
+        filename=f"certificado-{certificate.validation_code}.pdf",
+    )
+
+
 @router.get("/validate/{code}", response_model=CertificateValidationOut)
 def validate_certificate(code: str, db: Session = Depends(get_db)):
-    valid, certificate, message = CertificateService(db).validate_code(code)
+    service = CertificateService(db)
+    valid, certificate, message = service.validate_code(code)
     course_name = certificate.course.name if certificate and certificate.course else None
     student_name = certificate.student.name if certificate and certificate.student else None
     return CertificateValidationOut(
@@ -90,4 +106,5 @@ def validate_certificate(code: str, db: Session = Depends(get_db)):
         message=message,
         course_name=course_name,
         student_name=student_name,
+        signature_valid=bool(certificate and service.verify_signature(certificate)),
     )

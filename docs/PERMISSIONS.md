@@ -1,6 +1,6 @@
 # W-Edu - Matriz de Permissoes
 
-Este documento registra a regra operacional por papel. A nomenclatura `User` e `/users` e a direcao nova da API; `Student` e `/students` permanecem como compatibilidade enquanto existirem tabelas e FKs legadas.
+Este documento registra a regra operacional por papel. A nomenclatura `User` e `/users` e a direcao nova da API; `Student` e `/students` permanecem como compatibilidade de dominio/API, embora a tabela fisica de identidade seja `users`.
 
 ## Papeis
 

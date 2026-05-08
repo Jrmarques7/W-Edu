@@ -38,7 +38,7 @@ class QuizAttempt(Base):
     __table_args__ = (UniqueConstraint("student_id", "quiz_id", "attempted_at"),)
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    student_id: Mapped[int] = mapped_column(ForeignKey("students.id"), index=True)
+    student_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
     quiz_id: Mapped[int] = mapped_column(ForeignKey("quizzes.id"), index=True)
     score: Mapped[int] = mapped_column(Integer)  # 0-100
     passed: Mapped[bool] = mapped_column(Boolean)

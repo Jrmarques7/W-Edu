@@ -48,6 +48,9 @@ class CertificateOut(BaseModel):
     revoked_at: datetime | None
     revoked_reason: str | None
     pdf_url: str | None
+    signature_algorithm: str | None
+    signature_hash: str | None
+    signed_at: datetime | None
 
     model_config = {"from_attributes": True}
 
@@ -58,6 +61,7 @@ class CertificateValidationOut(BaseModel):
     message: str | None = None
     course_name: str | None = None
     student_name: str | None = None
+    signature_valid: bool = False
 
 
 class CertificateEligibilityOut(BaseModel):

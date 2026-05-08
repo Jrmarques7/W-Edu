@@ -71,6 +71,11 @@ def update_charge(charge_id: int, data: ChargeUpdate, db: Session = Depends(get_
     return FinanceService(db).update_charge(charge_id, data)
 
 
+@router.post("/charges/{charge_id}/gateway/asaas", response_model=ChargeOut)
+def create_asaas_charge(charge_id: int, db: Session = Depends(get_db), _: Student = Depends(get_current_admin)):
+    return FinanceService(db).sync_charge_gateway(charge_id)
+
+
 @router.post("/charges/{charge_id}/paid", response_model=ChargeOut)
 def mark_paid(charge_id: int, db: Session = Depends(get_db), _: Student = Depends(get_current_admin)):
     return FinanceService(db).mark_paid(charge_id)

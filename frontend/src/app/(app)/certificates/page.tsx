@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ShieldCheckIcon } from '@heroicons/react/24/outline';
+import { QRCodeSVG } from 'qrcode.react';
 import toast from 'react-hot-toast';
 import api from '@/lib/api/client';
 import { endpoints } from '@/lib/api/endpoints';
@@ -26,6 +27,21 @@ export default function CertificatesPage() {
   }, []);
 
   const courseName = (courseId: number) => courses.find((course) => course.id === courseId)?.name ?? `Curso #${courseId}`;
+  const validationUrl = (code: string) => typeof window === 'undefined' ? '' : `${window.location.origin}/validate-certificate?code=${encodeURIComponent(code)}`;
+
+  const downloadCertificate = async (certificate: Certificate) => {
+    try {
+      const { data } = await api.get(endpoints.certificates.download(certificate.id), { responseType: 'blob' });
+      const url = URL.createObjectURL(data);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = `certificado-${certificate.validation_code}.pdf`;
+      anchor.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      toast.error('Erro ao baixar certificado.');
+    }
+  };
 
   if (loading) return (
     <div className="flex items-center justify-center py-20">
@@ -73,9 +89,34 @@ export default function CertificatesPage() {
               <div className="mt-4 rounded-lg bg-gray-50 p-3 dark:bg-gray-900">
                 <p className="text-xs font-medium uppercase text-gray-400">Código de validação</p>
                 <p className="mt-1 break-all font-mono text-sm text-gray-900 dark:text-white">{certificate.validation_code}</p>
+                {certificate.signed_at && (
+                  <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                    Assinado digitalmente em {new Date(certificate.signed_at).toLocaleDateString('pt-BR')}
+                  </p>
+                )}
               </div>
+              {!certificate.revoked_at && (
+                <div className="mt-4 flex flex-col gap-3 rounded-lg border border-gray-200 p-3 dark:border-gray-700 sm:flex-row sm:items-center">
+                  <div className="w-fit rounded bg-white p-2">
+                    <QRCodeSVG value={validationUrl(certificate.validation_code)} size={96} level="M" includeMargin />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-medium uppercase text-gray-400">Validação por QR Code</p>
+                    <p className="mt-1 break-all text-xs text-gray-500 dark:text-gray-400">{validationUrl(certificate.validation_code)}</p>
+                  </div>
+                </div>
+              )}
               {certificate.revoked_reason && (
                 <p className="mt-3 text-sm text-red-600 dark:text-red-400">{certificate.revoked_reason}</p>
+              )}
+              {!certificate.revoked_at && (
+                <button
+                  type="button"
+                  onClick={() => downloadCertificate(certificate)}
+                  className="mt-4 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+                >
+                  Baixar PDF
+                </button>
               )}
             </div>
           ))}

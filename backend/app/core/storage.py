@@ -14,6 +14,18 @@ def documents_storage_dir() -> Path:
     return path
 
 
+def certificates_storage_dir() -> Path:
+    path = Path(settings.CERTIFICATES_STORAGE_DIR)
+    path.mkdir(parents=True, exist_ok=True)
+    return path
+
+
+def assignments_storage_dir() -> Path:
+    path = Path(settings.ASSIGNMENTS_STORAGE_DIR)
+    path.mkdir(parents=True, exist_ok=True)
+    return path
+
+
 def _sanitize_filename(filename: str) -> str:
     stem = Path(filename).stem
     suffix = Path(filename).suffix.lower()
@@ -31,3 +43,13 @@ def store_uploaded_document(document_id: int, version_number: int, upload: Uploa
         shutil.copyfileobj(upload.file, handle)
     size = target_path.stat().st_size
     return str(target_path), size
+
+
+def store_assignment_file(submission_id: int, upload: UploadFile) -> tuple[str, str, int]:
+    base_dir = assignments_storage_dir() / str(submission_id)
+    base_dir.mkdir(parents=True, exist_ok=True)
+    safe_name = _sanitize_filename(upload.filename or "submission")
+    target_path = base_dir / f"{uuid.uuid4().hex}_{safe_name}"
+    with target_path.open("wb") as handle:
+        shutil.copyfileobj(upload.file, handle)
+    return str(target_path), safe_name, target_path.stat().st_size

@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
-from app.routers import auth, users, students, courses, lessons, enrollments, progress, sessions, webhooks, admin, quiz, learning_paths, schedule, certificates, notifications, finance, documents, analytics, forum, chat
+from app.routers import assignments, auth, users, students, courses, lessons, enrollments, progress, sessions, webhooks, admin, quiz, learning_paths, schedule, certificates, notifications, finance, documents, analytics, forum, chat
 from app.services.notification_worker import run_notification_worker
 
 
@@ -40,6 +40,7 @@ app.include_router(users.router, prefix="/users", tags=["users"])
 app.include_router(students.router, prefix="/students", tags=["students"])
 app.include_router(courses.router, prefix="/courses", tags=["courses"])
 app.include_router(lessons.router, prefix="/lessons", tags=["lessons"])
+app.include_router(assignments.router, prefix="/assignments", tags=["assignments"])
 app.include_router(enrollments.router, prefix="/enrollments", tags=["enrollments"])
 app.include_router(progress.router, prefix="/progress", tags=["progress"])
 app.include_router(sessions.router, prefix="/sessions", tags=["sessions"])

@@ -79,3 +79,17 @@ export interface MeetingAttendanceSummary {
   absent: number;
   recorded: number;
 }
+
+export interface MeetingAttendanceReportRow {
+  student_id: number;
+  student_name: string;
+  student_email: string;
+  status: AttendanceStatus;
+  method: AttendanceMethod | null;
+  recorded_at: string | null;
+  notes: string | null;
+  practical_score: number | null;
+  practical_status: 'reviewed' | 'returned' | null;
+  practical_feedback: string | null;
+  practical_recorded_at: string | null;
+}

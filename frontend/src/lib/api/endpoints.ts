@@ -50,6 +50,8 @@ export const endpoints = {
     checkinTokens: (meetingId: number) => `/schedule/meetings/${meetingId}/checkin-tokens`,
     checkIn: (token: string) => `/schedule/check-in/${token}`,
     attendance: (meetingId: number) => `/schedule/meetings/${meetingId}/attendance`,
+    attendanceReport: (meetingId: number) => `/schedule/meetings/${meetingId}/attendance-report`,
+    practicalAssessments: (meetingId: number) => `/schedule/meetings/${meetingId}/practical-assessments`,
   },
   certificates: {
     rule: (courseId: number) => `/certificates/rules/${courseId}`,
@@ -57,6 +59,7 @@ export const endpoints = {
     issue: (courseId: number, studentId: number) => `/certificates/courses/${courseId}/students/${studentId}/issue`,
     courseCertificates: (courseId: number) => `/certificates/courses/${courseId}/certificates`,
     revoke: (id: number) => `/certificates/${id}/revoke`,
+    download: (id: number) => `/certificates/${id}/download`,
     validate: (code: string) => `/certificates/validate/${code}`,
     my: '/certificates/students/me',
     student: (studentId: number) => `/certificates/students/${studentId}`,
@@ -73,6 +76,13 @@ export const endpoints = {
     videoStream: (id: number) => `/lessons/${id}/video/stream`,
     videoUpload: (id: number) => `/lessons/${id}/video`,
   },
+  assignments: {
+    mine: (lessonId: number) => `/assignments/lessons/${lessonId}/me`,
+    submit: (lessonId: number) => `/assignments/lessons/${lessonId}/submit`,
+    submissions: (lessonId: number) => `/assignments/lessons/${lessonId}/submissions`,
+    review: (submissionId: number) => `/assignments/submissions/${submissionId}`,
+    download: (submissionId: number) => `/assignments/submissions/${submissionId}/download`,
+  },
   quizzes: {
     lesson: (lessonId: number) => `/quizzes/lesson/${lessonId}`,
     lessonOptional: (lessonId: number) => `/quizzes/lesson/${lessonId}/optional`,
@@ -87,6 +97,7 @@ export const endpoints = {
     subscription: (id: number) => `/finance/subscriptions/${id}`,
     charges: '/finance/charges',
     charge: (id: number) => `/finance/charges/${id}`,
+    chargeAsaas: (id: number) => `/finance/charges/${id}/gateway/asaas`,
     chargePaid: (id: number) => `/finance/charges/${id}/paid`,
     chargeFailed: (id: number) => `/finance/charges/${id}/failed`,
   },

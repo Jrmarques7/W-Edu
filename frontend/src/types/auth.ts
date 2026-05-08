@@ -42,6 +42,25 @@ export interface InstructorProfile {
   created_at: string;
 }
 
+export interface InstructorAvailability {
+  id: number;
+  instructor_profile_id: number;
+  day_of_week: number;
+  start_time: string;
+  end_time: string;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface InstructorRating {
+  id: number;
+  instructor_profile_id: number;
+  student_id: number;
+  score: number;
+  comment: string | null;
+  created_at: string;
+}
+
 export interface AuthTokens {
   access_token: string;
   token_type: string;

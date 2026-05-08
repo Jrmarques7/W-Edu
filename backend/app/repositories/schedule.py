@@ -8,6 +8,7 @@ from app.models.schedule import (
     ClassOffering,
     CheckinToken,
     Location,
+    PracticalAssessmentRecord,
     Room,
     ScheduledMeeting,
     WaitlistEntry,
@@ -241,3 +242,37 @@ class CheckinTokenRepository:
         self.db.commit()
         self.db.refresh(token)
         return token
+
+
+class PracticalAssessmentRepository:
+    def __init__(self, db: Session):
+        self.db = db
+
+    def get_by_meeting_and_student(self, meeting_id: int, student_id: int) -> PracticalAssessmentRecord | None:
+        return (
+            self.db.query(PracticalAssessmentRecord)
+            .filter(
+                PracticalAssessmentRecord.scheduled_meeting_id == meeting_id,
+                PracticalAssessmentRecord.student_id == student_id,
+            )
+            .first()
+        )
+
+    def list_by_meeting(self, meeting_id: int) -> list[PracticalAssessmentRecord]:
+        return (
+            self.db.query(PracticalAssessmentRecord)
+            .filter(PracticalAssessmentRecord.scheduled_meeting_id == meeting_id)
+            .order_by(PracticalAssessmentRecord.recorded_at.desc())
+            .all()
+        )
+
+    def create(self, record: PracticalAssessmentRecord) -> PracticalAssessmentRecord:
+        self.db.add(record)
+        self.db.commit()
+        self.db.refresh(record)
+        return record
+
+    def update(self, record: PracticalAssessmentRecord) -> PracticalAssessmentRecord:
+        self.db.commit()
+        self.db.refresh(record)
+        return record

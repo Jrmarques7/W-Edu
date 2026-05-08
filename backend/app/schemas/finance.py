@@ -78,6 +78,7 @@ class ChargeCreate(BaseModel):
     currency: str = "BRL"
     payment_method: PaymentMethod = PaymentMethod.manual
     gateway_name: str | None = None
+    gateway_customer_id: str | None = None
     gateway_reference: str | None = None
     due_at: datetime | None = None
     description: str | None = None
@@ -87,7 +88,13 @@ class ChargeUpdate(BaseModel):
     status: ChargeStatus | None = None
     paid_at: datetime | None = None
     gateway_name: str | None = None
+    gateway_customer_id: str | None = None
     gateway_reference: str | None = None
+    gateway_status: str | None = None
+    checkout_url: str | None = None
+    bank_slip_url: str | None = None
+    pix_qr_code_payload: str | None = None
+    pix_qr_code_image: str | None = None
     due_at: datetime | None = None
     description: str | None = None
 
@@ -105,7 +112,13 @@ class ChargeOut(BaseModel):
     payment_method: PaymentMethod
     status: ChargeStatus
     gateway_name: str | None
+    gateway_customer_id: str | None
     gateway_reference: str | None
+    gateway_status: str | None
+    checkout_url: str | None
+    bank_slip_url: str | None
+    pix_qr_code_payload: str | None
+    pix_qr_code_image: str | None
     due_at: datetime | None
     paid_at: datetime | None
     description: str | None

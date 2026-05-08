@@ -1,6 +1,6 @@
 # W-Edu — Controle de Implementacao
 
-Ultima atualizacao: 2026-05-02
+Ultima atualizacao: 2026-05-08
 
 ## Resumo Executivo
 
@@ -53,14 +53,22 @@ O projeto ja possui uma base LMS/EAD com autenticacao, cursos, aulas, matriculas
 - Status de presenca: `present`, `late`, `absent`.
 - Metodos preparados: `manual`, `qr_code`, `webhook`, `biometric`, `facial`.
 - Admin gera token de check-in e consulta quantidade de presencas.
+- Admin visualiza QR Code de check-in com link copiavel.
+- Aluno pode abrir `/check-in/{token}` para registrar presenca autenticada.
+- Admin consulta relatorio detalhado por encontro com aluno, status, horario e metodo de registro.
+- Admin ajusta manualmente presenca, atraso ou falta por aluno no relatorio do encontro.
+- Criacao/edicao de encontros bloqueia conflitos de sala e instrutor no mesmo horario.
 - Encerramento de encontro gera faltas automaticamente para inscritos ativos sem registro.
 - Resumo de frequencia por encontro.
 
 ### Usuarios, perfis e empresas
 
-- Camada semantica `User` criada sobre a tabela legada `students`, com endpoint publico `/users` e aliases internos para migracao gradual.
+- Tabela fisica principal de identidade migrada de `students` para `users` via migration `c6d7e8f9a0b1`.
+- Camada semantica `User` criada com endpoints publicos `/users`; aliases `Student` e rotas `/students` seguem como compatibilidade de API e dominio academico.
 - Endpoints admin tambem aceitam `/admin/users`, mantendo `/admin/students` por compatibilidade.
 - Frontend admin passou a consumir `/admin/users` e ganhou rota `/admin/users`, preservando `/admin/students` como rota legada.
+- Tela de configuracoes permite editar perfil proprio com nome, telefone, documento, cargo, departamento e bio.
+- Perfil admin permite editar dados de aluno/usuario, perfil de instrutor, disponibilidade e avaliacoes.
 - Frontend passou a bloquear acesso direto a paginas `/admin/*` fora do escopo do papel, alem de filtrar o menu lateral.
 - Papeis expandidos: aluno, instrutor, coordenador, gestor empresa e admin.
 - Empresas B2B.
@@ -76,6 +84,15 @@ O projeto ja possui uma base LMS/EAD com autenticacao, cursos, aulas, matriculas
 - Catalogo de cursos exibe trilhas de aprendizagem e permite matricula/continuidade pelos cursos vinculados.
 - Aluno ganhou tela `Meus certificados` para consultar certificados emitidos e codigos de validacao.
 - Validacao publica de certificado disponivel em `/validate-certificate`.
+- Certificacao por curso com regra configuravel de progresso, quiz e frequencia.
+- Emissao manual e automatica de certificado quando o aluno atende aos criterios.
+- Certificado PDF gerado no backend e baixavel pelo aluno, admin ou coordenador autorizado.
+- Certificados emitidos exibem QR Code para validacao publica por codigo.
+- Certificados recebem assinatura digital interna HMAC-SHA256 e a validacao publica verifica a integridade da assinatura.
+- Aulas do tipo avaliacao aceitam entrega de atividade com texto e/ou arquivo, reenvio e correcao por admin/coordenador na tela admin de aulas.
+- Elegibilidade de certificado considera quizzes online e entregas avaliativas corrigidas com nota minima.
+- Encontros presenciais/hibridos aceitam avaliacao pratica por aluno com nota e feedback no relatorio de presenca.
+- Elegibilidade de certificado considera avaliacoes praticas presenciais vinculadas a aulas avaliativas.
 - Matriz de permissoes criada em `docs/PERMISSIONS.md`.
 - Verificador leve de rotas criticas criado em `backend/scripts/check_permissions.py`.
 - Verificador dos guards de papel criado em `backend/scripts/check_role_guards.py`.
@@ -113,11 +130,25 @@ O projeto ja possui uma base LMS/EAD com autenticacao, cursos, aulas, matriculas
 - Fórum por curso com tópicos e respostas.
 - Chat persistido por curso entre aluno e instrutor/coordenação.
 
+### Financeiro
+
+- Planos de curso.
+- Assinaturas por aluno ou empresa.
+- Cobrancas por turma, curso ou assinatura.
+- Estrutura base para PIX, cartao e boleto.
+- Integracao Asaas para criacao de cobranca via `POST /v3/payments`.
+- Cobranças Asaas armazenam referencia externa, status do gateway, checkout, boleto e payload/QR Pix quando disponivel.
+
 ## Migrations Criadas
 
 - `9d8f1c2a3b4e_expand_academic_domain.py`
 - `a1b2c3d4e5f6_add_schedule_domain.py`
 - `b2c3d4e5f6a7_add_presential_attendance.py`
+- `c2d3e4f5a6b7_add_assignment_submissions.py`
+- `c3d4e5f6a7b8_add_practical_assessments.py`
+- `c4d5e6f7a8b9_add_certificate_signatures.py`
+- `c5d6e7f8a9b0_add_charge_gateway_checkout_fields.py`
+- `c6d7e8f9a0b1_rename_students_table_to_users.py`
 
 ## Validacoes Realizadas
 
@@ -135,55 +166,24 @@ Observacao: `alembic upgrade head` online nao foi aplicado porque o PostgreSQL c
 
 ### Usuarios e perfis
 
-- Concluir migracao fisica futura da tabela/foreign keys `students` para `users`, se o custo operacional justificar.
-- Telas completas para editar perfis detalhados de aluno e instrutor.
-- Expandir a verificacao HTTP de permissoes para cobrir todos os recursos administrativos e escopos por organizacao.
+- Expandir a verificacao HTTP de permissoes para cobrir todos os recursos administrativos restantes e escopos por organizacao.
+- Renomear gradualmente simbolos internos `Student*` para `User*` onde fizer sentido, preservando campos academicos `student_id`.
 
 ### Instrutores
 
 - Agenda real do professor.
-- Regras para evitar conflito de agenda.
+- Expandir disponibilidade semanal para sugestao automatica de horarios.
 
 ### Presencial avancado
 
-- Relatorio completo de presentes, ausentes e atrasados por encontro.
-- Registro automatico de faltas apos encerramento do encontro.
-- QR Code visual na interface, nao apenas token textual.
 - Check-in pelo app/mobile.
 - Biometria/facial real.
-
-### Avaliacoes e certificacao
-
-- Regras de aprovacao por progresso, nota e frequencia.
-- Dashboard de progresso por curso para o aluno.
-- Historico de sessoes de voz com aula, curso, duracao e transcricao.
-- Botao "Falar com professor" integrado ao BeVox realtime por WebSocket.
-- Endpoint dedicado de inicio de voz retorna sessao local, agente, caller e WebSocket publico do BeVox.
-- Certificacao por curso com regra configuravel.
-- Emissao automatica de certificado quando o aluno atende aos criterios.
-- Validacao publica de certificado por codigo.
-- Avaliacao hibrida: prova online e validacao presencial.
-- Trabalhos/atividades com entrega.
-- Avaliacao pratica presencial.
-- Certificado PDF.
-- Assinatura digital.
 
 ### Comunicacao
 
 - Base para integracao W-Omni.
 - Push ainda depende de adaptador real.
 - Grupos por turma.
-
-### Financeiro
-
-- Planos de curso.
-- Assinaturas.
-- Pagamento por turma.
-- PIX.
-- Cartao.
-- Boleto.
-- Gateway Asaas/PagSeguro como integracao futura.
-- Estrutura base de planos, assinaturas e cobrancas.
 
 ### Documentos e GED/ECM
 
@@ -227,9 +227,10 @@ Observacao: `alembic upgrade head` online nao foi aplicado porque o PostgreSQL c
 
 ## Proximo Marco Recomendado
 
-Implementar usuarios e perfis:
+Implementar agenda real do professor:
 
-- Concluir refinamento de permissoes por recurso.
-- Planejar migracao fisica de nomes legados `students` para `users` sem quebrar FKs.
+- Usar disponibilidade ativa do instrutor para sugerir horarios.
+- Cruzar disponibilidade com encontros ja agendados.
+- Exibir agenda consolidada por instrutor.
 
-Esse marco destrava instrutores reais, empresas, agenda de professor, relatorios corporativos e permissoes mais corretas.
+Esse marco destrava alocacao mais confiavel de instrutores, conflitos mais claros e planejamento de turmas.

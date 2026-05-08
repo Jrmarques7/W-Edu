@@ -3,19 +3,23 @@
 import { CalendarDaysIcon } from '@heroicons/react/24/outline';
 import MeetingRow from './MeetingRow';
 import type { Course } from '@/types/course';
-import type { AttendanceRecord, ClassOffering, MeetingAttendanceSummary, Room, ScheduledMeeting } from '@/types/schedule';
+import type { AttendanceRecord, AttendanceStatus, ClassOffering, MeetingAttendanceReportRow, MeetingAttendanceSummary, Room, ScheduledMeeting } from '@/types/schedule';
 
-export default function ClassOfferingsList({ classes, courses, rooms, meetings, attendance, summaries, onCreateMeeting, onLoadMeetings, onGenerateCheckin, onLoadAttendance, onLoadSummary, onCloseMeeting, showHeader = true }: {
+export default function ClassOfferingsList({ classes, courses, rooms, meetings, attendance, attendanceReports, summaries, onCreateMeeting, onLoadMeetings, onGenerateCheckin, onLoadAttendance, onLoadAttendanceReport, onMarkAttendance, onSavePracticalAssessment, onLoadSummary, onCloseMeeting, showHeader = true }: {
   classes: ClassOffering[];
   courses: Course[];
   rooms: Room[];
   meetings: Record<number, ScheduledMeeting[]>;
   attendance: Record<number, AttendanceRecord[]>;
+  attendanceReports: Record<number, MeetingAttendanceReportRow[]>;
   summaries: Record<number, MeetingAttendanceSummary>;
   onCreateMeeting: (cls: ClassOffering) => void;
   onLoadMeetings: (classId: number) => void;
   onGenerateCheckin: (meeting: ScheduledMeeting) => void;
   onLoadAttendance: (meetingId: number) => void;
+  onLoadAttendanceReport: (meetingId: number) => void;
+  onMarkAttendance: (meeting: ScheduledMeeting, studentId: number, status: AttendanceStatus) => void;
+  onSavePracticalAssessment: (meeting: ScheduledMeeting, studentId: number, score: number, feedback: string | null) => void;
   onLoadSummary: (meetingId: number) => void;
   onCloseMeeting: (meeting: ScheduledMeeting) => void;
   showHeader?: boolean;
@@ -61,8 +65,8 @@ export default function ClassOfferingsList({ classes, courses, rooms, meetings, 
                   <div className="px-5 pb-4">
                     <div className="rounded-lg border border-gray-100 dark:border-gray-700 divide-y divide-gray-100 dark:divide-gray-700">
                       {(meetings[cls.id] ?? []).map((meeting) => (
-                        <MeetingRow key={meeting.id} meeting={meeting} attendanceRecords={attendance[meeting.id]} summary={summaries[meeting.id]}
-                          onGenerateCheckin={onGenerateCheckin} onLoadAttendance={onLoadAttendance} onLoadSummary={onLoadSummary} onClose={onCloseMeeting} />
+                        <MeetingRow key={meeting.id} meeting={meeting} attendanceRecords={attendance[meeting.id]} attendanceReport={attendanceReports[meeting.id]} summary={summaries[meeting.id]}
+                          onGenerateCheckin={onGenerateCheckin} onLoadAttendance={onLoadAttendance} onLoadAttendanceReport={onLoadAttendanceReport} onMarkAttendance={onMarkAttendance} onSavePracticalAssessment={onSavePracticalAssessment} onLoadSummary={onLoadSummary} onClose={onCloseMeeting} />
                       ))}
                     </div>
                   </div>

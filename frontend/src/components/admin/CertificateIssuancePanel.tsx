@@ -39,7 +39,7 @@ export default function CertificateIssuancePanel({ enrolledStudents, studentId, 
         <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-4 text-sm text-gray-700 dark:text-gray-300">
           <p className="font-medium mb-2">{eligibility.eligible ? 'Elegível' : 'Não elegível'}</p>
           <p>Progresso: {eligibility.progress_percent}%</p>
-          <p>Quiz: {eligibility.quiz_percent}%</p>
+          <p>Avaliações: {eligibility.quiz_percent}%</p>
           <p>Frequência: {eligibility.attendance_percent}%</p>
           {eligibility.reasons.length > 0 && <p className="mt-2 text-red-600 dark:text-red-400">{eligibility.reasons.join(' • ')}</p>}
         </div>

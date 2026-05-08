@@ -1,7 +1,7 @@
 from datetime import datetime
 from pydantic import BaseModel, Field
 
-from app.models.schedule import AttendanceMethod, AttendanceStatus, ClassEnrollmentStatus, ClassStatus, MeetingType
+from app.models.schedule import AttendanceMethod, AttendanceStatus, ClassEnrollmentStatus, ClassStatus, MeetingType, PracticalAssessmentStatus
 
 
 class LocationCreate(BaseModel):
@@ -199,3 +199,38 @@ class MeetingAttendanceSummary(BaseModel):
     late: int
     absent: int
     recorded: int
+
+
+class MeetingAttendanceReportRow(BaseModel):
+    student_id: int
+    student_name: str
+    student_email: str
+    status: AttendanceStatus
+    method: AttendanceMethod | None = None
+    recorded_at: datetime | None = None
+    notes: str | None = None
+    practical_score: int | None = None
+    practical_status: PracticalAssessmentStatus | None = None
+    practical_feedback: str | None = None
+    practical_recorded_at: datetime | None = None
+
+
+class PracticalAssessmentRecordCreate(BaseModel):
+    student_id: int
+    score: int = Field(ge=0, le=100)
+    status: PracticalAssessmentStatus = PracticalAssessmentStatus.reviewed
+    feedback: str | None = None
+
+
+class PracticalAssessmentRecordOut(BaseModel):
+    id: int
+    scheduled_meeting_id: int
+    class_offering_id: int
+    student_id: int
+    score: int
+    status: PracticalAssessmentStatus
+    feedback: str | None
+    recorded_at: datetime
+    recorded_by_id: int | None
+
+    model_config = {"from_attributes": True}

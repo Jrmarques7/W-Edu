@@ -8,6 +8,7 @@ from app.models.student import Student
 from app.repositories.finance import BillingPlanRepository, ChargeRepository, SubscriptionRepository
 from app.repositories.student import OrganizationRepository, StudentRepository
 from app.schemas.finance import BillingPlanCreate, BillingPlanUpdate, ChargeCreate, ChargeUpdate, SubscriptionCreate, SubscriptionUpdate
+from app.services.payment_gateways import AsaasGateway, apply_gateway_payload
 
 
 class FinanceService:
@@ -83,7 +84,22 @@ class FinanceService:
                 payload["student_id"] = subscription.student_id
             if not payload.get("organization_id"):
                 payload["organization_id"] = subscription.organization_id
-        return self.charge_repo.create(Charge(**payload))
+            if not payload.get("gateway_customer_id"):
+                payload["gateway_customer_id"] = subscription.gateway_customer_id
+        charge = self.charge_repo.create(Charge(**payload))
+        if charge.gateway_name == "asaas" and not charge.gateway_reference:
+            charge = apply_gateway_payload(charge, AsaasGateway().create_charge(charge))
+            charge = self.charge_repo.update(charge)
+        return charge
+
+    def sync_charge_gateway(self, charge_id: int) -> Charge:
+        charge = self._get_charge_or_404(charge_id)
+        if charge.gateway_name != "asaas":
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Cobrança não usa gateway Asaas")
+        if charge.gateway_reference:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Cobrança já enviada ao Asaas")
+        charge = apply_gateway_payload(charge, AsaasGateway().create_charge(charge))
+        return self.charge_repo.update(charge)
 
     def update_charge(self, charge_id: int, data: ChargeUpdate) -> Charge:
         charge = self._get_charge_or_404(charge_id)

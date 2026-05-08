@@ -22,6 +22,9 @@ export interface Certificate {
   revoked_at: string | null;
   revoked_reason: string | null;
   pdf_url: string | null;
+  signature_algorithm: string | null;
+  signature_hash: string | null;
+  signed_at: string | null;
 }
 
 export interface CertificateEligibility {
@@ -40,6 +43,7 @@ export interface CertificateValidation {
   message: string | null;
   course_name: string | null;
   student_name: string | null;
+  signature_valid: boolean;
 }
 
 export interface CertificateIssueResult {
