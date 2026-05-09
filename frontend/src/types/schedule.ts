@@ -50,6 +50,45 @@ export interface ScheduledMeeting {
   created_at: string;
 }
 
+export interface InstructorAgendaAvailability {
+  id: number;
+  day_of_week: number;
+  start_time: string;
+  end_time: string;
+  is_active: boolean;
+}
+
+export interface InstructorAgendaMeeting {
+  id: number;
+  class_offering_id: number;
+  class_name: string;
+  course_id: number;
+  course_name: string;
+  room_id: number | null;
+  room_name: string | null;
+  title: string;
+  starts_at: string;
+  ends_at: string;
+  type: MeetingType;
+  is_closed: boolean;
+}
+
+export interface InstructorAgendaSuggestion {
+  starts_at: string;
+  ends_at: string;
+  availability_id: number;
+}
+
+export interface InstructorAgenda {
+  instructor_id: number;
+  instructor_name: string;
+  range_start: string;
+  range_end: string;
+  availability: InstructorAgendaAvailability[];
+  meetings: InstructorAgendaMeeting[];
+  suggestions: InstructorAgendaSuggestion[];
+}
+
 export interface CheckinToken {
   id: number;
   scheduled_meeting_id: number;

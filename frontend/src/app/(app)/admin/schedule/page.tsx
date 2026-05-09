@@ -2,25 +2,31 @@
 
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { AcademicCapIcon, BuildingOffice2Icon, MapPinIcon, PlusIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { AcademicCapIcon, BuildingOffice2Icon, CalendarDaysIcon, ClockIcon, MapPinIcon, PlusIcon, UserIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import api from '@/lib/api/client';
 import { endpoints } from '@/lib/api/endpoints';
+import type { User } from '@/types/auth';
 import type { Course } from '@/types/course';
-import type { AttendanceRecord, AttendanceStatus, CheckinToken, ClassOffering, Location, MeetingAttendanceReportRow, MeetingAttendanceSummary, MeetingType, Room, ScheduledMeeting } from '@/types/schedule';
+import type { AttendanceRecord, AttendanceStatus, CheckinToken, ClassOffering, InstructorAgenda, InstructorAgendaSuggestion, Location, MeetingAttendanceReportRow, MeetingAttendanceSummary, MeetingType, Room, ScheduledMeeting } from '@/types/schedule';
 import CheckinQrModal from '@/components/admin/CheckinQrModal';
 import ClassOfferingForm from '@/components/admin/ClassOfferingForm';
 import ClassOfferingsList from '@/components/admin/ClassOfferingsList';
 import LocationForm from '@/components/admin/LocationForm';
 import RoomForm from '@/components/admin/RoomForm';
 
-type SetupTab = 'classes' | 'rooms' | 'locations';
+type SetupTab = 'classes' | 'instructors' | 'rooms' | 'locations';
 const toDateTimeLocal = (value: string) => value.slice(0, 16);
+const toApiDateTime = (value: string) => new Date(value).toISOString();
+const dayLabels = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
 
 export default function AdminSchedulePage() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [locations, setLocations] = useState<Location[]>([]);
   const [rooms, setRooms] = useState<Room[]>([]);
   const [classes, setClasses] = useState<ClassOffering[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [instructorAgenda, setInstructorAgenda] = useState<InstructorAgenda | null>(null);
+  const [agendaLoading, setAgendaLoading] = useState(false);
   const [meetings, setMeetings] = useState<Record<number, ScheduledMeeting[]>>({});
   const [attendance, setAttendance] = useState<Record<number, AttendanceRecord[]>>({});
   const [attendanceReports, setAttendanceReports] = useState<Record<number, MeetingAttendanceReportRow[]>>({});
@@ -40,18 +46,28 @@ export default function AdminSchedulePage() {
     ends_at: '',
     type: 'live' as MeetingType,
   });
+  const [pendingMeetingSlot, setPendingMeetingSlot] = useState<{ starts_at: string; ends_at: string } | null>(null);
+  const [agendaForm, setAgendaForm] = useState({
+    instructor_id: '',
+    range_start: toDateTimeLocal(new Date().toISOString()),
+    range_end: toDateTimeLocal(new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()),
+    duration_minutes: 60,
+  });
+  const instructors = users.filter((user) => user.role === 'instructor' && user.is_active);
 
   const load = async () => {
-    const [courseRes, locationRes, roomRes, classRes] = await Promise.all([
+    const [courseRes, locationRes, roomRes, classRes, userRes] = await Promise.all([
       api.get<Course[]>(endpoints.courses.list),
       api.get<Location[]>(endpoints.schedule.locations),
       api.get<Room[]>(endpoints.schedule.rooms),
       api.get<ClassOffering[]>(endpoints.schedule.classes),
+      api.get<User[]>('/admin/users'),
     ]);
     setCourses(courseRes.data);
     setLocations(locationRes.data);
     setRooms(roomRes.data);
     setClasses(classRes.data);
+    setUsers(userRes.data);
     setLoading(false);
   };
 
@@ -62,10 +78,11 @@ export default function AdminSchedulePage() {
     setMeetingForm({
       title: '',
       room_id: cls.room_id ? String(cls.room_id) : '',
-      starts_at: toDateTimeLocal(cls.starts_at),
-      ends_at: toDateTimeLocal(cls.ends_at),
+      starts_at: pendingMeetingSlot?.starts_at ?? toDateTimeLocal(cls.starts_at),
+      ends_at: pendingMeetingSlot?.ends_at ?? toDateTimeLocal(cls.ends_at),
       type: cls.room_id ? 'in_person' : 'live',
     });
+    setPendingMeetingSlot(null);
   };
 
   const createMeeting = async (event: React.FormEvent) => {
@@ -91,6 +108,38 @@ export default function AdminSchedulePage() {
   const loadMeetings = async (classId: number) => {
     const { data } = await api.get<ScheduledMeeting[]>(endpoints.schedule.classMeetings(classId));
     setMeetings((prev) => ({ ...prev, [classId]: data }));
+  };
+
+  const loadInstructorAgenda = async (event?: React.FormEvent) => {
+    event?.preventDefault();
+    if (!agendaForm.instructor_id) {
+      setInstructorAgenda(null);
+      return;
+    }
+    setAgendaLoading(true);
+    try {
+      const { data } = await api.get<InstructorAgenda>(endpoints.schedule.instructorAgenda(Number(agendaForm.instructor_id)), {
+        params: {
+          range_start: toApiDateTime(agendaForm.range_start),
+          range_end: toApiDateTime(agendaForm.range_end),
+          duration_minutes: agendaForm.duration_minutes,
+        },
+      });
+      setInstructorAgenda(data);
+    } catch (error: any) {
+      toast.error(error.response?.data?.detail || 'Erro ao carregar agenda do instrutor.');
+    } finally {
+      setAgendaLoading(false);
+    }
+  };
+
+  const useSuggestion = (suggestion: InstructorAgendaSuggestion) => {
+    setPendingMeetingSlot({
+      starts_at: toDateTimeLocal(suggestion.starts_at),
+      ends_at: toDateTimeLocal(suggestion.ends_at),
+    });
+    setActiveSetupTab('classes');
+    toast.success('Horário selecionado. Escolha uma turma e crie o encontro.');
   };
 
   const generateCheckinToken = async (meeting: ScheduledMeeting) => {
@@ -183,6 +232,7 @@ export default function AdminSchedulePage() {
 
   const setupTabs = [
     { id: 'classes' as SetupTab, label: 'Turmas', icon: AcademicCapIcon, badge: classes.length },
+    { id: 'instructors' as SetupTab, label: 'Instrutores', icon: UserIcon, badge: instructors.length },
     { id: 'rooms' as SetupTab, label: 'Salas', icon: BuildingOffice2Icon, badge: rooms.length },
     { id: 'locations' as SetupTab, label: 'Unidades', icon: MapPinIcon, badge: locations.length },
   ];
@@ -262,6 +312,107 @@ export default function AdminSchedulePage() {
                 showHeader={false}
                 onCreateMeeting={openMeetingModal} onLoadMeetings={loadMeetings} onGenerateCheckin={generateCheckinToken}
                 onLoadAttendance={loadAttendance} onLoadAttendanceReport={loadAttendanceReport} onMarkAttendance={markManualAttendance} onSavePracticalAssessment={savePracticalAssessment} onLoadSummary={loadSummary} onCloseMeeting={closeMeeting} />
+            </div>
+          )}
+          {activeSetupTab === 'instructors' && (
+            <div className="space-y-4">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Agenda do professor</h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Consulte disponibilidade, encontros confirmados e horários livres sugeridos.
+                </p>
+              </div>
+              <form onSubmit={loadInstructorAgenda} className="grid grid-cols-1 gap-3 rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800 md:grid-cols-[1.3fr_1fr_1fr_120px_auto]">
+                <select
+                  value={agendaForm.instructor_id}
+                  onChange={(e) => setAgendaForm((prev) => ({ ...prev, instructor_id: e.target.value }))}
+                  className="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-900 dark:text-white"
+                >
+                  <option value="">Selecione o instrutor</option>
+                  {instructors.map((instructor) => <option key={instructor.id} value={instructor.id}>{instructor.name}</option>)}
+                </select>
+                <input
+                  type="datetime-local"
+                  value={agendaForm.range_start}
+                  onChange={(e) => setAgendaForm((prev) => ({ ...prev, range_start: e.target.value }))}
+                  className="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-900 dark:text-white"
+                />
+                <input
+                  type="datetime-local"
+                  value={agendaForm.range_end}
+                  onChange={(e) => setAgendaForm((prev) => ({ ...prev, range_end: e.target.value }))}
+                  className="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-900 dark:text-white"
+                />
+                <input
+                  type="number"
+                  min={15}
+                  max={480}
+                  step={15}
+                  value={agendaForm.duration_minutes}
+                  onChange={(e) => setAgendaForm((prev) => ({ ...prev, duration_minutes: Number(e.target.value) }))}
+                  className="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-900 dark:text-white"
+                />
+                <button type="submit" className="inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700 disabled:opacity-60" disabled={agendaLoading || !agendaForm.instructor_id}>
+                  <CalendarDaysIcon className="h-4 w-4" />
+                  <span>{agendaLoading ? 'Carregando' : 'Consultar'}</span>
+                </button>
+              </form>
+
+              {instructorAgenda && (
+                <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
+                  <div className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
+                    <h3 className="font-semibold text-gray-900 dark:text-white">Disponibilidade semanal</h3>
+                    <div className="mt-3 space-y-2">
+                      {instructorAgenda.availability.length === 0 ? (
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Nenhuma disponibilidade cadastrada.</p>
+                      ) : instructorAgenda.availability.map((slot) => (
+                        <div key={slot.id} className="flex items-center justify-between rounded-lg bg-gray-50 px-3 py-2 text-sm dark:bg-gray-900">
+                          <span className="text-gray-700 dark:text-gray-300">{dayLabels[slot.day_of_week]}</span>
+                          <span className={slot.is_active ? 'text-emerald-700 dark:text-emerald-300' : 'text-gray-400'}>
+                            {slot.start_time} - {slot.end_time}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
+                    <h3 className="font-semibold text-gray-900 dark:text-white">Encontros agendados</h3>
+                    <div className="mt-3 space-y-2">
+                      {instructorAgenda.meetings.length === 0 ? (
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Nenhum encontro no período.</p>
+                      ) : instructorAgenda.meetings.map((meeting) => (
+                        <div key={meeting.id} className="rounded-lg border border-gray-100 p-3 dark:border-gray-700">
+                          <p className="text-sm font-medium text-gray-900 dark:text-white">{meeting.title}</p>
+                          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{meeting.course_name} · {meeting.class_name}</p>
+                          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                            {new Date(meeting.starts_at).toLocaleString()} - {new Date(meeting.ends_at).toLocaleTimeString()}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
+                    <h3 className="font-semibold text-gray-900 dark:text-white">Horários sugeridos</h3>
+                    <div className="mt-3 space-y-2">
+                      {instructorAgenda.suggestions.length === 0 ? (
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Sem horários livres para a duração informada.</p>
+                      ) : instructorAgenda.suggestions.slice(0, 12).map((suggestion) => (
+                        <button
+                          key={`${suggestion.starts_at}-${suggestion.ends_at}`}
+                          type="button"
+                          onClick={() => useSuggestion(suggestion)}
+                          className="flex w-full items-center justify-between rounded-lg border border-gray-100 px-3 py-2 text-left text-sm transition-colors hover:border-indigo-200 hover:bg-indigo-50 dark:border-gray-700 dark:hover:border-indigo-700 dark:hover:bg-indigo-950/30"
+                        >
+                          <span className="text-gray-700 dark:text-gray-300">{new Date(suggestion.starts_at).toLocaleString()}</span>
+                          <ClockIcon className="h-4 w-4 text-indigo-600" />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
           {activeSetupTab === 'rooms' && (
@@ -394,6 +545,7 @@ export default function AdminSchedulePage() {
             <ClassOfferingForm
               courses={courses}
               rooms={rooms}
+              instructors={instructors}
               variant="plain"
               onCancel={() => setClassModalOpen(false)}
               onCreated={() => {

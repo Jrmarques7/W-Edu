@@ -43,6 +43,7 @@ export const endpoints = {
     classEnrollments: (id: number) => `/schedule/classes/${id}/enrollments`,
     classWaitlist: (id: number) => `/schedule/classes/${id}/waitlist`,
     joinClass: (id: number) => `/schedule/classes/${id}/join`,
+    instructorAgenda: (id: number) => `/schedule/instructors/${id}/agenda`,
     meetings: '/schedule/meetings',
     meeting: (id: number) => `/schedule/meetings/${id}`,
     closeMeeting: (id: number) => `/schedule/meetings/${id}/close`,

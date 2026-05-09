@@ -3,14 +3,16 @@
 import { useState } from 'react';
 import { AcademicCapIcon, PlusIcon } from '@heroicons/react/24/outline';
 import type { Course } from '@/types/course';
+import type { User } from '@/types/auth';
 import type { ClassOffering, Room } from '@/types/schedule';
 
 const toDateTimeLocal = (v: string) => v.slice(0, 16);
 const toApiDateTime = (v: string) => new Date(v).toISOString();
 
-export default function ClassOfferingForm({ courses, rooms, onCreated, onCancel, variant = 'card' }: {
+export default function ClassOfferingForm({ courses, rooms, instructors = [], onCreated, onCancel, variant = 'card' }: {
   courses: Course[];
   rooms: Room[];
+  instructors?: User[];
   onCreated: () => void;
   onCancel?: () => void;
   variant?: 'card' | 'plain';
@@ -19,7 +21,7 @@ export default function ClassOfferingForm({ courses, rooms, onCreated, onCancel,
     course_id: '', name: '',
     starts_at: toDateTimeLocal(new Date().toISOString()),
     ends_at: toDateTimeLocal(new Date(Date.now() + 60 * 60 * 1000).toISOString()),
-    capacity: 20, status: 'open' as ClassOffering['status'], room_id: '',
+    capacity: 20, status: 'open' as ClassOffering['status'], room_id: '', instructor_id: '',
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -33,6 +35,7 @@ export default function ClassOfferingForm({ courses, rooms, onCreated, onCancel,
         starts_at: toApiDateTime(form.starts_at), ends_at: toApiDateTime(form.ends_at),
         capacity: form.capacity, status: form.status,
         room_id: form.room_id ? Number(form.room_id) : null,
+        instructor_id: form.instructor_id ? Number(form.instructor_id) : null,
       });
       setForm((p) => ({ ...p, name: '' }));
       toast.success('Turma criada.');
@@ -69,6 +72,10 @@ export default function ClassOfferingForm({ courses, rooms, onCreated, onCancel,
           {rooms.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
         </select>
       </div>
+      <select value={form.instructor_id} onChange={(e) => setForm((p) => ({ ...p, instructor_id: e.target.value }))} className={inputCls}>
+        <option value="">Sem instrutor</option>
+        {instructors.map((instructor) => <option key={instructor.id} value={instructor.id}>{instructor.name}</option>)}
+      </select>
       <div className={variant === 'plain' ? 'flex justify-end gap-3 pt-2' : ''}>
         {onCancel && (
           <button type="button" onClick={onCancel} className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-white">

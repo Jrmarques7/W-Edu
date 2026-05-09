@@ -44,6 +44,7 @@ Objetivo: separar curso de oferta/turma.
 - [x] Criar `ScheduledMeeting`.
 - [x] Criar disponibilidade de instrutor.
 - [x] Bloquear conflitos de sala e instrutor ao agendar encontros.
+- [x] Exibir agenda real do professor com sugestoes por disponibilidade.
 
 Aceite:
 

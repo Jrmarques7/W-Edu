@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.models.notification import NotificationEventType
 from app.models.schedule import ClassEnrollment, ClassOffering, WaitlistEntry
+from app.models.student import UserRole
 from app.repositories.course import CourseRepository
 from app.repositories.schedule import ClassOfferingRepository, LocationRepository, RoomRepository
 from app.repositories.student import StudentRepository
@@ -93,8 +94,11 @@ class ClassOfferingService:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Sala não encontrada")
         if room and location_id and room.location_id != location_id:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Sala não pertence à unidade")
-        if instructor_id and not self.student_repo.get_by_id(instructor_id):
+        instructor = self.student_repo.get_by_id(instructor_id) if instructor_id else None
+        if instructor_id and not instructor:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Instrutor não encontrado")
+        if instructor and instructor.role != UserRole.instructor:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Usuário selecionado não é instrutor")
 
     def _validate_dates(self, starts_at, ends_at) -> None:
         if ends_at <= starts_at:

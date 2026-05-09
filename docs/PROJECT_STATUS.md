@@ -1,6 +1,6 @@
 # W-Edu — Controle de Implementacao
 
-Ultima atualizacao: 2026-05-08
+Ultima atualizacao: 2026-05-09
 
 ## Resumo Executivo
 
@@ -103,6 +103,7 @@ O projeto ja possui uma base LMS/EAD com autenticacao, cursos, aulas, matriculas
 - Disponibilidade semanal cadastravel.
 - Avaliacoes simples de alunos/admin.
 - Resumo minimo na tela de usuarios.
+- Agenda real do professor com disponibilidade semanal, encontros confirmados e sugestao de horarios livres.
 
 ### Planejamento e documentacao
 
@@ -171,8 +172,7 @@ Observacao: `alembic upgrade head` online nao foi aplicado porque o PostgreSQL c
 
 ### Instrutores
 
-- Agenda real do professor.
-- Expandir disponibilidade semanal para sugestao automatica de horarios.
+- Expandir sugestoes de horarios para considerar sala, unidade e preferencia de turma.
 
 ### Presencial avancado
 
@@ -227,10 +227,6 @@ Observacao: `alembic upgrade head` online nao foi aplicado porque o PostgreSQL c
 
 ## Proximo Marco Recomendado
 
-Implementar agenda real do professor:
+Implementar contratos, termos e materiais didaticos versionados no dominio de documentos.
 
-- Usar disponibilidade ativa do instrutor para sugerir horarios.
-- Cruzar disponibilidade com encontros ja agendados.
-- Exibir agenda consolidada por instrutor.
-
-Esse marco destrava alocacao mais confiavel de instrutores, conflitos mais claros e planejamento de turmas.
+Esse marco completa a camada GED local antes de integrar Alfresco Community Edition e OnlyOffice.

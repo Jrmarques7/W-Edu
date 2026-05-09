@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends
+from datetime import datetime
+
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -22,6 +24,7 @@ from app.schemas.schedule import (
     RoomUpdate,
     ScheduledMeetingCreate,
     MeetingAttendanceSummary,
+    InstructorAgendaOut,
     MeetingAttendanceReportRow,
     PracticalAssessmentRecordCreate,
     PracticalAssessmentRecordOut,
@@ -152,6 +155,18 @@ def list_class_meetings(
     _: Student = Depends(get_current_student),
 ):
     return ScheduledMeetingService(db).list_by_class(class_id)
+
+
+@router.get("/instructors/{instructor_id}/agenda", response_model=InstructorAgendaOut)
+def instructor_agenda(
+    instructor_id: int,
+    range_start: datetime | None = None,
+    range_end: datetime | None = None,
+    duration_minutes: int = Query(default=60, ge=15, le=480),
+    db: Session = Depends(get_db),
+    _: Student = Depends(get_current_admin_or_coordinator),
+):
+    return ScheduledMeetingService(db).instructor_agenda(instructor_id, range_start, range_end, duration_minutes)
 
 
 @router.patch("/meetings/{meeting_id}", response_model=ScheduledMeetingOut)

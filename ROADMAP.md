@@ -144,6 +144,7 @@ Objetivo: transformar presencial em capacidade nativa da plataforma.
 - [x] Implementar check-in por QR Code.
 - [x] Exibir QR Code visual para check-in no admin.
 - [x] Bloquear conflitos de sala e instrutor ao agendar encontros.
+- [x] Exibir agenda real do professor com disponibilidade, encontros e sugestoes.
 - [x] Preparar interface para biometria/facial futura.
 
 Entidades esperadas:

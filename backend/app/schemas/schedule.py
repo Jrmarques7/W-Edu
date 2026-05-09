@@ -156,6 +156,47 @@ class ScheduledMeetingOut(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class InstructorAvailabilitySlotOut(BaseModel):
+    id: int
+    day_of_week: int
+    start_time: str
+    end_time: str
+    is_active: bool
+
+    model_config = {"from_attributes": True}
+
+
+class InstructorAgendaMeetingOut(BaseModel):
+    id: int
+    class_offering_id: int
+    class_name: str
+    course_id: int
+    course_name: str
+    room_id: int | None
+    room_name: str | None
+    title: str
+    starts_at: datetime
+    ends_at: datetime
+    type: MeetingType
+    is_closed: bool
+
+
+class InstructorAgendaSuggestionOut(BaseModel):
+    starts_at: datetime
+    ends_at: datetime
+    availability_id: int
+
+
+class InstructorAgendaOut(BaseModel):
+    instructor_id: int
+    instructor_name: str
+    range_start: datetime
+    range_end: datetime
+    availability: list[InstructorAvailabilitySlotOut]
+    meetings: list[InstructorAgendaMeetingOut]
+    suggestions: list[InstructorAgendaSuggestionOut]
+
+
 class CheckinTokenCreate(BaseModel):
     valid_minutes: int = Field(default=30, gt=0, le=1440)
 
