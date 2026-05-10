@@ -19,10 +19,13 @@ function proxyBevoxUpgrade(req, socket, head) {
     ? (req.url.replace(/^\/bevox/, '') || '/')
     : (req.url || '/');
 
+  console.log(`[bevox] upgrade ${req.url} → ${target.host}${targetPath}`);
+
   const proxyPort = Number(target.port) || (target.protocol === 'https:' ? 443 : 80);
   const proxySocket = net.connect(proxyPort, target.hostname);
 
   proxySocket.on('connect', () => {
+    console.log('[bevox] connected to BeVox');
     const headerLines = Object.entries(req.headers)
       .filter(([k]) => k !== 'host')
       .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(', ') : v}`)
@@ -40,10 +43,12 @@ function proxyBevoxUpgrade(req, socket, head) {
   proxySocket.pipe(socket, { end: false });
   socket.pipe(proxySocket, { end: false });
 
-  proxySocket.on('end', () => socket.end());
-  socket.on('end', () => proxySocket.end());
-  proxySocket.on('error', () => { socket.write('HTTP/1.1 502 Bad Gateway\r\n\r\n'); socket.destroy(); });
-  socket.on('error', () => proxySocket.destroy());
+  proxySocket.on('data', d => console.log('[bevox] BeVox→client:', d.slice(0, 80).toString().replace(/\r\n/g, '\\r\\n')));
+  socket.on('data', d => console.log('[bevox] client→BeVox:', d.slice(0, 80).toString().replace(/\r\n/g, '\\r\\n')));
+  proxySocket.on('end', () => { console.log('[bevox] BeVox closed'); socket.end(); });
+  socket.on('end', () => { console.log('[bevox] client closed'); proxySocket.end(); });
+  proxySocket.on('error', e => { console.log('[bevox] BeVox error:', e.message); socket.write('HTTP/1.1 502 Bad Gateway\r\n\r\n'); socket.destroy(); });
+  socket.on('error', e => { console.log('[bevox] client error:', e.message); proxySocket.destroy(); });
 }
 
 await app.prepare();
