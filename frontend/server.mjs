@@ -62,7 +62,7 @@ const server = http.createServer((req, res) => {
 });
 
 server.on('upgrade', (req, socket, head) => {
-  if (req.url?.startsWith('/bevox/')) {
+  if (req.url?.startsWith('/bevox/') || req.url?.startsWith('/ws/')) {
     proxyBevoxUpgrade(req, socket, head);
     return;
   }
