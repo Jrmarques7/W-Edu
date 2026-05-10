@@ -2,7 +2,7 @@ export function getSameOriginBevoxWsUrl(): string {
   if (typeof window === 'undefined') return 'ws://localhost:8001/ws/voice/stream';
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
   if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-    return `${protocol}//${window.location.host}/ws/voice/stream`;
+    return `${protocol}//${window.location.host}/bevox/ws/voice/stream`;
   }
   return `${protocol}//${window.location.hostname}:8001/ws/voice/stream`;
 }
