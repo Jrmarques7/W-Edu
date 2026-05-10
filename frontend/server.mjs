@@ -1,5 +1,5 @@
 import http from 'node:http';
-import https from 'node:https';
+import net from 'node:net';
 import next from 'next';
 
 const dev = process.env.NODE_ENV !== 'production';
@@ -15,44 +15,35 @@ function getBevoxTarget() {
 
 function proxyBevoxUpgrade(req, socket, head) {
   const target = getBevoxTarget();
-  const targetPath = req.url?.replace(/^\/bevox/, '') || '/';
-  const headers = {
-    ...req.headers,
-    host: target.host,
-  };
+  const targetPath = req.url?.startsWith('/bevox')
+    ? (req.url.replace(/^\/bevox/, '') || '/')
+    : (req.url || '/');
 
-  const transport = target.protocol === 'https:' ? https : http;
-  const proxyReq = transport.request({
-    hostname: target.hostname,
-    port: target.port || (target.protocol === 'https:' ? 443 : 80),
-    path: targetPath,
-    method: req.method,
-    headers,
+  const proxyPort = Number(target.port) || (target.protocol === 'https:' ? 443 : 80);
+  const proxySocket = net.connect(proxyPort, target.hostname);
+
+  proxySocket.on('connect', () => {
+    const headerLines = Object.entries(req.headers)
+      .filter(([k]) => k !== 'host')
+      .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(', ') : v}`)
+      .join('\r\n');
+
+    proxySocket.write(
+      `${req.method} ${targetPath} HTTP/1.1\r\n` +
+      `host: ${target.host}\r\n` +
+      (headerLines ? headerLines + '\r\n' : '') +
+      '\r\n'
+    );
+    if (head && head.length) proxySocket.write(head);
   });
 
-  proxyReq.on('upgrade', (proxyRes, proxySocket, proxyHead) => {
-    socket.write(`HTTP/${proxyRes.httpVersion} ${proxyRes.statusCode} ${proxyRes.statusMessage}\r\n`);
-    for (const [key, value] of Object.entries(proxyRes.headers)) {
-      if (Array.isArray(value)) {
-        for (const item of value) socket.write(`${key}: ${item}\r\n`);
-      } else if (value !== undefined) {
-        socket.write(`${key}: ${value}\r\n`);
-      }
-    }
-    socket.write('\r\n');
+  proxySocket.pipe(socket, { end: false });
+  socket.pipe(proxySocket, { end: false });
 
-    if (proxyHead.length) socket.write(proxyHead);
-    if (head.length) proxySocket.write(head);
-    proxySocket.pipe(socket);
-    socket.pipe(proxySocket);
-  });
-
-  proxyReq.on('error', () => {
-    socket.write('HTTP/1.1 502 Bad Gateway\r\n\r\n');
-    socket.destroy();
-  });
-
-  proxyReq.end();
+  proxySocket.on('end', () => socket.end());
+  socket.on('end', () => proxySocket.end());
+  proxySocket.on('error', () => { socket.write('HTTP/1.1 502 Bad Gateway\r\n\r\n'); socket.destroy(); });
+  socket.on('error', () => proxySocket.destroy());
 }
 
 await app.prepare();
